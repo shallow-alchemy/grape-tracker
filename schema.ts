@@ -14,7 +14,7 @@ export const schema = createSchema({
 
 export type Schema = typeof schema;
 
-export const permissions = definePermissions<Schema, { sub: string }>(
+export const permissions = definePermissions<{ sub: string }, Schema>(
   schema,
   () => ({
     example: {
