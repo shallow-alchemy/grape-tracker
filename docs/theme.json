@@ -1,0 +1,188 @@
+{
+  "name": "80s-hacker-terminal",
+  "version": "1.0.0",
+  "description": "Muted 80s terminal theme with faded black backgrounds and subtle green accents",
+  "colors": {
+    "primary": {
+      "50": "#f0f2f0",
+      "100": "#d8e2d8",
+      "200": "#b6d2b6",
+      "300": "#8fbe8f",
+      "400": "#6ba76b",
+      "500": "#4a8d4a",
+      "600": "#3a7a3a",
+      "700": "#2d5f2d",
+      "800": "#244d24",
+      "900": "#1d3e1d"
+    },
+    "secondary": {
+      "50": "#f5f6f5",
+      "100": "#ebedef",
+      "200": "#d4d8d4",
+      "300": "#b6beb6",
+      "400": "#8a968a",
+      "500": "#626b62",
+      "600": "#4a534a",
+      "700": "#384038",
+      "800": "#2a312a",
+      "900": "#1e241e"
+    },
+    "accent": {
+      "50": "#f0f5f0",
+      "100": "#dcebdc",
+      "200": "#b9d6b9",
+      "300": "#8fbe8f",
+      "400": "#65a165",
+      "500": "#4a8d4a",
+      "600": "#3a7a3a",
+      "700": "#2d5f2d",
+      "800": "#244d24",
+      "900": "#1d3e1d"
+    },
+    "semantic": {
+      "background": "#1a1c1a",
+      "surface": "#212421",
+      "surface_elevated": "#282b28",
+      "surface_hover": "#2f322f",
+      "border": "#3a3f3a",
+      "border_hover": "#434843",
+      "border_focus": "#3a7a3a",
+      "border_accent": "#3a7a3a",
+      "text_primary": "#d8e2d8",
+      "text_secondary": "#9db59d",
+      "text_muted": "#627062",
+      "text_inverse": "#1a1c1a",
+      "text_accent": "#65a165",
+      "success": "#4a8d4a",
+      "error": "#cc3838",
+      "warning": "#d4850b",
+      "info": "#2563eb"
+    }
+  },
+  "typography": {
+    "families": {
+      "heading": "'Monaco', 'Menlo', 'Ubuntu Mono', monospace",
+      "body": "'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace",
+      "mono": "'Fira Code', 'SF Mono', 'Monaco', monospace"
+    },
+    "sizes": {
+      "xs": "0.75rem",
+      "sm": "0.875rem",
+      "base": "1rem",
+      "lg": "1.125rem",
+      "xl": "1.25rem",
+      "2xl": "1.5rem",
+      "3xl": "1.875rem"
+    },
+    "weights": {
+      "normal": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "line_heights": {
+      "tight": 1.25,
+      "normal": 1.5,
+      "relaxed": 1.75
+    }
+  },
+  "spacing": {
+    "px": "1px",
+    "xs": "0.25rem",
+    "sm": "0.5rem",
+    "md": "0.75rem",
+    "lg": "1rem",
+    "xl": "1.25rem",
+    "2xl": "1.5rem",
+    "3xl": "2rem",
+    "4xl": "2.5rem",
+    "5xl": "3rem"
+  },
+  "breakpoints": {
+    "sm": "640px",
+    "md": "768px",
+    "lg": "1024px",
+    "xl": "1280px"
+  },
+  "effects": {
+    "shadows": {
+      "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.3)",
+      "md": "0 4px 6px -1px rgba(0, 0, 0, 0.4)",
+      "lg": "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
+      "xl": "0 20px 25px -5px rgba(0, 0, 0, 0.6)",
+      "glow": "0 0 15px rgba(58, 122, 58, 0.2)",
+      "glow_strong": "0 0 25px rgba(58, 122, 58, 0.3)"
+    },
+    "border_radius": {
+      "none": "0",
+      "sm": "0.25rem",
+      "md": "0.375rem",
+      "lg": "0.5rem",
+      "xl": "0.75rem",
+      "2xl": "1rem",
+      "full": "9999px"
+    },
+    "transitions": {
+      "fast": "150ms ease-in-out",
+      "normal": "250ms ease-in-out",
+      "slow": "350ms ease-in-out"
+    },
+    "z_index": {
+      "dropdown": 1000,
+      "sticky": 1020,
+      "fixed": 1030,
+      "modal": 1040,
+      "popover": 1050,
+      "tooltip": 1060
+    }
+  },
+  "components": {
+    "button": {
+      "heights": {
+        "sm": "2rem",
+        "md": "2.5rem",
+        "lg": "3rem"
+      }
+    },
+    "input": {
+      "heights": {
+        "sm": "2rem",
+        "md": "2.5rem",
+        "lg": "3rem"
+      }
+    }
+  },
+  "atmosphere": {
+    "crt_simulation": {
+      "grain_opacity": 0.4,
+      "grain_size": "3px",
+      "vignette_intensity": "rgba(0,0,0,0.15)",
+      "vignette_position": "ellipse at center"
+    },
+    "background_gradients": {
+      "layer_1": "radial-gradient(circle at 20% 80%, rgba(58, 122, 58, 0.02) 0%, transparent 50%)",
+      "layer_2": "radial-gradient(circle at 80% 20%, rgba(58, 122, 58, 0.015) 0%, transparent 50%)",
+      "layer_3": "radial-gradient(circle at 40% 40%, rgba(58, 122, 58, 0.01) 0%, transparent 50%)"
+    },
+    "terminal_chrome": {
+      "dot_colors": {
+        "red": "#ef4444",
+        "yellow": "#f59e0b",
+        "green": "#4a8d4a"
+      },
+      "dot_size": "6px",
+      "dot_spacing": "0.25rem"
+    }
+  },
+  "css_variables": {
+    "color_primary_600": "var(--color-primary-600)",
+    "color_background": "var(--color-background)",
+    "color_surface": "var(--color-surface)",
+    "color_text_primary": "var(--color-text-primary)",
+    "spacing_lg": "var(--spacing-lg)",
+    "font_body": "var(--font-body)",
+    "transition_normal": "var(--transition-normal)",
+    "shadow_glow": "var(--shadow-glow)",
+    "radius_md": "var(--radius-md)"
+  }
+}

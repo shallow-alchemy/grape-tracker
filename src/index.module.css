@@ -1,0 +1,59 @@
+.signInContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: var(--color-background);
+}
+
+.signInContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3xl);
+  padding: var(--spacing-2xl);
+}
+
+.appTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-accent);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-shadow: var(--shadow-glow);
+}
+
+.signInButton {
+  padding: var(--spacing-lg) var(--spacing-3xl);
+  background: var(--color-primary-600);
+  border: var(--spacing-px) solid var(--color-primary-500);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  box-shadow: var(--shadow-glow);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.signInButton:hover {
+  background: var(--color-primary-500);
+  box-shadow: var(--shadow-glow-strong);
+  transform: translateY(-2px);
+}
+
+.signInButton:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-glow);
+}
+
+.grapes {
+  font-size: 4rem;
+  color: #8B5A8B;
+  opacity: 0.8;
+}
