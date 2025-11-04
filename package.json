@@ -1,0 +1,28 @@
+{
+  "name": "mobile-app",
+  "version": "1.0.0",
+  "description": "Mobile-first web app with Zero sync",
+  "type": "module",
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "preview": "rsbuild preview",
+    "zero-cache": "npx zero-cache-dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@rsbuild/core": "^1.6.1",
+    "@rsbuild/plugin-react": "^1.4.1",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@rocicorp/zero": "^0.24.2025101500",
+    "react": "^19.2.0",
+    "react-aria-components": "^1.13.0",
+    "react-dom": "^19.2.0"
+  }
+}
