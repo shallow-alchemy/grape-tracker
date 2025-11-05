@@ -65,6 +65,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xl);
+  min-height: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .currentWeather {
@@ -106,13 +109,45 @@
   padding: var(--spacing-lg);
 }
 
+.forecastContent {
+  display: block;
+}
+
+.todayWeatherDesktop {
+  display: none;
+}
+
+.forecastHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
 .forecastHeader {
   font-family: var(--font-heading);
   font-size: var(--font-size-sm);
   color: var(--color-text-accent);
   letter-spacing: 0.15em;
-  margin-bottom: var(--spacing-md);
   text-transform: uppercase;
+  margin: 0;
+}
+
+.tempToggle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--spacing-xs);
+  transition: color var(--transition-fast);
+}
+
+.tempToggle:hover {
+  color: var(--color-text-accent);
 }
 
 .forecastDays {
@@ -127,13 +162,20 @@
   background: var(--color-surface-elevated);
   border: var(--spacing-px) solid var(--color-border);
   border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  align-items: center;
 }
 
 .dayLabel {
   font-family: var(--font-heading);
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  margin-bottom: var(--spacing-xs);
+}
+
+.forecastIcon {
+  display: none;
 }
 
 .dayTemp {
@@ -143,10 +185,15 @@
 }
 
 .warnings {
-  background: var(--color-surface);
-  border: var(--spacing-px) solid var(--color-warning);
+  background: var(--color-surface-elevated);
+  border: 2px solid var(--color-warning);
   border-radius: var(--radius-md);
   padding: var(--spacing-lg);
+  box-shadow: 0 0 20px rgba(212, 133, 11, 0.15);
+}
+
+.warnings.hidden {
+  display: none;
 }
 
 .warningHeader {
@@ -154,20 +201,17 @@
   font-size: var(--font-size-sm);
   color: var(--color-warning);
   letter-spacing: 0.15em;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   text-transform: uppercase;
+  font-weight: var(--font-weight-semibold);
 }
 
 .warningItem {
   font-family: var(--font-body);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
   padding: var(--spacing-sm) 0;
-  border-bottom: var(--spacing-px) solid var(--color-border);
-}
-
-.warningItem:last-child {
-  border-bottom: none;
+  font-weight: var(--font-weight-medium);
 }
 
 .seasonalActivities {
@@ -177,21 +221,37 @@
   padding: var(--spacing-lg);
 }
 
+.seasonalActivitiesContent {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  min-width: 0;
+}
+
 .activityHeader {
   font-family: var(--font-heading);
   font-size: var(--font-size-sm);
   color: var(--color-accent-400);
   letter-spacing: 0.15em;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   text-transform: uppercase;
 }
 
 .activityItem {
+  padding: var(--spacing-xs) 0;
+  border-bottom: var(--spacing-px) solid var(--color-border);
+  min-width: 0;
+}
+
+.activityText {
   font-family: var(--font-body);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  padding: var(--spacing-xs) 0;
   line-height: var(--line-height-relaxed);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
 }
 
 .scanButton {
@@ -212,6 +272,8 @@
   transition: all var(--transition-normal);
   cursor: pointer;
   touch-action: manipulation;
+  position: relative;
+  z-index: 0;
 }
 
 .scanButton:hover {
@@ -262,4 +324,386 @@
   font-size: var(--font-size-base);
   color: var(--color-text-muted);
   text-align: center;
+}
+
+.desktopDashboard {
+  display: none;
+}
+
+.desktopRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.desktopPanel {
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+.panelTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.panelTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.panelTitleRow .panelTitle {
+  margin-bottom: 0;
+}
+
+.panelLink {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: color var(--transition-fast);
+}
+
+.panelLink:hover {
+  color: var(--color-text-accent);
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.activityItem {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm);
+  border-bottom: var(--spacing-px) solid var(--color-border);
+}
+
+.activityItem:last-child {
+  border-bottom: none;
+}
+
+.activityTime {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.activityText {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.vintageInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.vintageName {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.vintageMetrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.metricItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.metricLabel {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.metricValue {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-400);
+}
+
+.tastingNote {
+  padding: var(--spacing-md);
+  background: var(--color-surface-elevated);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.tastingHeader {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: var(--spacing-sm);
+}
+
+.tastingText {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+.suppliesList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.supplyItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  border-bottom: var(--spacing-px) solid var(--color-border);
+}
+
+.supplyItem:last-child {
+  border-bottom: none;
+}
+
+.supplyName {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.supplyReason {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border-bottom: var(--spacing-px) solid var(--color-border);
+}
+
+.taskItem:last-child {
+  border-bottom: none;
+}
+
+.taskCheckbox {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--color-primary-600);
+  cursor: pointer;
+}
+
+.taskText {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  flex: 1;
+}
+
+.taskDate {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .app {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .scanButton {
+    display: none;
+  }
+
+  .weatherSection {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: var(--spacing-3xl);
+    padding: 0 var(--spacing-4xl) 0;
+    overflow-y: visible;
+    flex: none;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .weatherSection > *:first-child {
+    margin-top: var(--spacing-3xl);
+  }
+
+  .warnings {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+  }
+
+  .currentWeather {
+    display: none;
+  }
+
+  .seasonalActivities {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+  }
+
+  .seasonalActivitiesContent {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, auto);
+    gap: 0;
+    grid-auto-flow: column;
+    min-width: 0;
+  }
+
+  .seasonalActivitiesContent .activityItem {
+    min-width: 0;
+  }
+
+  .seasonalActivitiesContent .activityItem:nth-child(3),
+  .seasonalActivitiesContent .activityItem:nth-child(6) {
+    border-bottom: none;
+  }
+
+  .forecast {
+    grid-column: 1 / 2;
+    grid-row: 3 / 4;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .forecastContent {
+    display: flex;
+    gap: var(--spacing-xl);
+    align-items: stretch;
+    max-height: 120px;
+  }
+
+  .todayWeatherDesktop {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: var(--color-surface-elevated);
+    border: var(--spacing-px) solid var(--color-border-accent);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    min-width: 200px;
+    flex-shrink: 0;
+    max-height: 120px;
+  }
+
+  .todayLabel {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .todayIcon {
+    font-size: 2.5rem;
+    color: var(--color-primary-400);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .todayTemp {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary-400);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .todayCondition {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+
+  .forecastDays {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: var(--spacing-sm);
+    flex: 1;
+  }
+
+  .forecastDay {
+    max-height: 120px;
+  }
+
+  .forecastIcon {
+    display: block;
+    font-size: 2.5rem;
+    color: var(--color-primary-400);
+  }
+
+  .desktopDashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: var(--spacing-3xl);
+    padding: var(--spacing-4xl);
+    flex: none;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 400px;
+  }
+
+  .desktopRow {
+    display: contents;
+  }
+
+  .desktopPanel {
+    overflow-y: auto;
+    padding: var(--spacing-2xl);
+  }
 }
