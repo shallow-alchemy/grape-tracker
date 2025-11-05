@@ -326,6 +326,218 @@
   text-align: center;
 }
 
+.vineyardContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+}
+
+.vineyardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.vineyardTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.desktopActions {
+  display: none;
+  gap: var(--spacing-md);
+}
+
+.actionButton {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background: var(--color-primary-600);
+  border: var(--spacing-px) solid var(--color-primary-500);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.actionButton:hover {
+  background: var(--color-primary-500);
+}
+
+.vineList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.vineItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vineItem:hover {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-border-accent);
+}
+
+.vineId {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-accent);
+  flex-shrink: 0;
+}
+
+.vineInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.vineVariety {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vineBlock {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.vineHealth {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--color-primary-400);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+
+.vineHealthWarning {
+  color: var(--color-warning);
+}
+
+.vineDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+}
+
+.backButton {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--spacing-sm) 0;
+  margin-bottom: var(--spacing-md);
+  transition: color var(--transition-fast);
+  text-align: left;
+}
+
+.backButton:hover {
+  color: var(--color-text-accent);
+}
+
+.vineDetailsTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.vineDetailsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.vineDetailsSection {
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+.sectionTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-sm) 0;
+  border-bottom: var(--spacing-px) solid var(--color-border);
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.detailValue {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sectionPlaceholder {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin: 0;
+}
+
 .desktopDashboard {
   display: none;
 }
@@ -705,5 +917,35 @@
   .desktopPanel {
     overflow-y: auto;
     padding: var(--spacing-2xl);
+  }
+
+  .desktopActions {
+    display: flex;
+  }
+
+  .vineyardContainer {
+    padding: var(--spacing-4xl);
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .vineList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  .vineDetails {
+    padding: var(--spacing-4xl);
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .vineDetailsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-xl);
   }
 }

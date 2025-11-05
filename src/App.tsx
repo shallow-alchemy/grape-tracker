@@ -225,10 +225,97 @@ export const DashboardView = () => {
 };
 
 export const VineyardView = () => {
+  const [selectedVine, setSelectedVine] = useState<string | null>(null);
+
+  const vines = [
+    { id: 'A-001', block: 'BLOCK A', variety: 'CABERNET SAUVIGNON', age: '5 YRS', health: 'GOOD' },
+    { id: 'A-002', block: 'BLOCK A', variety: 'CABERNET SAUVIGNON', age: '5 YRS', health: 'GOOD' },
+    { id: 'A-003', block: 'BLOCK A', variety: 'CABERNET SAUVIGNON', age: '5 YRS', health: 'NEEDS ATTENTION' },
+    { id: 'B-001', block: 'BLOCK B', variety: 'MERLOT', age: '3 YRS', health: 'GOOD' },
+    { id: 'B-002', block: 'BLOCK B', variety: 'MERLOT', age: '3 YRS', health: 'EXCELLENT' },
+    { id: 'C-001', block: 'BLOCK C', variety: 'PINOT NOIR', age: '2 YRS', health: 'GOOD' },
+  ];
+
+  if (selectedVine) {
+    const vine = vines.find(v => v.id === selectedVine);
+    return (
+      <div className={styles.vineDetails}>
+        <button className={styles.backButton} onClick={() => setSelectedVine(null)}>
+          {'<'} BACK TO VINES
+        </button>
+        <h1 className={styles.vineDetailsTitle}>VINE {vine?.id}</h1>
+        <div className={styles.vineDetailsGrid}>
+          <div className={styles.vineDetailsSection}>
+            <h2 className={styles.sectionTitle}>DETAILS</h2>
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>BLOCK</span>
+              <span className={styles.detailValue}>{vine?.block}</span>
+            </div>
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>VARIETY</span>
+              <span className={styles.detailValue}>{vine?.variety}</span>
+            </div>
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>AGE</span>
+              <span className={styles.detailValue}>{vine?.age}</span>
+            </div>
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>HEALTH</span>
+              <span className={styles.detailValue}>{vine?.health}</span>
+            </div>
+          </div>
+          <div className={styles.vineDetailsSection}>
+            <h2 className={styles.sectionTitle}>PHOTOS</h2>
+            <p className={styles.sectionPlaceholder}>No photos uploaded</p>
+          </div>
+          <div className={styles.vineDetailsSection}>
+            <h2 className={styles.sectionTitle}>TRAINING & PRUNING</h2>
+            <p className={styles.sectionPlaceholder}>No notes yet</p>
+          </div>
+          <div className={styles.vineDetailsSection}>
+            <h2 className={styles.sectionTitle}>DISEASE NOTES</h2>
+            <p className={styles.sectionPlaceholder}>No disease notes</p>
+          </div>
+          <div className={styles.vineDetailsSection}>
+            <h2 className={styles.sectionTitle}>WATERING LOG</h2>
+            <p className={styles.sectionPlaceholder}>No watering records</p>
+          </div>
+          <div className={styles.vineDetailsSection}>
+            <h2 className={styles.sectionTitle}>SPUR PLANNING</h2>
+            <p className={styles.sectionPlaceholder}>No spur plans</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={styles.viewContainer}>
-      <h1 className={styles.viewTitle}>VINEYARD</h1>
-      <p className={styles.viewPlaceholder}>Vineyard management coming soon...</p>
+    <div className={styles.vineyardContainer}>
+      <div className={styles.vineyardHeader}>
+        <h1 className={styles.vineyardTitle}>VINEYARD</h1>
+        <div className={styles.desktopActions}>
+          <button className={styles.actionButton}>REGISTER QR CODE</button>
+          <button className={styles.actionButton}>ADD BLOCK</button>
+        </div>
+      </div>
+      <div className={styles.vineList}>
+        {vines.map((vine) => (
+          <div
+            key={vine.id}
+            className={styles.vineItem}
+            onClick={() => setSelectedVine(vine.id)}
+          >
+            <div className={styles.vineId}>{vine.id}</div>
+            <div className={styles.vineInfo}>
+              <div className={styles.vineVariety}>{vine.variety}</div>
+              <div className={styles.vineBlock}>{vine.block} • {vine.age}</div>
+            </div>
+            <div className={`${styles.vineHealth} ${vine.health === 'NEEDS ATTENTION' ? styles.vineHealthWarning : ''}`}>
+              {vine.health}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
