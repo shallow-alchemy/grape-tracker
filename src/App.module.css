@@ -13,6 +13,7 @@
   padding: var(--spacing-lg);
   border-bottom: var(--spacing-px) solid var(--color-border);
   background: var(--color-surface);
+  gap: var(--spacing-lg);
 }
 
 .appTitle {
@@ -22,6 +23,39 @@
   color: var(--color-text-accent);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.appTitle:hover {
+  opacity: 0.8;
+}
+
+.nav {
+  display: flex;
+  gap: var(--spacing-md);
+  flex: 1;
+}
+
+.navLink {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--spacing-px) solid transparent;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.navLink:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+  background: var(--color-surface-elevated);
 }
 
 .weatherSection {
@@ -162,7 +196,7 @@
 
 .scanButton {
   flex-shrink: 0;
-  min-height: 33vh;
+  min-height: 25vh;
   margin: var(--spacing-lg);
   background: var(--color-primary-600);
   border: var(--spacing-px) solid var(--color-primary-500);
@@ -201,4 +235,31 @@
   font-weight: var(--font-weight-semibold);
   letter-spacing: 0.2em;
   text-transform: uppercase;
+}
+
+.viewContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-3xl);
+  overflow-y: auto;
+}
+
+.viewTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: var(--spacing-xl);
+}
+
+.viewPlaceholder {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  text-align: center;
 }
