@@ -244,6 +244,9 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
   const [showAddVineModal, setShowAddVineModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [vinesData, setVinesData] = useState<any[]>([]);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -284,26 +287,70 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     }
   }, [showQRModal, vineUrl]);
 
-  const handleAddVine = (vineData: { block: string; variety: string; plantingDate: Date; health: string; notes?: string }) => {
-    const newVineId = generateVineId(vineData.block, vines);
-    const sequenceNumber = parseInt(newVineId.split('-')[1]);
-    const now = Date.now();
+  const validateVineForm = (vineData: { block: string; variety: string; plantingDate: Date; health: string }): Record<string, string> => {
+    const errors: Record<string, string> = {};
 
-    z.mutate.vine.insert({
-      id: newVineId,
-      block: vineData.block,
-      sequenceNumber,
-      variety: vineData.variety.toUpperCase(),
-      plantingDate: vineData.plantingDate.getTime(),
-      health: vineData.health,
-      notes: vineData.notes || '',
-      qrGenerated: 0,
-      createdAt: now,
-      updatedAt: now,
-    });
+    if (!vineData.block) {
+      errors.block = 'Block is required';
+    }
 
-    setShowAddVineModal(false);
-    setSelectedVine(newVineId);
+    if (!vineData.variety || vineData.variety.trim().length === 0) {
+      errors.variety = 'Variety is required';
+    } else if (vineData.variety.trim().length < 2) {
+      errors.variety = 'Variety must be at least 2 characters';
+    }
+
+    if (!vineData.plantingDate) {
+      errors.plantingDate = 'Planting date is required';
+    } else if (vineData.plantingDate > new Date()) {
+      errors.plantingDate = 'Planting date cannot be in the future';
+    }
+
+    if (!vineData.health) {
+      errors.health = 'Health status is required';
+    }
+
+    return errors;
+  };
+
+  const handleAddVine = async (vineData: { block: string; variety: string; plantingDate: Date; health: string; notes?: string }) => {
+    const errors = validateVineForm(vineData);
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setFormErrors({});
+    setIsSubmitting(true);
+
+    try {
+      const newVineId = generateVineId(vineData.block, vines);
+      const sequenceNumber = parseInt(newVineId.split('-')[1]);
+      const now = Date.now();
+
+      await z.mutate.vine.insert({
+        id: newVineId,
+        block: vineData.block,
+        sequenceNumber,
+        variety: vineData.variety.toUpperCase(),
+        plantingDate: vineData.plantingDate.getTime(),
+        health: vineData.health,
+        notes: vineData.notes || '',
+        qrGenerated: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      setShowAddVineModal(false);
+      setSuccessMessage(`Vine ${newVineId} created successfully`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+      setSelectedVine(newVineId);
+    } catch (error) {
+      setFormErrors({ submit: 'Failed to create vine. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (selectedVine) {
@@ -431,6 +478,11 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
           <button className={styles.actionButton}>BATCH GENERATE TAGS</button>
         </div>
       </div>
+      {successMessage && (
+        <div className={styles.successMessage}>
+          {successMessage}
+        </div>
+      )}
       <div className={styles.vineList}>
         {vines.map((vine: any) => (
           <div
@@ -451,7 +503,13 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
       </div>
 
       {showAddVineModal && (
-        <div className={styles.modal} onClick={() => setShowAddVineModal(false)}>
+        <div className={styles.modal} onClick={() => {
+          if (!isSubmitting) {
+            setShowAddVineModal(false);
+            setFormErrors({});
+            setIsSubmitting(false);
+          }
+        }}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>ADD VINE</h2>
             <form
@@ -477,6 +535,8 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                   <option value="C">BLOCK C</option>
                   <option value="D">BLOCK D</option>
                 </select>
+                <div className={styles.formHint}>Vineyard section where vine will be planted</div>
+                {formErrors.block && <div className={styles.formError}>{formErrors.block}</div>}
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>VARIETY</label>
@@ -485,8 +545,13 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                   name="variety"
                   className={styles.formInput}
                   placeholder="CABERNET SAUVIGNON"
+                  onChange={(e) => {
+                    e.target.value = e.target.value.toUpperCase();
+                  }}
                   required
                 />
+                <div className={styles.formHint}>Grape variety name (automatically converted to uppercase)</div>
+                {formErrors.variety && <div className={styles.formError}>{formErrors.variety}</div>}
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>PLANTING DATE</label>
@@ -494,17 +559,20 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                   type="date"
                   name="plantingDate"
                   className={styles.formInput}
+                  defaultValue={new Date().toISOString().split('T')[0]}
                   required
                 />
+                {formErrors.plantingDate && <div className={styles.formError}>{formErrors.plantingDate}</div>}
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>HEALTH STATUS</label>
-                <select name="health" className={styles.formSelect} required>
+                <select name="health" className={styles.formSelect} defaultValue="GOOD" required>
                   <option value="EXCELLENT">EXCELLENT</option>
                   <option value="GOOD">GOOD</option>
                   <option value="FAIR">FAIR</option>
                   <option value="NEEDS ATTENTION">NEEDS ATTENTION</option>
                 </select>
+                {formErrors.health && <div className={styles.formError}>{formErrors.health}</div>}
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>PLANTING NOTES (OPTIONAL)</label>
@@ -515,16 +583,22 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                   rows={3}
                 />
               </div>
+              {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
               <div className={styles.formActions}>
                 <button
                   type="button"
                   className={styles.formButtonSecondary}
-                  onClick={() => setShowAddVineModal(false)}
+                  onClick={() => {
+                    setShowAddVineModal(false);
+                    setFormErrors({});
+                    setIsSubmitting(false);
+                  }}
+                  disabled={isSubmitting}
                 >
                   CANCEL
                 </button>
-                <button type="submit" className={styles.formButton}>
-                  CREATE VINE
+                <button type="submit" className={styles.formButton} disabled={isSubmitting}>
+                  {isSubmitting ? 'CREATING...' : 'CREATE VINE'}
                 </button>
               </div>
             </form>

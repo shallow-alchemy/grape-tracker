@@ -19,6 +19,7 @@ export const schema = createSchema({
 export const permissions = definePermissions(schema, () => ({
     vine: {
         row: {
+            select: ANYONE_CAN,
             insert: ANYONE_CAN,
             update: { preMutation: ANYONE_CAN },
             delete: ANYONE_CAN,
