@@ -19,9 +19,7 @@ export const schema = createSchema({
   tables: [vineTable],
 });
 
-export type Schema = typeof schema;
-
-export const permissions = definePermissions<{ sub: string }, Schema>(
+export const permissions = definePermissions(
   schema,
   () => ({
     vine: {

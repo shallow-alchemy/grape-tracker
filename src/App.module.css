@@ -470,6 +470,14 @@
   color: var(--color-text-accent);
 }
 
+.vineDetailsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  gap: var(--spacing-md);
+}
+
 .vineDetailsTitle {
   font-family: var(--font-heading);
   font-size: var(--font-size-xl);
@@ -477,7 +485,7 @@
   color: var(--color-text-accent);
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  margin: 0 0 var(--spacing-lg) 0;
+  margin: 0;
 }
 
 .vineDetailsGrid {
@@ -536,6 +544,186 @@
   color: var(--color-text-muted);
   font-style: italic;
   margin: 0;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+}
+
+.modalContent {
+  background: var(--color-background);
+  border: var(--spacing-px) solid var(--color-border-accent);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.vineForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.formLabel {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.formInput,
+.formSelect,
+.formTextarea {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all var(--transition-fast);
+}
+
+.formInput:focus,
+.formSelect:focus,
+.formTextarea:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  background: var(--color-surface-elevated);
+}
+
+.formTextarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.formActions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  margin-top: var(--spacing-md);
+}
+
+.formButton,
+.formButtonSecondary {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: var(--spacing-px) solid;
+}
+
+.formButton {
+  background: var(--color-primary-600);
+  border-color: var(--color-primary-500);
+  color: var(--color-text-primary);
+}
+
+.formButton:hover {
+  background: var(--color-primary-500);
+}
+
+.formButtonSecondary {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.formButtonSecondary:hover {
+  border-color: var(--color-border-accent);
+  color: var(--color-text-primary);
+}
+
+.qrContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl) 0;
+}
+
+.qrCanvas {
+  max-width: 100%;
+  height: auto;
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.qrInfo {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.qrVineId {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-accent);
+  letter-spacing: 0.1em;
+}
+
+.qrVariety {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.qrBlock {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.qrUrl {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  word-break: break-all;
+  padding: var(--spacing-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  max-width: 100%;
 }
 
 .desktopDashboard {

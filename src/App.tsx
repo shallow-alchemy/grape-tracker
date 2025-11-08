@@ -3,7 +3,8 @@ import { useUser, UserButton } from '@clerk/clerk-react';
 import { Button } from 'react-aria-components';
 import { Router, Route, Link } from 'wouter';
 import { WiDaySunny, WiCloudy, WiRain, WiThunderstorm, WiStrongWind, WiSnow, WiSnowflakeCold } from 'react-icons/wi';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import QRCode from 'qrcode';
 import { schema, type Schema } from '../schema';
 import styles from './App.module.css';
 
@@ -224,26 +225,125 @@ export const DashboardView = () => {
   );
 };
 
-export const VineyardView = () => {
-  const [selectedVine, setSelectedVine] = useState<string | null>(null);
+const calculateAge = (plantingDate: Date): string => {
+  const years = new Date().getFullYear() - plantingDate.getFullYear();
+  return `${years} YRS`;
+};
 
-  const vines = [
-    { id: 'A-001', block: 'BLOCK A', variety: 'CABERNET SAUVIGNON', age: '5 YRS', health: 'GOOD' },
-    { id: 'A-002', block: 'BLOCK A', variety: 'CABERNET SAUVIGNON', age: '5 YRS', health: 'GOOD' },
-    { id: 'A-003', block: 'BLOCK A', variety: 'CABERNET SAUVIGNON', age: '5 YRS', health: 'NEEDS ATTENTION' },
-    { id: 'B-001', block: 'BLOCK B', variety: 'MERLOT', age: '3 YRS', health: 'GOOD' },
-    { id: 'B-002', block: 'BLOCK B', variety: 'MERLOT', age: '3 YRS', health: 'EXCELLENT' },
-    { id: 'C-001', block: 'BLOCK C', variety: 'PINOT NOIR', age: '2 YRS', health: 'GOOD' },
-  ];
+const generateVineId = (block: string, vines: any[]): string => {
+  const blockVines = vines.filter(v => v.block === block);
+  const maxNumber = blockVines.length > 0
+    ? Math.max(...blockVines.map(v => parseInt(v.id.split('-')[1])))
+    : 0;
+  const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
+  return `${block}-${nextNumber}`;
+};
+
+export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
+  const [selectedVine, setSelectedVine] = useState<string | null>(null);
+  const [showAddVineModal, setShowAddVineModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [vinesData, setVinesData] = useState<any[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const loadVines = async () => {
+      const result = await z.query.vine.run();
+      setVinesData(result);
+    };
+    loadVines();
+
+    const interval = setInterval(loadVines, 1000);
+    return () => clearInterval(interval);
+  }, [z]);
+
+  const vines = vinesData.map((vine: any) => ({
+    id: vine.id,
+    block: vine.block,
+    variety: vine.variety,
+    plantingDate: new Date(vine.plantingDate),
+    age: calculateAge(new Date(vine.plantingDate)),
+    health: vine.health,
+    notes: vine.notes || '',
+    qrGenerated: vine.qrGenerated > 0,
+  }));
+
+  const selectedVineData = selectedVine ? vines.find((v: any) => v.id === selectedVine) : null;
+  const vineUrl = selectedVineData ? `${window.location.origin}/vineyard/vine/${selectedVineData.id}` : '';
+
+  useEffect(() => {
+    if (showQRModal && canvasRef.current && vineUrl) {
+      QRCode.toCanvas(canvasRef.current, vineUrl, {
+        width: 400,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff',
+        },
+      });
+    }
+  }, [showQRModal, vineUrl]);
+
+  const handleAddVine = (vineData: { block: string; variety: string; plantingDate: Date; health: string; notes?: string }) => {
+    const newVineId = generateVineId(vineData.block, vines);
+    const sequenceNumber = parseInt(newVineId.split('-')[1]);
+    const now = Date.now();
+
+    z.mutate.vine.insert({
+      id: newVineId,
+      block: vineData.block,
+      sequenceNumber,
+      variety: vineData.variety.toUpperCase(),
+      plantingDate: vineData.plantingDate.getTime(),
+      health: vineData.health,
+      notes: vineData.notes || '',
+      qrGenerated: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    setShowAddVineModal(false);
+    setSelectedVine(newVineId);
+  };
 
   if (selectedVine) {
-    const vine = vines.find(v => v.id === selectedVine);
+    const vine = selectedVineData;
+
+    const handleDownloadSVG = () => {
+      QRCode.toString(vineUrl, {
+        type: 'svg',
+        width: 400,
+        margin: 2,
+      }).then((svg: string) => {
+        const blob = new Blob([svg], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `vine-${vine?.id}.svg`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        if (vine && !vine.qrGenerated) {
+          z.mutate.vine.update({
+            id: vine.id,
+            qrGenerated: Date.now(),
+            updatedAt: Date.now(),
+          });
+        }
+      });
+    };
+
     return (
       <div className={styles.vineDetails}>
         <button className={styles.backButton} onClick={() => setSelectedVine(null)}>
           {'<'} BACK TO VINES
         </button>
-        <h1 className={styles.vineDetailsTitle}>VINE {vine?.id}</h1>
+        <div className={styles.vineDetailsHeader}>
+          <h1 className={styles.vineDetailsTitle}>VINE {vine?.id}</h1>
+          <button className={styles.actionButton} onClick={() => setShowQRModal(true)}>
+            GENERATE TAG
+          </button>
+        </div>
         <div className={styles.vineDetailsGrid}>
           <div className={styles.vineDetailsSection}>
             <h2 className={styles.sectionTitle}>DETAILS</h2>
@@ -285,6 +385,39 @@ export const VineyardView = () => {
             <p className={styles.sectionPlaceholder}>No spur plans</p>
           </div>
         </div>
+
+        {showQRModal && (
+          <div className={styles.modal} onClick={() => setShowQRModal(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <h2 className={styles.modalTitle}>VINE TAG - {vine?.id}</h2>
+              <div className={styles.qrContainer}>
+                <canvas ref={canvasRef} className={styles.qrCanvas} />
+                <div className={styles.qrInfo}>
+                  <div className={styles.qrVineId}>{vine?.id}</div>
+                  <div className={styles.qrVariety}>{vine?.variety}</div>
+                  <div className={styles.qrBlock}>BLOCK {vine?.block}</div>
+                </div>
+                <div className={styles.qrUrl}>{vineUrl}</div>
+              </div>
+              <div className={styles.formActions}>
+                <button
+                  type="button"
+                  className={styles.formButtonSecondary}
+                  onClick={() => setShowQRModal(false)}
+                >
+                  CLOSE
+                </button>
+                <button
+                  type="button"
+                  className={styles.formButton}
+                  onClick={handleDownloadSVG}
+                >
+                  DOWNLOAD SVG
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -294,12 +427,12 @@ export const VineyardView = () => {
       <div className={styles.vineyardHeader}>
         <h1 className={styles.vineyardTitle}>VINEYARD</h1>
         <div className={styles.desktopActions}>
-          <button className={styles.actionButton}>REGISTER QR CODE</button>
-          <button className={styles.actionButton}>ADD BLOCK</button>
+          <button className={styles.actionButton} onClick={() => setShowAddVineModal(true)}>ADD VINE</button>
+          <button className={styles.actionButton}>BATCH GENERATE TAGS</button>
         </div>
       </div>
       <div className={styles.vineList}>
-        {vines.map((vine) => (
+        {vines.map((vine: any) => (
           <div
             key={vine.id}
             className={styles.vineItem}
@@ -308,7 +441,7 @@ export const VineyardView = () => {
             <div className={styles.vineId}>{vine.id}</div>
             <div className={styles.vineInfo}>
               <div className={styles.vineVariety}>{vine.variety}</div>
-              <div className={styles.vineBlock}>{vine.block} • {vine.age}</div>
+              <div className={styles.vineBlock}>BLOCK {vine.block} • {vine.age}</div>
             </div>
             <div className={`${styles.vineHealth} ${vine.health === 'NEEDS ATTENTION' ? styles.vineHealthWarning : ''}`}>
               {vine.health}
@@ -316,6 +449,88 @@ export const VineyardView = () => {
           </div>
         ))}
       </div>
+
+      {showAddVineModal && (
+        <div className={styles.modal} onClick={() => setShowAddVineModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2 className={styles.modalTitle}>ADD VINE</h2>
+            <form
+              className={styles.vineForm}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleAddVine({
+                  block: formData.get('block') as string,
+                  variety: formData.get('variety') as string,
+                  plantingDate: new Date(formData.get('plantingDate') as string),
+                  health: formData.get('health') as string,
+                  notes: formData.get('notes') as string || undefined,
+                });
+              }}
+            >
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>BLOCK</label>
+                <select name="block" className={styles.formSelect} required>
+                  <option value="">Select Block</option>
+                  <option value="A">BLOCK A</option>
+                  <option value="B">BLOCK B</option>
+                  <option value="C">BLOCK C</option>
+                  <option value="D">BLOCK D</option>
+                </select>
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>VARIETY</label>
+                <input
+                  type="text"
+                  name="variety"
+                  className={styles.formInput}
+                  placeholder="CABERNET SAUVIGNON"
+                  required
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>PLANTING DATE</label>
+                <input
+                  type="date"
+                  name="plantingDate"
+                  className={styles.formInput}
+                  required
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>HEALTH STATUS</label>
+                <select name="health" className={styles.formSelect} required>
+                  <option value="EXCELLENT">EXCELLENT</option>
+                  <option value="GOOD">GOOD</option>
+                  <option value="FAIR">FAIR</option>
+                  <option value="NEEDS ATTENTION">NEEDS ATTENTION</option>
+                </select>
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>PLANTING NOTES (OPTIONAL)</label>
+                <textarea
+                  name="notes"
+                  className={styles.formTextarea}
+                  placeholder="Any notes about planting..."
+                  rows={3}
+                />
+              </div>
+              <div className={styles.formActions}>
+                <button
+                  type="button"
+                  className={styles.formButtonSecondary}
+                  onClick={() => setShowAddVineModal(false)}
+                >
+                  CANCEL
+                </button>
+                <button type="submit" className={styles.formButton}>
+                  CREATE VINE
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -331,17 +546,26 @@ export const WineryView = () => {
 
 export const App = () => {
   const { user } = useUser();
+  const [z, setZ] = useState<Zero<Schema> | null>(null);
 
-  if (!user) {
+  useEffect(() => {
+    if (user) {
+      const zero = new Zero<Schema>({
+        userID: user.id,
+        server: process.env.PUBLIC_ZERO_SERVER || 'http://localhost:4848',
+        schema,
+      });
+      setZ(zero);
+
+      return () => {
+        zero.close();
+      };
+    }
+  }, [user?.id]);
+
+  if (!user || !z) {
     return <div>Loading...</div>;
   }
-
-  // @ts-expect-error - Zero instance will be used later
-  const z = new Zero<Schema>({
-    userID: user.id,
-    server: process.env.PUBLIC_ZERO_SERVER || 'http://localhost:4848',
-    schema,
-  });
 
   return (
     <Router>
@@ -355,7 +579,7 @@ export const App = () => {
           <UserButton />
         </header>
         <Route path="/" component={DashboardView} />
-        <Route path="/vineyard" component={VineyardView} />
+        <Route path="/vineyard">{() => <VineyardView z={z} />}</Route>
         <Route path="/winery" component={WineryView} />
       </div>
     </Router>
