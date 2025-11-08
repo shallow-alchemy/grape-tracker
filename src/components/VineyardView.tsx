@@ -146,7 +146,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     return errors;
   };
 
-  const handleAddVine = async (vineData: { block: string; variety: string; plantingDate: Date; health: string; notes?: string }) => {
+  const handleAddVine = async (vineData: { block: string; variety: string; plantingDate: Date; health: string; notes?: string; quantity?: number }) => {
     const errors = validateVineForm(vineData);
 
     if (Object.keys(errors).length > 0) {
@@ -158,26 +158,52 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     setIsSubmitting(true);
 
     try {
-      const { id: newVineId, sequenceNumber } = generateVineId(vineData.block, vinesData);
+      const quantity = vineData.quantity || 1;
       const now = Date.now();
+      const createdVineIds: string[] = [];
 
-      await z.mutate.vine.insert({
-        id: newVineId,
-        block: vineData.block,
-        sequenceNumber,
-        variety: vineData.variety.toUpperCase(),
-        plantingDate: vineData.plantingDate.getTime(),
-        health: vineData.health,
-        notes: vineData.notes || '',
-        qrGenerated: 0,
-        createdAt: now,
-        updatedAt: now,
-      });
+      // Create vines sequentially
+      for (let i = 0; i < quantity; i++) {
+        const { id: newVineId, sequenceNumber } = generateVineId(vineData.block, vinesData);
+
+        await z.mutate.vine.insert({
+          id: newVineId,
+          block: vineData.block,
+          sequenceNumber,
+          variety: vineData.variety.toUpperCase(),
+          plantingDate: vineData.plantingDate.getTime(),
+          health: vineData.health,
+          notes: vineData.notes || '',
+          qrGenerated: 0,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        createdVineIds.push(newVineId);
+
+        // Update vinesData to reflect the new vine for next iteration
+        vinesData.push({
+          id: newVineId,
+          block: vineData.block,
+          sequenceNumber,
+          variety: vineData.variety.toUpperCase(),
+          plantingDate: vineData.plantingDate.getTime(),
+          health: vineData.health,
+          notes: vineData.notes || '',
+          qrGenerated: 0,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
 
       setShowAddVineModal(false);
-      setSuccessMessage(`Vine ${newVineId} created successfully`);
+      if (quantity === 1) {
+        setSuccessMessage(`Vine ${vineData.block}-${createdVineIds[0]} created successfully`);
+        setSelectedVine(createdVineIds[0]);
+      } else {
+        setSuccessMessage(`${quantity} vines created successfully (${vineData.block}-${createdVineIds[0]} - ${vineData.block}-${createdVineIds[createdVineIds.length - 1]})`);
+      }
       setTimeout(() => setSuccessMessage(null), 3000);
-      setSelectedVine(newVineId);
     } catch (error) {
       setFormErrors({ submit: 'Failed to create vine. Please try again.' });
     } finally {
@@ -314,7 +340,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     }
   };
 
-  const handleDeleteVine = async (vineId: string) => {
+  const handleDeleteVine = async (vineId: string, block: string) => {
     setIsSubmitting(true);
     setFormErrors({});
 
@@ -324,7 +350,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
       setShowDeleteVineConfirmModal(false);
       setShowVineSettingsModal(false);
       setSelectedVine(null);
-      setSuccessMessage(`Vine ${vineId} deleted successfully`);
+      setSuccessMessage(`Vine ${block}-${vineId} deleted successfully`);
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error('Error deleting vine:', error);
@@ -383,7 +409,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `vine-${vine?.id}.svg`;
+        link.download = `vine-${vine?.block}-${vine?.id}.svg`;
         link.click();
         URL.revokeObjectURL(url);
 
@@ -403,7 +429,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
           {'<'} BACK TO VINES
         </button>
         <div className={styles.vineDetailsHeader}>
-          <h1 className={styles.vineDetailsTitle}>VINE {vine?.id}</h1>
+          <h1 className={styles.vineDetailsTitle}>VINE {vine?.block}-{vine?.id}</h1>
           <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
             <button className={styles.actionButton} onClick={() => setShowQRModal(true)}>
               GENERATE TAG
@@ -462,12 +488,12 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
         <Modal
           isOpen={showQRModal}
           onClose={() => setShowQRModal(false)}
-          title={`VINE TAG - ${vine?.id}`}
+          title={`VINE TAG - ${vine?.block}-${vine?.id}`}
         >
           <div className={styles.qrContainer}>
                 <canvas ref={canvasRef} className={styles.qrCanvas} />
                 <div className={styles.qrInfo}>
-                  <div className={styles.qrVineId}>{vine?.id}</div>
+                  <div className={styles.qrVineId}>{vine?.block}-{vine?.id}</div>
                   <div className={styles.qrVariety}>{vine?.variety}</div>
                   <div className={styles.qrBlock}>BLOCK {vine?.block}</div>
                 </div>
@@ -613,7 +639,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
           {vine && (
             <div>
               <p style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--color-text-secondary)' }}>
-                Are you sure you want to delete <strong style={{ color: 'var(--color-text-accent)' }}>vine {vine.id}</strong>? This action cannot be undone.
+                Are you sure you want to delete <strong style={{ color: 'var(--color-text-accent)' }}>vine {vine.block}-{vine.id}</strong>? This action cannot be undone.
               </p>
 
               {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
@@ -633,7 +659,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                 <button
                   type="button"
                   className={styles.deleteButton}
-                  onClick={() => handleDeleteVine(vine.id)}
+                  onClick={() => handleDeleteVine(vine.id, vine.block)}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'DELETING...' : 'CONFIRM DELETE'}
@@ -711,7 +737,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
             className={styles.vineItem}
             onClick={() => setSelectedVine(vine.id)}
           >
-            <div className={styles.vineId}>{vine.id}</div>
+            <div className={styles.vineId}>{vine.block}-{vine.id}</div>
             <div className={styles.vineInfo}>
               <div className={styles.vineVariety}>{vine.variety}</div>
               <div className={styles.vineBlock}>BLOCK {vine.block} • {vine.age}</div>
@@ -744,6 +770,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                   plantingDate: new Date(formData.get('plantingDate') as string),
                   health: formData.get('health') as string,
                   notes: formData.get('notes') as string || undefined,
+                  quantity: Number(formData.get('quantity')) || 1,
                 });
               }}
             >
@@ -759,6 +786,20 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                 </select>
                 <div className={styles.formHint}>Vineyard section where vine will be planted</div>
                 {formErrors.block && <div className={styles.formError}>{formErrors.block}</div>}
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>QUANTITY</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  className={styles.formInput}
+                  defaultValue={1}
+                  min={1}
+                  max={1000}
+                  required
+                />
+                <div className={styles.formHint}>Number of vines to create with these settings</div>
+                {formErrors.quantity && <div className={styles.formError}>{formErrors.quantity}</div>}
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>VARIETY</label>
