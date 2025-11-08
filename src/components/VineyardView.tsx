@@ -1,6 +1,7 @@
 import { Zero } from '@rocicorp/zero';
 import { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
+import { FiSettings } from 'react-icons/fi';
 import { type Schema } from '../../schema';
 import { Modal } from './Modal';
 import styles from '../App.module.css';
@@ -10,23 +11,29 @@ const calculateAge = (plantingDate: Date): string => {
   return `${years} YRS`;
 };
 
-const generateVineId = (block: string, vines: any[]): string => {
-  const blockVines = vines.filter(v => v.block === block);
-  const maxNumber = blockVines.length > 0
-    ? Math.max(...blockVines.map(v => parseInt(v.id.split('-')[1])))
+const generateVineId = (_block: string, vinesData: any[]): { id: string; sequenceNumber: number } => {
+  const maxNumber = vinesData.length > 0
+    ? Math.max(...vinesData.map(v => v.sequenceNumber))
     : 0;
-  const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
-  return `${block}-${nextNumber}`;
+  const nextNumber = maxNumber + 1;
+  const vineId = nextNumber.toString().padStart(3, '0');
+  return { id: vineId, sequenceNumber: nextNumber };
 };
 
 export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
   const [selectedVine, setSelectedVine] = useState<string | null>(null);
   const [showAddVineModal, setShowAddVineModal] = useState(false);
   const [showAddBlockModal, setShowAddBlockModal] = useState(false);
+  const [showManageBlocksModal, setShowManageBlocksModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [vinesData, setVinesData] = useState<any[]>([]);
   const [blocksData, setBlocksData] = useState<any[]>([]);
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+  const [editingBlock, setEditingBlock] = useState<string | null>(null);
+  const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
+  const [deleteMigrateToBlock, setDeleteMigrateToBlock] = useState<string | null>(null);
+  const [deleteVines, setDeleteVines] = useState(false);
   const [showBlockDropdown, setShowBlockDropdown] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -133,8 +140,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     setIsSubmitting(true);
 
     try {
-      const newVineId = generateVineId(vineData.block, vines);
-      const sequenceNumber = parseInt(newVineId.split('-')[1]);
+      const { id: newVineId, sequenceNumber } = generateVineId(vineData.block, vinesData);
       const now = Date.now();
 
       await z.mutate.vine.insert({
@@ -185,6 +191,79 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       setFormErrors({ submit: 'Failed to create block. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateBlock = async (blockId: string, blockData: { name: string; location?: string; sizeAcres?: number; soilType?: string; notes?: string }) => {
+    setFormErrors({});
+    setIsSubmitting(true);
+
+    try {
+      const now = Date.now();
+
+      await z.mutate.block.update({
+        id: blockId,
+        name: blockData.name.toUpperCase(),
+        location: blockData.location || '',
+        sizeAcres: blockData.sizeAcres || 0,
+        soilType: blockData.soilType || '',
+        notes: blockData.notes || '',
+        updatedAt: now,
+      });
+
+      setEditingBlock(null);
+      setSuccessMessage(`Block ${blockData.name} updated successfully`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      setFormErrors({ submit: 'Failed to update block. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteBlock = async () => {
+    if (!deleteBlockId) return;
+
+    setIsSubmitting(true);
+    setFormErrors({});
+
+    try {
+      const vinesToMigrate = vinesData.filter((v: any) => v.block === deleteBlockId);
+      const vineCount = vinesToMigrate.length;
+
+      if (vineCount > 0) {
+        if (deleteVines) {
+          await Promise.all(
+            vinesToMigrate.map((v: any) => z.mutate.vine.delete({ id: v.id }))
+          );
+        } else if (deleteMigrateToBlock) {
+          await Promise.all(
+            vinesToMigrate.map((v: any) =>
+              z.mutate.vine.update({
+                id: v.id,
+                block: deleteMigrateToBlock,
+                updatedAt: Date.now(),
+              })
+            )
+          );
+        }
+      }
+
+      await z.mutate.block.delete({ id: deleteBlockId });
+
+      setShowDeleteConfirmModal(false);
+      setShowManageBlocksModal(false);
+      setEditingBlock(null);
+      setDeleteBlockId(null);
+      setDeleteMigrateToBlock(null);
+      setDeleteVines(false);
+      setSuccessMessage(`Block deleted successfully`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      console.error('Error deleting block:', error);
+      setFormErrors({ submit: `Failed to delete block: ${error}` });
     } finally {
       setIsSubmitting(false);
     }
@@ -349,6 +428,13 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
           <button className={styles.actionButton} onClick={() => setShowAddBlockModal(true)}>ADD BLOCK</button>
           <button className={styles.actionButton} onClick={() => setShowAddVineModal(true)}>ADD VINE</button>
           <button className={styles.actionButton}>VINE TAGS</button>
+          <button
+            className={styles.iconButton}
+            onClick={() => setShowManageBlocksModal(true)}
+            title="Manage Blocks"
+          >
+            <FiSettings size={20} />
+          </button>
         </div>
       </div>
       {successMessage && (
@@ -575,6 +661,263 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                 </button>
               </div>
             </form>
+      </Modal>
+
+      <Modal
+        isOpen={showManageBlocksModal}
+        onClose={() => {
+          setShowManageBlocksModal(false);
+          setEditingBlock(null);
+          setFormErrors({});
+        }}
+        title="MANAGE BLOCKS"
+        size="large"
+        closeDisabled={isSubmitting}
+      >
+        {!editingBlock ? (
+          <div>
+            <div className={styles.blockListContainer}>
+              {blocks.map((block) => (
+                <div
+                  key={block.id}
+                  className={styles.manageBlockItem}
+                  onClick={() => setEditingBlock(block.id)}
+                >
+                  <div className={styles.manageBlockName}>{block.name}</div>
+                  <div className={styles.manageBlockDetails}>
+                    {block.location && <span>{block.location}</span>}
+                    {block.sizeAcres > 0 && <span>{block.sizeAcres} acres</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <button
+              className={styles.backButton}
+              onClick={() => {
+                setEditingBlock(null);
+                setFormErrors({});
+              }}
+            >
+              {'<'} BACK TO BLOCKS
+            </button>
+            {(() => {
+              const blockToEdit = blocks.find(b => b.id === editingBlock);
+              if (!blockToEdit) return null;
+
+              const vineCountInBlock = vinesData.filter((v: any) => v.block === editingBlock).length;
+
+              return (
+                <form
+                  className={styles.vineForm}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    handleUpdateBlock(editingBlock, {
+                      name: formData.get('name') as string,
+                      location: formData.get('location') as string || undefined,
+                      sizeAcres: formData.get('sizeAcres') ? Number(formData.get('sizeAcres')) : undefined,
+                      soilType: formData.get('soilType') as string || undefined,
+                      notes: formData.get('notes') as string || undefined,
+                    });
+                  }}
+                >
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>BLOCK NAME</label>
+                    <input
+                      type="text"
+                      name="name"
+                      className={styles.formInput}
+                      defaultValue={blockToEdit.name}
+                      onChange={(e) => {
+                        e.target.value = e.target.value.toUpperCase();
+                      }}
+                      required
+                    />
+                    {formErrors.name && <div className={styles.formError}>{formErrors.name}</div>}
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>LOCATION (OPTIONAL)</label>
+                    <input
+                      type="text"
+                      name="location"
+                      className={styles.formInput}
+                      defaultValue={blockToEdit.location}
+                      placeholder="North section, near barn"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>SIZE IN ACRES (OPTIONAL)</label>
+                    <input
+                      type="number"
+                      name="sizeAcres"
+                      className={styles.formInput}
+                      defaultValue={blockToEdit.sizeAcres || 0}
+                      step="0.1"
+                      min="0"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>SOIL TYPE (OPTIONAL)</label>
+                    <input
+                      type="text"
+                      name="soilType"
+                      className={styles.formInput}
+                      defaultValue={blockToEdit.soilType}
+                      placeholder="Clay, sandy loam, etc."
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>NOTES (OPTIONAL)</label>
+                    <textarea
+                      name="notes"
+                      className={styles.formTextarea}
+                      defaultValue={blockToEdit.notes}
+                      placeholder="Any additional notes..."
+                      rows={3}
+                    />
+                  </div>
+                  {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
+                  <div className={styles.formActions}>
+                    <button type="submit" className={styles.formButton} disabled={isSubmitting}>
+                      {isSubmitting ? 'UPDATING...' : 'UPDATE BLOCK'}
+                    </button>
+                  </div>
+                  <div style={{ marginTop: 'var(--spacing-xl)', paddingTop: 'var(--spacing-xl)', borderTop: '1px solid var(--color-border)' }}>
+                    <button
+                      type="button"
+                      className={styles.deleteButton}
+                      onClick={() => {
+                        setDeleteBlockId(editingBlock);
+                        const availableBlocks = blocks.filter(b => b.id !== editingBlock);
+                        if (availableBlocks.length > 0) {
+                          setDeleteMigrateToBlock(availableBlocks[0].id);
+                          setDeleteVines(false);
+                        }
+                        setShowDeleteConfirmModal(true);
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      DELETE BLOCK {vineCountInBlock > 0 && `(${vineCountInBlock} VINES)`}
+                    </button>
+                  </div>
+                </form>
+              );
+            })()}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={showDeleteConfirmModal}
+        onClose={() => {
+          setShowDeleteConfirmModal(false);
+          setDeleteBlockId(null);
+          setDeleteMigrateToBlock(null);
+          setDeleteVines(false);
+        }}
+        title="DELETE BLOCK"
+        size="medium"
+        closeDisabled={isSubmitting}
+      >
+        {(() => {
+          const blockToDelete = blocks.find(b => b.id === deleteBlockId);
+          if (!blockToDelete) return null;
+
+          const vineCountInBlock = vinesData.filter((v: any) => v.block === deleteBlockId).length;
+          const availableBlocks = blocks.filter(b => b.id !== deleteBlockId);
+
+          return (
+            <div>
+              <p style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--color-text-secondary)' }}>
+                You are about to delete <strong style={{ color: 'var(--color-text-accent)' }}>{blockToDelete.name}</strong>.
+                {vineCountInBlock > 0 && (
+                  <span> This block contains <strong style={{ color: 'var(--color-text-accent)' }}>{vineCountInBlock} vine{vineCountInBlock > 1 ? 's' : ''}</strong>.</span>
+                )}
+              </p>
+
+              {vineCountInBlock > 0 && availableBlocks.length > 0 && (
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>
+                    <input
+                      type="radio"
+                      name="deleteOption"
+                      checked={!deleteVines}
+                      onChange={() => {
+                        setDeleteVines(false);
+                        if (availableBlocks.length > 0 && !deleteMigrateToBlock) {
+                          setDeleteMigrateToBlock(availableBlocks[0].id);
+                        }
+                      }}
+                      style={{ marginRight: 'var(--spacing-sm)' }}
+                    />
+                    MIGRATE {vineCountInBlock} VINE{vineCountInBlock > 1 ? 'S' : ''} TO:
+                  </label>
+                  {!deleteVines && (
+                    <select
+                      className={styles.formSelect}
+                      value={deleteMigrateToBlock || ''}
+                      onChange={(e) => setDeleteMigrateToBlock(e.target.value)}
+                      style={{ marginTop: 'var(--spacing-sm)' }}
+                    >
+                      {availableBlocks.map((block) => (
+                        <option key={block.id} value={block.id}>
+                          {block.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {vineCountInBlock > 0 && (
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>
+                    <input
+                      type="radio"
+                      name="deleteOption"
+                      checked={deleteVines}
+                      onChange={() => {
+                        setDeleteVines(true);
+                        setDeleteMigrateToBlock(null);
+                      }}
+                      style={{ marginRight: 'var(--spacing-sm)' }}
+                    />
+                    DELETE BLOCK AND ALL {vineCountInBlock} VINE{vineCountInBlock > 1 ? 'S' : ''}
+                  </label>
+                </div>
+              )}
+
+              {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
+
+              <div className={styles.formActions}>
+                <button
+                  type="button"
+                  className={styles.formButtonSecondary}
+                  onClick={() => {
+                    setShowDeleteConfirmModal(false);
+                    setDeleteBlockId(null);
+                    setDeleteMigrateToBlock(null);
+                    setDeleteVines(false);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="button"
+                  className={styles.deleteButton}
+                  onClick={handleDeleteBlock}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'DELETING...' : 'CONFIRM DELETE'}
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );

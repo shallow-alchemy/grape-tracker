@@ -460,6 +460,22 @@
   background: var(--color-primary-500);
 }
 
+.iconButton {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.iconButton:hover {
+  color: var(--color-text-accent);
+}
+
 .vineList {
   display: flex;
   flex-direction: column;
@@ -730,6 +746,44 @@
   min-height: 80px;
 }
 
+.blockListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.manageBlockItem {
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.manageBlockItem:hover {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-border-accent);
+}
+
+.manageBlockName {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: var(--spacing-xs);
+}
+
+.manageBlockDetails {
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  display: flex;
+  gap: var(--spacing-md);
+}
+
 .formActions {
   display: flex;
   gap: var(--spacing-md);
@@ -786,6 +840,33 @@
 
 .formButtonSecondary:disabled:hover {
   background: transparent;
+}
+
+.deleteButton {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: var(--spacing-px) solid;
+  background: transparent;
+  border-color: var(--color-error);
+  color: var(--color-error);
+  width: 100%;
+}
+
+.deleteButton:hover {
+  background: var(--color-error);
+  color: var(--color-text-primary);
+}
+
+.deleteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .qrContainer {

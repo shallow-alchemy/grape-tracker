@@ -41,7 +41,10 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
       row: {
         select: ANYONE_CAN,
         insert: ANYONE_CAN,
-        update: { preMutation: ANYONE_CAN },
+        update: {
+          preMutation: ANYONE_CAN,
+          postMutation: ANYONE_CAN,
+        },
         delete: ANYONE_CAN,
       },
     },
@@ -49,7 +52,10 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
       row: {
         select: ANYONE_CAN,
         insert: ANYONE_CAN,
-        update: { preMutation: ANYONE_CAN },
+        update: {
+          preMutation: ANYONE_CAN,
+          postMutation: ANYONE_CAN,
+        },
         delete: ANYONE_CAN,
       },
     },
