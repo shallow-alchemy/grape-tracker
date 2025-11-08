@@ -204,14 +204,20 @@ Desktop uses a priority-first vertical scrolling layout with 1400px max-width ap
 - Muted green accents
 - Faded borders and backgrounds
 
-## Next Steps (Not Yet Implemented)
+## Development Roadmap
 
-1. QR code scanning functionality
-2. Weather API integration
-3. Conditional rendering of weather warnings
-4. Actual grape tracking features
-5. Zero sync implementation
-6. Real seasonal task logic
+See **`docs/roadmap.md`** for the complete development roadmap.
+
+**Current Priority:**
+Fix vine sync issue on main branch (Zero). See `docs/next-steps-zero-sync.md` for debugging steps.
+
+**Upcoming Features:**
+1. Block management system (create/edit blocks)
+2. Quantity field for batch vine creation
+3. QR code → STL conversion for 3D printable vine tags
+4. QR code scanning functionality
+5. Weather API integration
+6. Enhanced grape tracking features
 
 ## Important Notes
 
@@ -221,13 +227,193 @@ Desktop uses a priority-first vertical scrolling layout with 1400px max-width ap
 - **Single file components**: Related components kept together per engineering principles
 - **No over-engineering**: Minimal implementation, features added only when needed
 
+## Database Setup & Sync Engines
+
+### Two Branch Strategy
+
+**Main Branch**: Uses Rocicorp Zero with local PostgreSQL
+**electricsql Branch**: Uses ElectricSQL with Docker PostgreSQL + backend API
+
+### Zero Setup (Main Branch)
+
+**Required Services:**
+1. PostgreSQL (Homebrew, local installation)
+2. zero-cache server (port 4848)
+3. Rsbuild dev server (port 3000)
+
+**PostgreSQL Configuration:**
+- Database: `gilbert`
+- User: `mattpardini` (Homebrew default)
+- Port: 5432 (standard)
+- Required setting: `wal_level = logical` (for logical replication)
+
+**Environment Variables (.env):**
+```
+ZERO_UPSTREAM_DB="postgresql://mattpardini@127.0.0.1:5432/gilbert"
+ZERO_REPLICA_FILE="/tmp/sync-replica.db"
+ZERO_AUTH_SECRET="dev-secret-key-change-in-production"
+PUBLIC_ZERO_SERVER="http://localhost:4848"
+PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_dGVhY2hpbmctY2FsZi00My5jbGVyay5hY2NvdW50cy5kZXYk"
+```
+
+**Critical PostgreSQL Setup:**
+```sql
+-- In psql, connect to postgres first
+CREATE DATABASE gilbert;
+
+-- Enable logical replication (REQUIRED for Zero)
+ALTER SYSTEM SET wal_level = logical;
+
+-- Must restart PostgreSQL after this change
+-- brew services restart postgresql@15
+
+-- Verify setting took effect
+SHOW wal_level;  -- Must show "logical"
+
+-- Create vine table
+CREATE TABLE IF NOT EXISTS vine (
+  id TEXT PRIMARY KEY,
+  block TEXT NOT NULL,
+  "sequenceNumber" INTEGER NOT NULL,
+  variety TEXT NOT NULL,
+  "plantingDate" BIGINT NOT NULL,
+  health TEXT NOT NULL,
+  notes TEXT NOT NULL,
+  "qrGenerated" BIGINT NOT NULL,
+  "createdAt" BIGINT NOT NULL,
+  "updatedAt" BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_vine_block ON vine(block);
+CREATE INDEX IF NOT EXISTS idx_vine_variety ON vine(variety);
+```
+
+**Schema Compilation:**
+Zero requires `schema.js` but codebase has `schema.ts`. Must compile before starting zero-cache:
+```bash
+npx tsc schema.ts --module esnext --target es2020 --moduleResolution bundler
+```
+
+**Starting Zero (correct order):**
+```bash
+# Terminal 1: Start PostgreSQL
+brew services start postgresql@15
+
+# Terminal 2: Clean caches and start zero-cache
+rm -rf /tmp/sync-replica.db* node_modules/.cache
+yarn zero-cache
+
+# Terminal 3: Start dev server
+yarn dev
+```
+
+**Common Zero Issues:**
+1. **"wal_level = replica" error**: PostgreSQL didn't restart properly after setting logical
+   - Solution: `brew services restart postgresql@15` or `pkill -9 postgres` then restart
+2. **"No schema found" warning**: schema.js doesn't exist
+   - Solution: Compile schema.ts to schema.js with tsc
+3. **Vines not syncing**: Permissions not deployed (no schema.js)
+   - Solution: Ensure schema.js exists and restart zero-cache
+
+### ElectricSQL Setup (electricsql Branch)
+
+**Required Services:**
+1. PostgreSQL (Docker, port 54321)
+2. Electric sync service (Docker, port 3002)
+3. Backend API server (Express, port 3001)
+4. Rsbuild dev server (port 3000)
+
+**Environment Variables (.env):**
+```
+DATABASE_URL="postgresql://postgres:password@localhost:54321/electric"
+PUBLIC_ELECTRIC_URL="http://localhost:3002"
+PUBLIC_API_URL="http://localhost:3001"
+PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_dGVhY2hpbmctY2FsZi00My5jbGVyay5hY2NvdW50cy5kZXYk"
+```
+
+**Docker Setup (docker-compose.yml):**
+- PostgreSQL: Port 54321 (not 5432 to avoid conflict with local)
+- Electric: Port 3002 (not 3000 to avoid conflict with Rsbuild)
+- Both configured with logical replication
+
+**Database Schema:**
+Tables must be in `public` schema (not `zero_0`). Migration file: `migrations/001_create_vine_table.sql`
+
+**Architecture:**
+- **Reads**: Browser → Electric HTTP API → PostgreSQL (real-time sync)
+- **Writes**: Browser → Backend API (Express) → PostgreSQL → Electric → All clients
+
+**Starting ElectricSQL (correct order):**
+```bash
+# Start Docker services
+docker-compose up -d
+
+# Wait for services
+sleep 5
+
+# Run migration
+docker exec -i grape-tracker-postgres-1 psql -U postgres -d electric < migrations/001_create_vine_table.sql
+
+# Terminal 1: Start API server
+yarn api
+
+# Terminal 2: Start dev server
+yarn dev
+```
+
+**Common Electric Issues:**
+1. **Port conflicts**: Electric and Rsbuild both use 3000
+   - Solution: Electric on 3002, Rsbuild on 3000
+2. **Missing headers error**: Electric service not running or wrong port
+   - Solution: Check `docker-compose ps`, verify Electric on correct port
+3. **Table not found**: Migration not run or wrong schema
+   - Solution: Run migration, ensure table in `public` schema
+4. **BigInt conversion error**: PostgreSQL BIGINT returns as JavaScript BigInt
+   - Solution: Convert with `Number(value)` before using in Date constructor
+
+### Zero vs Electric Comparison
+
+**Zero (Main Branch):**
+- ✅ Simpler setup (no Docker, no backend API)
+- ✅ Works with local PostgreSQL
+- ✅ Built-in permissions system
+- ❌ Requires schema.js compilation
+- ❌ More finicky with PostgreSQL configuration
+- ❌ Less documentation/smaller community
+
+**Electric (electricsql Branch):**
+- ✅ Modern HTTP-based sync
+- ✅ Better documentation
+- ✅ TypeScript support out of box
+- ❌ Requires Docker setup
+- ❌ Requires separate backend API for writes
+- ❌ More complex architecture (3 services + DB)
+
+### Current Status (as of Nov 2025)
+
+**Main Branch (Zero):**
+- PostgreSQL configured with wal_level=logical ✅
+- gilbert database created ✅
+- vine table created ✅
+- schema.ts exists ✅
+- schema.js compiled ✅
+- zero-cache starts successfully ✅
+- **ISSUE**: Vines not appearing in UI after insert - permissions may not be deployed correctly
+
+**electricsql Branch:**
+- Full stack working ✅
+- Real-time sync functional ✅
+- Writes through backend API working ✅
+- Ready for testing
+
 ## Getting Started for New Claude Instances
 
 1. Read `docs/engineering-principles.md` - understand code standards
 2. Read `docs/theme.md` - understand design philosophy
 3. Review `docs/theme.json` - reference for all design tokens
 4. Check `src/App.tsx` - see current component structure
-5. Run `npm run dev` - start development server
-6. All styling must use CSS variables from index.css
-7. Follow fat arrow + named export patterns
-8. Keep components in single files until they exceed 1000 lines
+5. **Check current git branch** - main (Zero) or electricsql (Electric)
+6. Review database setup section above for current branch
+7. All styling must use CSS variables from index.css
+8. Follow fat arrow + named export patterns
+9. Keep components in single files until they exceed 1000 lines
