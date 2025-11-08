@@ -2,6 +2,7 @@ import { Zero } from '@rocicorp/zero';
 import { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { type Schema } from '../../schema';
+import { Modal } from './Modal';
 import styles from '../App.module.css';
 
 const calculateAge = (plantingDate: Date): string => {
@@ -21,8 +22,12 @@ const generateVineId = (block: string, vines: any[]): string => {
 export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
   const [selectedVine, setSelectedVine] = useState<string | null>(null);
   const [showAddVineModal, setShowAddVineModal] = useState(false);
+  const [showAddBlockModal, setShowAddBlockModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [vinesData, setVinesData] = useState<any[]>([]);
+  const [blocksData, setBlocksData] = useState<any[]>([]);
+  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+  const [showBlockDropdown, setShowBlockDropdown] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -39,7 +44,31 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     return () => clearInterval(interval);
   }, [z]);
 
-  const vines = vinesData.map((vine: any) => ({
+  useEffect(() => {
+    const loadBlocks = async () => {
+      const result = await z.query.block.run();
+      setBlocksData(result);
+    };
+    loadBlocks();
+
+    const interval = setInterval(loadBlocks, 1000);
+    return () => clearInterval(interval);
+  }, [z]);
+
+  const blocks = blocksData.map((block: any) => ({
+    id: block.id,
+    name: block.name,
+    location: block.location,
+    sizeAcres: block.sizeAcres,
+    soilType: block.soilType,
+    notes: block.notes,
+  }));
+
+  const filteredVinesData = selectedBlock
+    ? vinesData.filter((vine: any) => vine.block === selectedBlock)
+    : vinesData;
+
+  const vines = filteredVinesData.map((vine: any) => ({
     id: vine.id,
     block: vine.block,
     variety: vine.variety,
@@ -132,6 +161,35 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     }
   };
 
+  const handleAddBlock = async (blockData: { name: string; location?: string; sizeAcres?: number; soilType?: string; notes?: string }) => {
+    setFormErrors({});
+    setIsSubmitting(true);
+
+    try {
+      const blockId = blockData.name.replace(/^BLOCK\s+/, '').trim();
+      const now = Date.now();
+
+      await z.mutate.block.insert({
+        id: blockId,
+        name: blockData.name.toUpperCase(),
+        location: blockData.location || '',
+        sizeAcres: blockData.sizeAcres || 0,
+        soilType: blockData.soilType || '',
+        notes: blockData.notes || '',
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      setShowAddBlockModal(false);
+      setSuccessMessage(`Block ${blockData.name} created successfully`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      setFormErrors({ submit: 'Failed to create block. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (selectedVine) {
     const vine = selectedVineData;
 
@@ -212,11 +270,12 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
           </div>
         </div>
 
-        {showQRModal && (
-          <div className={styles.modal} onClick={() => setShowQRModal(false)}>
-            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-              <h2 className={styles.modalTitle}>VINE TAG - {vine?.id}</h2>
-              <div className={styles.qrContainer}>
+        <Modal
+          isOpen={showQRModal}
+          onClose={() => setShowQRModal(false)}
+          title={`VINE TAG - ${vine?.id}`}
+        >
+          <div className={styles.qrContainer}>
                 <canvas ref={canvasRef} className={styles.qrCanvas} />
                 <div className={styles.qrInfo}>
                   <div className={styles.qrVineId}>{vine?.id}</div>
@@ -241,18 +300,53 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                   DOWNLOAD SVG
                 </button>
               </div>
-            </div>
-          </div>
-        )}
+        </Modal>
       </div>
     );
   }
 
+  const displayTitle = selectedBlock
+    ? blocks.find(b => b.id === selectedBlock)?.name || 'VINEYARD'
+    : 'VINEYARD';
+
   return (
     <div className={styles.vineyardContainer}>
       <div className={styles.vineyardHeader}>
-        <h1 className={styles.vineyardTitle}>VINEYARD</h1>
+        <div className={styles.titleDropdownContainer}>
+          <h1
+            className={styles.vineyardTitle}
+            onClick={() => setShowBlockDropdown(!showBlockDropdown)}
+          >
+            {displayTitle} ▼
+          </h1>
+          {showBlockDropdown && (
+            <div className={styles.blockDropdown}>
+              <div
+                className={`${styles.dropdownItem} ${!selectedBlock ? styles.dropdownItemActive : ''}`}
+                onClick={() => {
+                  setSelectedBlock(null);
+                  setShowBlockDropdown(false);
+                }}
+              >
+                VINEYARD
+              </div>
+              {blocks.map((block) => (
+                <div
+                  key={block.id}
+                  className={`${styles.dropdownItem} ${selectedBlock === block.id ? styles.dropdownItemActive : ''}`}
+                  onClick={() => {
+                    setSelectedBlock(block.id);
+                    setShowBlockDropdown(false);
+                  }}
+                >
+                  {block.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <div className={styles.desktopActions}>
+          <button className={styles.actionButton} onClick={() => setShowAddBlockModal(true)}>ADD BLOCK</button>
           <button className={styles.actionButton} onClick={() => setShowAddVineModal(true)}>ADD VINE</button>
           <button className={styles.actionButton}>VINE TAGS</button>
         </div>
@@ -281,17 +375,17 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
         ))}
       </div>
 
-      {showAddVineModal && (
-        <div className={styles.modal} onClick={() => {
-          if (!isSubmitting) {
-            setShowAddVineModal(false);
-            setFormErrors({});
-            setIsSubmitting(false);
-          }
-        }}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.modalTitle}>ADD VINE</h2>
-            <form
+      <Modal
+        isOpen={showAddVineModal}
+        onClose={() => {
+          setShowAddVineModal(false);
+          setFormErrors({});
+          setIsSubmitting(false);
+        }}
+        title="ADD VINE"
+        closeDisabled={isSubmitting}
+      >
+        <form
               className={styles.vineForm}
               onSubmit={(e) => {
                 e.preventDefault();
@@ -309,10 +403,11 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                 <label className={styles.formLabel}>BLOCK</label>
                 <select name="block" className={styles.formSelect} required>
                   <option value="">Select Block</option>
-                  <option value="A">BLOCK A</option>
-                  <option value="B">BLOCK B</option>
-                  <option value="C">BLOCK C</option>
-                  <option value="D">BLOCK D</option>
+                  {blocks.map((block) => (
+                    <option key={block.id} value={block.id}>
+                      {block.name}
+                    </option>
+                  ))}
                 </select>
                 <div className={styles.formHint}>Vineyard section where vine will be planted</div>
                 {formErrors.block && <div className={styles.formError}>{formErrors.block}</div>}
@@ -381,9 +476,106 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
+
+      <Modal
+        isOpen={showAddBlockModal}
+        onClose={() => {
+          setShowAddBlockModal(false);
+          setFormErrors({});
+          setIsSubmitting(false);
+        }}
+        title="ADD BLOCK"
+        closeDisabled={isSubmitting}
+      >
+        <form
+              className={styles.vineForm}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleAddBlock({
+                  name: formData.get('name') as string,
+                  location: formData.get('location') as string || undefined,
+                  sizeAcres: formData.get('sizeAcres') ? Number(formData.get('sizeAcres')) : undefined,
+                  soilType: formData.get('soilType') as string || undefined,
+                  notes: formData.get('notes') as string || undefined,
+                });
+              }}
+            >
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>BLOCK NAME</label>
+                <input
+                  type="text"
+                  name="name"
+                  className={styles.formInput}
+                  placeholder="BLOCK E"
+                  onChange={(e) => {
+                    e.target.value = e.target.value.toUpperCase();
+                  }}
+                  required
+                />
+                <div className={styles.formHint}>Name of the vineyard block (automatically converted to uppercase)</div>
+                {formErrors.name && <div className={styles.formError}>{formErrors.name}</div>}
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>LOCATION (OPTIONAL)</label>
+                <input
+                  type="text"
+                  name="location"
+                  className={styles.formInput}
+                  placeholder="North section, near barn"
+                />
+                <div className={styles.formHint}>Physical location or description</div>
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>SIZE IN ACRES (OPTIONAL)</label>
+                <input
+                  type="number"
+                  name="sizeAcres"
+                  className={styles.formInput}
+                  placeholder="0"
+                  step="0.1"
+                  min="0"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>SOIL TYPE (OPTIONAL)</label>
+                <input
+                  type="text"
+                  name="soilType"
+                  className={styles.formInput}
+                  placeholder="Clay, sandy loam, etc."
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>NOTES (OPTIONAL)</label>
+                <textarea
+                  name="notes"
+                  className={styles.formTextarea}
+                  placeholder="Any additional notes..."
+                  rows={3}
+                />
+              </div>
+              {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
+              <div className={styles.formActions}>
+                <button
+                  type="button"
+                  className={styles.formButtonSecondary}
+                  onClick={() => {
+                    setShowAddBlockModal(false);
+                    setFormErrors({});
+                    setIsSubmitting(false);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  CANCEL
+                </button>
+                <button type="submit" className={styles.formButton} disabled={isSubmitting}>
+                  {isSubmitting ? 'CREATING...' : 'CREATE BLOCK'}
+                </button>
+              </div>
+            </form>
+      </Modal>
     </div>
   );
 };
