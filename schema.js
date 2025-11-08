@@ -1,4 +1,14 @@
-import { createSchema, table, string, number, ANYONE_CAN, definePermissions } from '@rocicorp/zero';
+import { createSchema, table, string, number, json, ANYONE_CAN, definePermissions } from '@rocicorp/zero';
+const vineyardTable = table('vineyard')
+    .columns({
+    id: string(),
+    name: string(),
+    location: string(),
+    varieties: json(),
+    createdAt: number(),
+    updatedAt: number(),
+})
+    .primaryKey('id');
 const blockTable = table('block')
     .columns({
     id: string(),
@@ -26,9 +36,20 @@ const vineTable = table('vine')
 })
     .primaryKey('id');
 export const schema = createSchema({
-    tables: [blockTable, vineTable],
+    tables: [vineyardTable, blockTable, vineTable],
 });
 export const permissions = definePermissions(schema, () => ({
+    vineyard: {
+        row: {
+            select: ANYONE_CAN,
+            insert: ANYONE_CAN,
+            update: {
+                preMutation: ANYONE_CAN,
+                postMutation: ANYONE_CAN,
+            },
+            delete: ANYONE_CAN,
+        },
+    },
     block: {
         row: {
             select: ANYONE_CAN,

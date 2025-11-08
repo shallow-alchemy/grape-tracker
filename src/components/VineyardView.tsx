@@ -25,10 +25,15 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
   const [showAddVineModal, setShowAddVineModal] = useState(false);
   const [showAddBlockModal, setShowAddBlockModal] = useState(false);
   const [showManageBlocksModal, setShowManageBlocksModal] = useState(false);
+  const [showEditBlockModal, setShowEditBlockModal] = useState(false);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [showDeleteVineConfirmModal, setShowDeleteVineConfirmModal] = useState(false);
+  const [showVineyardSettingsModal, setShowVineyardSettingsModal] = useState(false);
+  const [showVineSettingsModal, setShowVineSettingsModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [vinesData, setVinesData] = useState<any[]>([]);
   const [blocksData, setBlocksData] = useState<any[]>([]);
+  const [vineyardData, setVineyardData] = useState<any>(null);
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
@@ -59,6 +64,19 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     loadBlocks();
 
     const interval = setInterval(loadBlocks, 1000);
+    return () => clearInterval(interval);
+  }, [z]);
+
+  useEffect(() => {
+    const loadVineyard = async () => {
+      const result = await z.query.vineyard.run();
+      if (result.length > 0) {
+        setVineyardData(result[0]);
+      }
+    };
+    loadVineyard();
+
+    const interval = setInterval(loadVineyard, 1000);
     return () => clearInterval(interval);
   }, [z]);
 
@@ -214,6 +232,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
       });
 
       setEditingBlock(null);
+      setShowEditBlockModal(false);
       setSuccessMessage(`Block ${blockData.name} updated successfully`);
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
@@ -269,6 +288,88 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     }
   };
 
+  const handleUpdateVineyard = async (vineyardData: { name: string; location: string; varieties: string[] }) => {
+    setFormErrors({});
+    setIsSubmitting(true);
+
+    try {
+      const now = Date.now();
+
+      await z.mutate.vineyard.update({
+        id: 'default',
+        name: vineyardData.name,
+        location: vineyardData.location,
+        varieties: vineyardData.varieties,
+        updatedAt: now,
+      });
+
+      setShowVineyardSettingsModal(false);
+      setSuccessMessage('Vineyard settings updated successfully');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      console.error('Error updating vineyard:', error);
+      setFormErrors({ submit: `Failed to update vineyard: ${error}` });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteVine = async (vineId: string) => {
+    setIsSubmitting(true);
+    setFormErrors({});
+
+    try {
+      await z.mutate.vine.delete({ id: vineId });
+
+      setShowDeleteVineConfirmModal(false);
+      setShowVineSettingsModal(false);
+      setSelectedVine(null);
+      setSuccessMessage(`Vine ${vineId} deleted successfully`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      console.error('Error deleting vine:', error);
+      setFormErrors({ submit: `Failed to delete vine: ${error}` });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateVine = async (vineId: string, vineData: { block: string; variety: string; plantingDate: Date }) => {
+    setFormErrors({});
+    setIsSubmitting(true);
+
+    try {
+      const now = Date.now();
+
+      await z.mutate.vine.update({
+        id: vineId,
+        block: vineData.block,
+        variety: vineData.variety.toUpperCase(),
+        plantingDate: vineData.plantingDate.getTime(),
+        updatedAt: now,
+      });
+
+      setShowVineSettingsModal(false);
+      setSuccessMessage('Vine settings updated successfully');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      console.error('Error updating vine:', error);
+      setFormErrors({ submit: `Failed to update vine: ${error}` });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGearIconClick = () => {
+    if (selectedBlock) {
+      // Viewing specific block - open block settings
+      setShowEditBlockModal(true);
+    } else {
+      // Viewing all vineyards - open vineyard settings
+      setShowVineyardSettingsModal(true);
+    }
+  };
+
   if (selectedVine) {
     const vine = selectedVineData;
 
@@ -303,9 +404,18 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
         </button>
         <div className={styles.vineDetailsHeader}>
           <h1 className={styles.vineDetailsTitle}>VINE {vine?.id}</h1>
-          <button className={styles.actionButton} onClick={() => setShowQRModal(true)}>
-            GENERATE TAG
-          </button>
+          <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
+            <button className={styles.actionButton} onClick={() => setShowQRModal(true)}>
+              GENERATE TAG
+            </button>
+            <button
+              className={styles.iconButton}
+              onClick={() => setShowVineSettingsModal(true)}
+              title="Vine Settings"
+            >
+              <FiSettings size={20} />
+            </button>
+          </div>
         </div>
         <div className={styles.vineDetailsGrid}>
           <div className={styles.vineDetailsSection}>
@@ -380,6 +490,158 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                 </button>
               </div>
         </Modal>
+
+        <Modal
+          isOpen={showVineSettingsModal}
+          onClose={() => {
+            setShowVineSettingsModal(false);
+            setFormErrors({});
+            setIsSubmitting(false);
+          }}
+          title="VINE SETTINGS"
+          size="medium"
+          closeDisabled={isSubmitting}
+        >
+          {vine && (
+            <form
+              className={styles.vineForm}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleUpdateVine(vine.id, {
+                  block: formData.get('block') as string,
+                  variety: formData.get('variety') as string,
+                  plantingDate: new Date(formData.get('plantingDate') as string),
+                });
+              }}
+            >
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>BLOCK</label>
+                <select
+                  name="block"
+                  className={styles.formSelect}
+                  defaultValue={vine.block}
+                  required
+                >
+                  {blocks.map((block) => (
+                    <option key={block.id} value={block.id}>
+                      {block.name}
+                    </option>
+                  ))}
+                </select>
+                <div className={styles.formHint}>Vineyard block where this vine is located</div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>VARIETY</label>
+                {vineyardData && vineyardData.varieties && vineyardData.varieties.length > 0 ? (
+                  <select
+                    name="variety"
+                    className={styles.formSelect}
+                    defaultValue={vine.variety}
+                    required
+                  >
+                    {vineyardData.varieties.map((variety: string) => (
+                      <option key={variety} value={variety}>
+                        {variety}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      name="variety"
+                      className={styles.formInput}
+                      defaultValue={vine.variety}
+                      onChange={(e) => {
+                        e.target.value = e.target.value.toUpperCase();
+                      }}
+                      required
+                    />
+                    <div className={styles.formHint}>Add varieties in Vineyard Settings to use dropdown</div>
+                  </>
+                )}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>PLANTING DATE</label>
+                <input
+                  type="date"
+                  name="plantingDate"
+                  className={styles.formInput}
+                  defaultValue={vine.plantingDate.toISOString().split('T')[0]}
+                  required
+                />
+              </div>
+
+              {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
+
+              <div className={styles.formActions}>
+                <button type="submit" className={styles.formButton} disabled={isSubmitting}>
+                  {isSubmitting ? 'SAVING...' : 'SAVE SETTINGS'}
+                </button>
+              </div>
+
+              <div style={{ marginTop: 'var(--spacing-xl)', paddingTop: 'var(--spacing-xl)', borderTop: '1px solid var(--color-border)' }}>
+                <button
+                  type="button"
+                  className={styles.deleteButton}
+                  onClick={() => {
+                    setShowVineSettingsModal(false);
+                    setShowDeleteVineConfirmModal(true);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  DELETE VINE
+                </button>
+              </div>
+            </form>
+          )}
+        </Modal>
+
+        <Modal
+          isOpen={showDeleteVineConfirmModal}
+          onClose={() => {
+            setShowDeleteVineConfirmModal(false);
+            setFormErrors({});
+          }}
+          title="DELETE VINE"
+          size="medium"
+          closeDisabled={isSubmitting}
+        >
+          {vine && (
+            <div>
+              <p style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--color-text-secondary)' }}>
+                Are you sure you want to delete <strong style={{ color: 'var(--color-text-accent)' }}>vine {vine.id}</strong>? This action cannot be undone.
+              </p>
+
+              {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
+
+              <div className={styles.formActions}>
+                <button
+                  type="button"
+                  className={styles.formButtonSecondary}
+                  onClick={() => {
+                    setShowDeleteVineConfirmModal(false);
+                    setFormErrors({});
+                  }}
+                  disabled={isSubmitting}
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="button"
+                  className={styles.deleteButton}
+                  onClick={() => handleDeleteVine(vine.id)}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'DELETING...' : 'CONFIRM DELETE'}
+                </button>
+              </div>
+            </div>
+          )}
+        </Modal>
       </div>
     );
   }
@@ -430,8 +692,8 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
           <button className={styles.actionButton}>VINE TAGS</button>
           <button
             className={styles.iconButton}
-            onClick={() => setShowManageBlocksModal(true)}
-            title="Manage Blocks"
+            onClick={handleGearIconClick}
+            title={selectedBlock ? "Block Settings" : "Vineyard Settings"}
           >
             <FiSettings size={20} />
           </button>
@@ -500,17 +762,34 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>VARIETY</label>
-                <input
-                  type="text"
-                  name="variety"
-                  className={styles.formInput}
-                  placeholder="CABERNET SAUVIGNON"
-                  onChange={(e) => {
-                    e.target.value = e.target.value.toUpperCase();
-                  }}
-                  required
-                />
-                <div className={styles.formHint}>Grape variety name (automatically converted to uppercase)</div>
+                {vineyardData && vineyardData.varieties && vineyardData.varieties.length > 0 ? (
+                  <select
+                    name="variety"
+                    className={styles.formSelect}
+                    required
+                  >
+                    <option value="">Select Variety</option>
+                    {vineyardData.varieties.map((variety: string) => (
+                      <option key={variety} value={variety}>
+                        {variety}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      name="variety"
+                      className={styles.formInput}
+                      placeholder="CABERNET SAUVIGNON"
+                      onChange={(e) => {
+                        e.target.value = e.target.value.toUpperCase();
+                      }}
+                      required
+                    />
+                    <div className={styles.formHint}>Add varieties in Vineyard Settings to use dropdown</div>
+                  </>
+                )}
                 {formErrors.variety && <div className={styles.formError}>{formErrors.variety}</div>}
               </div>
               <div className={styles.formGroup}>
@@ -916,6 +1195,238 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                 </button>
               </div>
             </div>
+          );
+        })()}
+      </Modal>
+
+      <Modal
+        isOpen={showVineyardSettingsModal}
+        onClose={() => {
+          setShowVineyardSettingsModal(false);
+          setFormErrors({});
+          setIsSubmitting(false);
+        }}
+        title="VINEYARD SETTINGS"
+        size="large"
+        closeDisabled={isSubmitting}
+      >
+        {vineyardData && (
+          <form
+            className={styles.vineForm}
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const varietiesInput = formData.get('varieties') as string;
+              const varieties = varietiesInput
+                .split(',')
+                .map(v => v.trim().toUpperCase())
+                .filter(v => v.length > 0);
+
+              handleUpdateVineyard({
+                name: formData.get('name') as string,
+                location: formData.get('location') as string,
+                varieties,
+              });
+            }}
+          >
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>VINEYARD NAME</label>
+              <input
+                type="text"
+                name="name"
+                className={styles.formInput}
+                defaultValue={vineyardData.name}
+                placeholder="My Vineyard"
+                required
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>LOCATION</label>
+              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                <input
+                  type="text"
+                  name="location"
+                  className={styles.formInput}
+                  defaultValue={vineyardData.location}
+                  placeholder="Coordinates or address"
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className={styles.formButtonSecondary}
+                  onClick={() => {
+                    if ('geolocation' in navigator) {
+                      navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                          const input = document.querySelector('input[name="location"]') as HTMLInputElement;
+                          if (input) {
+                            input.value = `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
+                          }
+                        },
+                        (error) => {
+                          setFormErrors({ location: 'Unable to get location: ' + error.message });
+                        }
+                      );
+                    } else {
+                      setFormErrors({ location: 'Geolocation not supported' });
+                    }
+                  }}
+                >
+                  USE CURRENT LOCATION
+                </button>
+              </div>
+              <div className={styles.formHint}>Geographic coordinates or physical address</div>
+              {formErrors.location && <div className={styles.formError}>{formErrors.location}</div>}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>VARIETIES</label>
+              <textarea
+                name="varieties"
+                className={styles.formTextarea}
+                defaultValue={vineyardData.varieties?.join(', ') || ''}
+                placeholder="CABERNET SAUVIGNON, PINOT NOIR, CHARDONNAY"
+                rows={4}
+              />
+              <div className={styles.formHint}>Comma-separated list of grape varieties (automatically converted to uppercase)</div>
+            </div>
+
+            {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
+
+            <div className={styles.formActions}>
+              <button
+                type="button"
+                className={styles.formButtonSecondary}
+                onClick={() => {
+                  setShowVineyardSettingsModal(false);
+                  setFormErrors({});
+                  setIsSubmitting(false);
+                }}
+                disabled={isSubmitting}
+              >
+                CANCEL
+              </button>
+              <button type="submit" className={styles.formButton} disabled={isSubmitting}>
+                {isSubmitting ? 'SAVING...' : 'SAVE SETTINGS'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={showEditBlockModal}
+        onClose={() => {
+          setShowEditBlockModal(false);
+          setFormErrors({});
+          setIsSubmitting(false);
+        }}
+        title="BLOCK SETTINGS"
+        size="large"
+        closeDisabled={isSubmitting}
+      >
+        {(() => {
+          const blockToEdit = blocks.find(b => b.id === selectedBlock);
+          if (!blockToEdit) return null;
+
+          const vineCountInBlock = vinesData.filter((v: any) => v.block === selectedBlock).length;
+
+          return (
+            <form
+              className={styles.vineForm}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleUpdateBlock(selectedBlock!, {
+                  name: formData.get('name') as string,
+                  location: formData.get('location') as string || undefined,
+                  sizeAcres: formData.get('sizeAcres') ? Number(formData.get('sizeAcres')) : undefined,
+                  soilType: formData.get('soilType') as string || undefined,
+                  notes: formData.get('notes') as string || undefined,
+                });
+              }}
+            >
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>BLOCK NAME</label>
+                <input
+                  type="text"
+                  name="name"
+                  className={styles.formInput}
+                  defaultValue={blockToEdit.name}
+                  onChange={(e) => {
+                    e.target.value = e.target.value.toUpperCase();
+                  }}
+                  required
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>LOCATION (OPTIONAL)</label>
+                <input
+                  type="text"
+                  name="location"
+                  className={styles.formInput}
+                  defaultValue={blockToEdit.location}
+                  placeholder="North section, near barn"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>SIZE IN ACRES (OPTIONAL)</label>
+                <input
+                  type="number"
+                  name="sizeAcres"
+                  className={styles.formInput}
+                  defaultValue={blockToEdit.sizeAcres || 0}
+                  step="0.1"
+                  min="0"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>SOIL TYPE (OPTIONAL)</label>
+                <input
+                  type="text"
+                  name="soilType"
+                  className={styles.formInput}
+                  defaultValue={blockToEdit.soilType}
+                  placeholder="Clay, sandy loam, etc."
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>NOTES (OPTIONAL)</label>
+                <textarea
+                  name="notes"
+                  className={styles.formTextarea}
+                  defaultValue={blockToEdit.notes}
+                  placeholder="Any additional notes..."
+                  rows={3}
+                />
+              </div>
+              {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
+              <div className={styles.formActions}>
+                <button type="submit" className={styles.formButton} disabled={isSubmitting}>
+                  {isSubmitting ? 'SAVING...' : 'SAVE SETTINGS'}
+                </button>
+              </div>
+              <div style={{ marginTop: 'var(--spacing-xl)', paddingTop: 'var(--spacing-xl)', borderTop: '1px solid var(--color-border)' }}>
+                <button
+                  type="button"
+                  className={styles.deleteButton}
+                  onClick={() => {
+                    setDeleteBlockId(selectedBlock);
+                    const availableBlocks = blocks.filter(b => b.id !== selectedBlock);
+                    if (availableBlocks.length > 0) {
+                      setDeleteMigrateToBlock(availableBlocks[0].id);
+                      setDeleteVines(false);
+                    }
+                    setShowEditBlockModal(false);
+                    setShowDeleteConfirmModal(true);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  DELETE BLOCK {vineCountInBlock > 0 && `(${vineCountInBlock} VINES)`}
+                </button>
+              </div>
+            </form>
           );
         })()}
       </Modal>
