@@ -269,6 +269,12 @@ export const App = () => {
           <UserButton />
         </header>
         <Route path="/" component={DashboardView} />
+        <Route path="/vineyard/vine/:id">
+          {(params) => <VineyardView z={z} initialVineId={params.id} />}
+        </Route>
+        <Route path="/vineyard/block/:id">
+          {(params) => <VineyardView z={z} initialBlockId={params.id} />}
+        </Route>
         <Route path="/vineyard">{() => <VineyardView z={z} />}</Route>
         <Route path="/winery" component={WineryView} />
       </div>

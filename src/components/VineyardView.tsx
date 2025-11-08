@@ -1,6 +1,8 @@
 import { Zero } from '@rocicorp/zero';
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import QRCode from 'qrcode';
+import JSZip from 'jszip';
 import { FiSettings } from 'react-icons/fi';
 import { type Schema } from '../../schema';
 import { Modal } from './Modal';
@@ -20,8 +22,9 @@ const generateVineId = (_block: string, vinesData: any[]): { id: string; sequenc
   return { id: vineId, sequenceNumber: nextNumber };
 };
 
-export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
-  const [selectedVine, setSelectedVine] = useState<string | null>(null);
+export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Schema>; initialVineId?: string; initialBlockId?: string }) => {
+  const [, setLocation] = useLocation();
+  const [selectedVine, setSelectedVine] = useState<string | null>(initialVineId || null);
   const [showAddVineModal, setShowAddVineModal] = useState(false);
   const [showAddBlockModal, setShowAddBlockModal] = useState(false);
   const [showManageBlocksModal, setShowManageBlocksModal] = useState(false);
@@ -34,7 +37,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
   const [vinesData, setVinesData] = useState<any[]>([]);
   const [blocksData, setBlocksData] = useState<any[]>([]);
   const [vineyardData, setVineyardData] = useState<any>(null);
-  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+  const [selectedBlock, setSelectedBlock] = useState<string | null>(initialBlockId || null);
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
   const [deleteMigrateToBlock, setDeleteMigrateToBlock] = useState<string | null>(null);
@@ -79,6 +82,52 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     const interval = setInterval(loadVineyard, 1000);
     return () => clearInterval(interval);
   }, [z]);
+
+  useEffect(() => {
+    if (initialVineId && vinesData.length > 0) {
+      const vineExists = vinesData.some((v: any) => v.id === initialVineId);
+      if (vineExists) {
+        setSelectedVine(initialVineId);
+      }
+    }
+  }, [initialVineId, vinesData]);
+
+  const navigateToVine = (vineId: string) => {
+    // Mark that we navigated internally
+    sessionStorage.setItem('internalNav', 'true');
+    setSelectedVine(vineId);
+    setLocation(`/vineyard/vine/${vineId}`);
+  };
+
+  const navigateToBlock = (blockId: string | null) => {
+    // Mark that we navigated internally
+    sessionStorage.setItem('internalNav', 'true');
+    setSelectedBlock(blockId);
+    if (blockId) {
+      setLocation(`/vineyard/block/${blockId}`);
+    } else {
+      setLocation('/vineyard');
+    }
+  };
+
+  const navigateToVineyard = () => {
+    setSelectedVine(null);
+    setSelectedBlock(null);
+    setLocation('/vineyard');
+  };
+
+  const navigateBack = () => {
+    // Check if we have internal navigation history
+    const hasInternalNav = sessionStorage.getItem('internalNav') === 'true';
+
+    if (hasInternalNav) {
+      // We navigated here from within the app, use browser back
+      window.history.back();
+    } else {
+      // Direct access (QR code, bookmark, etc), go to vineyard
+      navigateToVineyard();
+    }
+  };
 
   const blocks = blocksData.map((block: any) => ({
     id: block.id,
@@ -199,7 +248,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
       setShowAddVineModal(false);
       if (quantity === 1) {
         setSuccessMessage(`Vine ${vineData.block}-${createdVineIds[0]} created successfully`);
-        setSelectedVine(createdVineIds[0]);
+        navigateToVine(createdVineIds[0]);
       } else {
         setSuccessMessage(`${quantity} vines created successfully (${vineData.block}-${createdVineIds[0]} - ${vineData.block}-${createdVineIds[createdVineIds.length - 1]})`);
       }
@@ -349,7 +398,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
 
       setShowDeleteVineConfirmModal(false);
       setShowVineSettingsModal(false);
-      setSelectedVine(null);
+      navigateToVineyard();
       setSuccessMessage(`Vine ${block}-${vineId} deleted successfully`);
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
@@ -396,6 +445,66 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     }
   };
 
+  const handleGenerateBatchTags = async () => {
+    setIsSubmitting(true);
+
+    try {
+      const vinesToGenerate = selectedBlock
+        ? vines.filter((v: any) => v.block === selectedBlock)
+        : vines;
+
+      if (vinesToGenerate.length === 0) {
+        setFormErrors({ submit: 'No vines to generate tags for' });
+        return;
+      }
+
+      const zip = new JSZip();
+
+      for (const vine of vinesToGenerate) {
+        const vineUrl = `${window.location.origin}/vineyard/vine/${vine.id}`;
+        const svg = await QRCode.toString(vineUrl, {
+          type: 'svg',
+          width: 400,
+          margin: 2,
+        });
+
+        zip.file(`vine-${vine.block}-${vine.id}.svg`, svg);
+
+        // Mark as generated if not already
+        if (!vine.qrGenerated) {
+          await z.mutate.vine.update({
+            id: vine.id,
+            qrGenerated: Date.now(),
+            updatedAt: Date.now(),
+          });
+        }
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      if (selectedBlock) {
+        const blockName = blocks.find(b => b.id === selectedBlock)?.name || selectedBlock;
+        link.download = `vine-tags-${blockName}.zip`;
+      } else {
+        link.download = `vine-tags-all.zip`;
+      }
+
+      link.click();
+      URL.revokeObjectURL(url);
+
+      setSuccessMessage(`Generated ${vinesToGenerate.length} vine tag${vinesToGenerate.length > 1 ? 's' : ''}`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      console.error('Error generating batch tags:', error);
+      setFormErrors({ submit: 'Failed to generate tags. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (selectedVine) {
     const vine = selectedVineData;
 
@@ -425,7 +534,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
 
     return (
       <div className={styles.vineDetails}>
-        <button className={styles.backButton} onClick={() => setSelectedVine(null)}>
+        <button className={styles.backButton} onClick={navigateBack}>
           {'<'} BACK TO VINES
         </button>
         <div className={styles.vineDetailsHeader}>
@@ -691,7 +800,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
               <div
                 className={`${styles.dropdownItem} ${!selectedBlock ? styles.dropdownItemActive : ''}`}
                 onClick={() => {
-                  setSelectedBlock(null);
+                  navigateToBlock(null);
                   setShowBlockDropdown(false);
                 }}
               >
@@ -702,7 +811,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                   key={block.id}
                   className={`${styles.dropdownItem} ${selectedBlock === block.id ? styles.dropdownItemActive : ''}`}
                   onClick={() => {
-                    setSelectedBlock(block.id);
+                    navigateToBlock(block.id);
                     setShowBlockDropdown(false);
                   }}
                 >
@@ -715,7 +824,13 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
         <div className={styles.desktopActions}>
           <button className={styles.actionButton} onClick={() => setShowAddBlockModal(true)}>ADD BLOCK</button>
           <button className={styles.actionButton} onClick={() => setShowAddVineModal(true)}>ADD VINE</button>
-          <button className={styles.actionButton}>VINE TAGS</button>
+          <button
+            className={styles.actionButton}
+            onClick={handleGenerateBatchTags}
+            disabled={isSubmitting || vines.length === 0}
+          >
+            {selectedBlock ? `GENERATE BLOCK TAGS (${vines.length})` : `GENERATE ALL TAGS (${vines.length})`}
+          </button>
           <button
             className={styles.iconButton}
             onClick={handleGearIconClick}
@@ -735,7 +850,7 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
           <div
             key={vine.id}
             className={styles.vineItem}
-            onClick={() => setSelectedVine(vine.id)}
+            onClick={() => navigateToVine(vine.id)}
           >
             <div className={styles.vineId}>{vine.block}-{vine.id}</div>
             <div className={styles.vineInfo}>
@@ -1115,6 +1230,9 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                         if (availableBlocks.length > 0) {
                           setDeleteMigrateToBlock(availableBlocks[0].id);
                           setDeleteVines(false);
+                        } else {
+                          setDeleteMigrateToBlock(null);
+                          setDeleteVines(true);
                         }
                         setShowDeleteConfirmModal(true);
                       }}
@@ -1458,6 +1576,9 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
                     if (availableBlocks.length > 0) {
                       setDeleteMigrateToBlock(availableBlocks[0].id);
                       setDeleteVines(false);
+                    } else {
+                      setDeleteMigrateToBlock(null);
+                      setDeleteVines(true);
                     }
                     setShowEditBlockModal(false);
                     setShowDeleteConfirmModal(true);
