@@ -1,11 +1,12 @@
-import { Zero } from '@rocicorp/zero';
 import { useUser, UserButton } from '@clerk/clerk-react';
 import { Button } from 'react-aria-components';
 import { Router, Route, Link } from 'wouter';
 import { WiDaySunny, WiCloudy, WiRain, WiThunderstorm, WiStrongWind, WiSnow, WiSnowflakeCold } from 'react-icons/wi';
 import { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
-import { schema, type Schema } from '../schema';
+import { useShape } from '@electric-sql/react';
+import { ELECTRIC_URL } from './electric-client';
+import { API_URL } from './api-client';
 import styles from './App.module.css';
 
 export const WeatherSection = () => {
@@ -239,33 +240,25 @@ const generateVineId = (block: string, vines: any[]): string => {
   return `${block}-${nextNumber}`;
 };
 
-export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
+export const VineyardView = () => {
   const [selectedVine, setSelectedVine] = useState<string | null>(null);
   const [showAddVineModal, setShowAddVineModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
-  const [vinesData, setVinesData] = useState<any[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
-    const loadVines = async () => {
-      const result = await z.query.vine.run();
-      setVinesData(result);
-    };
-    loadVines();
-
-    const interval = setInterval(loadVines, 1000);
-    return () => clearInterval(interval);
-  }, [z]);
+  const { data: vinesData = [] } = useShape({
+    url: `${ELECTRIC_URL}/v1/shape?table=vine`,
+  });
 
   const vines = vinesData.map((vine: any) => ({
     id: vine.id,
     block: vine.block,
     variety: vine.variety,
-    plantingDate: new Date(vine.plantingDate),
-    age: calculateAge(new Date(vine.plantingDate)),
+    plantingDate: new Date(Number(vine.plantingDate)),
+    age: calculateAge(new Date(Number(vine.plantingDate))),
     health: vine.health,
     notes: vine.notes || '',
-    qrGenerated: vine.qrGenerated > 0,
+    qrGenerated: Number(vine.qrGenerated) > 0,
   }));
 
   const selectedVineData = selectedVine ? vines.find((v: any) => v.id === selectedVine) : null;
@@ -284,22 +277,26 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
     }
   }, [showQRModal, vineUrl]);
 
-  const handleAddVine = (vineData: { block: string; variety: string; plantingDate: Date; health: string; notes?: string }) => {
+  const handleAddVine = async (vineData: { block: string; variety: string; plantingDate: Date; health: string; notes?: string }) => {
     const newVineId = generateVineId(vineData.block, vines);
     const sequenceNumber = parseInt(newVineId.split('-')[1]);
     const now = Date.now();
 
-    z.mutate.vine.insert({
-      id: newVineId,
-      block: vineData.block,
-      sequenceNumber,
-      variety: vineData.variety.toUpperCase(),
-      plantingDate: vineData.plantingDate.getTime(),
-      health: vineData.health,
-      notes: vineData.notes || '',
-      qrGenerated: 0,
-      createdAt: now,
-      updatedAt: now,
+    await fetch(`${API_URL}/api/vine`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: newVineId,
+        block: vineData.block,
+        sequenceNumber,
+        variety: vineData.variety.toUpperCase(),
+        plantingDate: vineData.plantingDate.getTime(),
+        health: vineData.health,
+        notes: vineData.notes || '',
+        qrGenerated: 0,
+        createdAt: now,
+        updatedAt: now,
+      })
     });
 
     setShowAddVineModal(false);
@@ -309,28 +306,31 @@ export const VineyardView = ({ z }: { z: Zero<Schema> }) => {
   if (selectedVine) {
     const vine = selectedVineData;
 
-    const handleDownloadSVG = () => {
-      QRCode.toString(vineUrl, {
+    const handleDownloadSVG = async () => {
+      const svg = await QRCode.toString(vineUrl, {
         type: 'svg',
         width: 400,
         margin: 2,
-      }).then((svg: string) => {
-        const blob = new Blob([svg], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `vine-${vine?.id}.svg`;
-        link.click();
-        URL.revokeObjectURL(url);
+      });
 
-        if (vine && !vine.qrGenerated) {
-          z.mutate.vine.update({
-            id: vine.id,
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `vine-${vine?.id}.svg`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      if (vine && !vine.qrGenerated) {
+        await fetch(`${API_URL}/api/vine/${vine.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             qrGenerated: Date.now(),
             updatedAt: Date.now(),
-          });
-        }
-      });
+          })
+        });
+      }
     };
 
     return (
@@ -546,24 +546,8 @@ export const WineryView = () => {
 
 export const App = () => {
   const { user } = useUser();
-  const [z, setZ] = useState<Zero<Schema> | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      const zero = new Zero<Schema>({
-        userID: user.id,
-        server: process.env.PUBLIC_ZERO_SERVER || 'http://localhost:4848',
-        schema,
-      });
-      setZ(zero);
-
-      return () => {
-        zero.close();
-      };
-    }
-  }, [user?.id]);
-
-  if (!user || !z) {
+  if (!user) {
     return <div>Loading...</div>;
   }
 
@@ -579,7 +563,7 @@ export const App = () => {
           <UserButton />
         </header>
         <Route path="/" component={DashboardView} />
-        <Route path="/vineyard">{() => <VineyardView z={z} />}</Route>
+        <Route path="/vineyard" component={VineyardView} />
         <Route path="/winery" component={WineryView} />
       </div>
     </Router>

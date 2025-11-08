@@ -1,0 +1,11 @@
+version: 1
+
+database:
+  url: postgresql://postgres:password@localhost:5432/postgres
+
+migrations:
+  path: ./migrations
+
+replication:
+  slot_name: electric_replication_slot
+  publication_name: electric_publication
