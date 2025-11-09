@@ -7,7 +7,9 @@ import { FiSettings } from 'react-icons/fi';
 import { type Schema } from '../../schema';
 import { Modal } from './Modal';
 import styles from '../App.module.css';
-import { calculateAge, generateVineId, prepareBlockDeletionState } from './vineyard-utils';
+import { generateVineId, prepareBlockDeletionState, transformVineData, transformBlockData, filterVinesByBlock, validateVineForm } from './vineyard-utils';
+import { useVines, useBlocks, useVineyard } from './vineyard-hooks';
+import { type VineFormData, type BlockFormData, type VineyardFormData } from './vineyard-types';
 import { VineDetailsView } from './VineDetailsView';
 
 export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Schema>; initialVineId?: string; initialBlockId?: string }) => {
@@ -21,9 +23,6 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
   const [showVineyardSettingsModal, setShowVineyardSettingsModal] = useState(false);
   const [showVineSettingsModal, setShowVineSettingsModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
-  const [vinesData, setVinesData] = useState<any[]>([]);
-  const [blocksData, setBlocksData] = useState<any[]>([]);
-  const [vineyardData, setVineyardData] = useState<any>(null);
   const [selectedBlock, setSelectedBlock] = useState<string | null>(initialBlockId || null);
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
   const [deleteMigrateToBlock, setDeleteMigrateToBlock] = useState<string | null>(null);
@@ -33,44 +32,13 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadVines = async () => {
-      const result = await z.query.vine.run();
-      setVinesData(result);
-    };
-    loadVines();
-
-    const interval = setInterval(loadVines, 1000);
-    return () => clearInterval(interval);
-  }, [z]);
-
-  useEffect(() => {
-    const loadBlocks = async () => {
-      const result = await z.query.block.run();
-      setBlocksData(result);
-    };
-    loadBlocks();
-
-    const interval = setInterval(loadBlocks, 1000);
-    return () => clearInterval(interval);
-  }, [z]);
-
-  useEffect(() => {
-    const loadVineyard = async () => {
-      const result = await z.query.vineyard.run();
-      if (result.length > 0) {
-        setVineyardData(result[0]);
-      }
-    };
-    loadVineyard();
-
-    const interval = setInterval(loadVineyard, 1000);
-    return () => clearInterval(interval);
-  }, [z]);
+  const vinesData = useVines(z);
+  const blocksData = useBlocks(z);
+  const vineyardData = useVineyard(z);
 
   useEffect(() => {
     if (initialVineId && vinesData.length > 0) {
-      const vineExists = vinesData.some((v: any) => v.id === initialVineId);
+      const vineExists = vinesData.some((v) => v.id === initialVineId);
       if (vineExists) {
         setSelectedVine(initialVineId);
       }
@@ -78,14 +46,12 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
   }, [initialVineId, vinesData]);
 
   const navigateToVine = (vineId: string) => {
-    // Mark that we navigated internally
     sessionStorage.setItem('internalNav', 'true');
     setSelectedVine(vineId);
     setLocation(`/vineyard/vine/${vineId}`);
   };
 
   const navigateToBlock = (blockId: string | null) => {
-    // Mark that we navigated internally
     sessionStorage.setItem('internalNav', 'true');
     setSelectedBlock(blockId);
     if (blockId) {
@@ -102,72 +68,22 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
   };
 
   const navigateBack = () => {
-    // Check if we have internal navigation history
     const hasInternalNav = sessionStorage.getItem('internalNav') === 'true';
 
     if (hasInternalNav) {
-      // We navigated here from within the app, use browser back
       window.history.back();
     } else {
-      // Direct access (QR code, bookmark, etc), go to vineyard
       navigateToVineyard();
     }
   };
 
-  const blocks = blocksData.map((block: any) => ({
-    id: block.id,
-    name: block.name,
-    location: block.location,
-    sizeAcres: block.sizeAcres,
-    soilType: block.soilType,
-    notes: block.notes,
-  }));
-
-  const filteredVinesData = selectedBlock
-    ? vinesData.filter((vine: any) => vine.block === selectedBlock)
-    : vinesData;
-
-  const vines = filteredVinesData.map((vine: any) => ({
-    id: vine.id,
-    block: vine.block,
-    variety: vine.variety,
-    plantingDate: new Date(vine.plantingDate),
-    age: calculateAge(new Date(vine.plantingDate)),
-    health: vine.health,
-    notes: vine.notes || '',
-    qrGenerated: vine.qrGenerated > 0,
-  }));
-
-  const selectedVineData = selectedVine ? vines.find((v: any) => v.id === selectedVine) : null;
+  const blocks = blocksData.map(transformBlockData);
+  const filteredVinesData = filterVinesByBlock(vinesData, selectedBlock);
+  const vines = filteredVinesData.map(transformVineData);
+  const selectedVineData = selectedVine ? vines.find((v) => v.id === selectedVine) : null;
   const vineUrl = selectedVineData ? `${window.location.origin}/vineyard/vine/${selectedVineData.id}` : '';
 
-  const validateVineForm = (vineData: { block: string; variety: string; plantingDate: Date; health: string }): Record<string, string> => {
-    const errors: Record<string, string> = {};
-
-    if (!vineData.block) {
-      errors.block = 'Block is required';
-    }
-
-    if (!vineData.variety || vineData.variety.trim().length === 0) {
-      errors.variety = 'Variety is required';
-    } else if (vineData.variety.trim().length < 2) {
-      errors.variety = 'Variety must be at least 2 characters';
-    }
-
-    if (!vineData.plantingDate) {
-      errors.plantingDate = 'Planting date is required';
-    } else if (vineData.plantingDate > new Date()) {
-      errors.plantingDate = 'Planting date cannot be in the future';
-    }
-
-    if (!vineData.health) {
-      errors.health = 'Health status is required';
-    }
-
-    return errors;
-  };
-
-  const handleAddVine = async (vineData: { block: string; variety: string; plantingDate: Date; health: string; notes?: string; quantity?: number }) => {
+  const handleAddVine = async (vineData: VineFormData) => {
     const errors = validateVineForm(vineData);
 
     if (Object.keys(errors).length > 0) {
@@ -183,7 +99,6 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
       const now = Date.now();
       const createdVineIds: string[] = [];
 
-      // Create vines sequentially
       for (let i = 0; i < quantity; i++) {
         const { id: newVineId, sequenceNumber } = generateVineId(vineData.block, vinesData);
 
@@ -202,7 +117,6 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
 
         createdVineIds.push(newVineId);
 
-        // Update vinesData to reflect the new vine for next iteration
         vinesData.push({
           id: newVineId,
           block: vineData.block,
@@ -232,7 +146,7 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
     }
   };
 
-  const handleAddBlock = async (blockData: { name: string; location?: string; sizeAcres?: number; soilType?: string; notes?: string }) => {
+  const handleAddBlock = async (blockData: BlockFormData) => {
     setFormErrors({});
     setIsSubmitting(true);
 
@@ -261,7 +175,7 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
     }
   };
 
-  const handleUpdateBlock = async (blockId: string, blockData: { name: string; location?: string; sizeAcres?: number; soilType?: string; notes?: string }) => {
+  const handleUpdateBlock = async (blockId: string, blockData: BlockFormData) => {
     setFormErrors({});
     setIsSubmitting(true);
 
@@ -295,17 +209,17 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
     setFormErrors({});
 
     try {
-      const vinesToMigrate = vinesData.filter((v: any) => v.block === deleteBlockId);
+      const vinesToMigrate = vinesData.filter((v) => v.block === deleteBlockId);
       const vineCount = vinesToMigrate.length;
 
       if (vineCount > 0) {
         if (deleteVines) {
           await Promise.all(
-            vinesToMigrate.map((v: any) => z.mutate.vine.delete({ id: v.id }))
+            vinesToMigrate.map((v) => z.mutate.vine.delete({ id: v.id }))
           );
         } else if (deleteMigrateToBlock) {
           await Promise.all(
-            vinesToMigrate.map((v: any) =>
+            vinesToMigrate.map((v) =>
               z.mutate.vine.update({
                 id: v.id,
                 block: deleteMigrateToBlock,
@@ -332,7 +246,7 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
     }
   };
 
-  const handleUpdateVineyard = async (vineyardData: { name: string; location: string; varieties: string[] }) => {
+  const handleUpdateVineyard = async (vineyardData: VineyardFormData) => {
     setFormErrors({});
     setIsSubmitting(true);
 
@@ -378,7 +292,7 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
     }
   };
 
-  const handleUpdateVine = async (vineId: string, vineData: { block: string; variety: string; plantingDate: Date }) => {
+  const handleUpdateVine = async (vineId: string, vineData: Pick<VineFormData, 'block' | 'variety' | 'plantingDate'>) => {
     setFormErrors({});
     setIsSubmitting(true);
 
@@ -406,10 +320,8 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
 
   const handleGearIconClick = () => {
     if (selectedBlock) {
-      // Viewing specific block - open block settings
       setShowEditBlockModal(true);
     } else {
-      // Viewing all vineyards - open vineyard settings
       setShowVineyardSettingsModal(true);
     }
   };
@@ -419,7 +331,7 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
 
     try {
       const vinesToGenerate = selectedBlock
-        ? vines.filter((v: any) => v.block === selectedBlock)
+        ? vines.filter((v) => v.block === selectedBlock)
         : vines;
 
       if (vinesToGenerate.length === 0) {
@@ -564,7 +476,7 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
         </div>
       )}
       <div className={styles.vineList}>
-        {vines.map((vine: any) => (
+        {vines.map((vine) => (
           <div
             key={vine.id}
             className={styles.vineItem}
@@ -832,7 +744,7 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
           const blockToDelete = blocks.find(b => b.id === deleteBlockId);
           if (!blockToDelete) return null;
 
-          const vineCountInBlock = vinesData.filter((v: any) => v.block === deleteBlockId).length;
+          const vineCountInBlock = vinesData.filter((v) => v.block === deleteBlockId).length;
           const availableBlocks = blocks.filter(b => b.id !== deleteBlockId);
 
           return (
@@ -1057,7 +969,7 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
           const blockToEdit = blocks.find(b => b.id === selectedBlock);
           if (!blockToEdit) return null;
 
-          const vineCountInBlock = vinesData.filter((v: any) => v.block === selectedBlock).length;
+          const vineCountInBlock = vinesData.filter((v) => v.block === selectedBlock).length;
 
           return (
             <form

@@ -92,6 +92,7 @@ components/
 - **Use const exports** instead of default exports wherever possible
 - **Fat arrow ES6 functions** for all function declarations
 - **Named exports** for better IDE support and refactoring
+- **Early returns over if/else** - reduce nesting by returning early
 
 ```jsx
 // GOOD: Const export with fat arrow function
@@ -108,10 +109,108 @@ function UserProfile({ user }) {
   function handleClick() {
     // Handle click logic
   }
-  
+
   return <div>{user.name}</div>;
 }
 export default UserProfile;
+```
+
+### Control Flow Patterns
+- **Prefer early returns** over if/else to reduce nesting and improve readability
+- **Guard clauses at the top** of functions for error conditions
+- **Flat code is better than nested code**
+
+```jsx
+// BAD: Nested if/else
+const navigateToBlock = (blockId) => {
+  if (blockId) {
+    setLocation(`/vineyard/block/${blockId}`);
+  } else {
+    setLocation('/vineyard');
+  }
+};
+
+// GOOD: Early return
+const navigateToBlock = (blockId) => {
+  if (blockId) return setLocation(`/vineyard/block/${blockId}`);
+  setLocation('/vineyard');
+};
+
+// BAD: Nested conditions
+const processData = (data) => {
+  if (data) {
+    if (data.isValid) {
+      return processValidData(data);
+    } else {
+      return handleInvalidData(data);
+    }
+  } else {
+    return handleMissingData();
+  }
+};
+
+// GOOD: Guard clauses with early returns
+const processData = (data) => {
+  if (!data) return handleMissingData();
+  if (!data.isValid) return handleInvalidData(data);
+  return processValidData(data);
+};
+```
+
+### Pure Functions
+- **Prefer pure functions** over impure functions whenever possible
+- **Pure functions** take inputs and return outputs without side effects
+- **Easier to test**, reason about, and refactor
+- **Extract logic** from handlers into pure functions for reusability
+
+```jsx
+// BAD: Impure function with side effects
+let errorCount = 0;
+const validateVineForm = (vineData) => {
+  const errors = {};
+  if (!vineData.block) {
+    errors.block = 'Block is required';
+    errorCount++; // Side effect
+  }
+  console.log('Validating...'); // Side effect
+  return errors;
+};
+
+// GOOD: Pure function
+const validateVineForm = (vineData) => {
+  const errors = {};
+  if (!vineData.block) {
+    errors.block = 'Block is required';
+  }
+  return errors;
+};
+
+// BAD: Handler doing everything
+const handleAddVine = async (vineData) => {
+  const errors = {};
+  if (!vineData.block) errors.block = 'Block is required';
+  if (Object.keys(errors).length > 0) {
+    setFormErrors(errors);
+    return;
+  }
+  await z.mutate.vine.insert(vineData);
+};
+
+// GOOD: Pure validation function + handler
+const validateVineForm = (vineData) => {
+  const errors = {};
+  if (!vineData.block) errors.block = 'Block is required';
+  return errors;
+};
+
+const handleAddVine = async (vineData) => {
+  const errors = validateVineForm(vineData); // Pure function
+  if (Object.keys(errors).length > 0) {
+    setFormErrors(errors);
+    return;
+  }
+  await z.mutate.vine.insert(vineData);
+};
 ```
 
 ### File Organization Priorities
@@ -178,6 +277,7 @@ export const MyComponent = () => { ... };
 4. **Am I using theme tokens?** If no, replace with CSS variables
 5. **Are all functions fat arrow style?** If no, convert to const declarations
 6. **Am I using const exports instead of default?** If possible, prefer named exports
+7. **Can I use an early return instead of if/else?** If yes, prefer early returns for flatter code
 
 ### When considering abstraction:
 1. **Is this file over 500-600 lines?** If yes, strongly consider splitting
