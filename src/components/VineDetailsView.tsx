@@ -1,29 +1,25 @@
-import { useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { FiSettings } from 'react-icons/fi';
 import { type Zero } from '@rocicorp/zero';
 import { type Schema } from '../../schema';
 import { Modal } from './Modal';
+import { useBlocks, useVineyard } from './vineyard-hooks';
+import { transformBlockData } from './vineyard-utils';
 import styles from '../App.module.css';
 
 type VineDetailsViewProps = {
   z: Zero<Schema>;
   vine: any;
   vineUrl: string;
-  blocks: any[];
-  vineyardData: any;
   showQRModal: boolean;
   setShowQRModal: (show: boolean) => void;
   showVineSettingsModal: boolean;
   setShowVineSettingsModal: (show: boolean) => void;
   showDeleteVineConfirmModal: boolean;
   setShowDeleteVineConfirmModal: (show: boolean) => void;
-  formErrors: Record<string, string>;
-  setFormErrors: (errors: Record<string, string>) => void;
-  isSubmitting: boolean;
-  setIsSubmitting: (submitting: boolean) => void;
-  handleUpdateVine: (vineId: string, vineData: { block: string; variety: string; plantingDate: Date }) => Promise<void>;
-  handleDeleteVine: (vineId: string, block: string) => Promise<void>;
+  onUpdateSuccess: (message: string) => void;
+  onDeleteSuccess: (message: string) => void;
   navigateBack: () => void;
 };
 
@@ -31,22 +27,22 @@ export const VineDetailsView = ({
   z,
   vine,
   vineUrl,
-  blocks,
-  vineyardData,
   showQRModal,
   setShowQRModal,
   showVineSettingsModal,
   setShowVineSettingsModal,
   showDeleteVineConfirmModal,
   setShowDeleteVineConfirmModal,
-  formErrors,
-  setFormErrors,
-  isSubmitting,
-  setIsSubmitting,
-  handleUpdateVine,
-  handleDeleteVine,
+  onUpdateSuccess,
+  onDeleteSuccess,
   navigateBack,
 }: VineDetailsViewProps) => {
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const blocksData = useBlocks(z);
+  const vineyardData = useVineyard(z);
+  const blocks = blocksData.map(transformBlockData);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -194,14 +190,31 @@ export const VineDetailsView = ({
         {vine && (
           <form
             className={styles.vineForm}
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              handleUpdateVine(vine.id, {
-                block: formData.get('block') as string,
-                variety: formData.get('variety') as string,
-                plantingDate: new Date(formData.get('plantingDate') as string),
-              });
+              setFormErrors({});
+              setIsSubmitting(true);
+
+              try {
+                const formData = new FormData(e.currentTarget);
+                const now = Date.now();
+
+                await z.mutate.vine.update({
+                  id: vine.id,
+                  block: formData.get('block') as string,
+                  variety: (formData.get('variety') as string).toUpperCase(),
+                  plantingDate: new Date(formData.get('plantingDate') as string).getTime(),
+                  updatedAt: now,
+                });
+
+                setShowVineSettingsModal(false);
+                onUpdateSuccess('Vine settings updated successfully');
+              } catch (error) {
+                console.error('Error updating vine:', error);
+                setFormErrors({ submit: `Failed to update vine: ${error}` });
+              } finally {
+                setIsSubmitting(false);
+              }
             }}
           >
             <div className={styles.formGroup}>
@@ -322,7 +335,24 @@ export const VineDetailsView = ({
               <button
                 type="button"
                 className={styles.deleteButton}
-                onClick={() => handleDeleteVine(vine.id, vine.block)}
+                onClick={async () => {
+                  setIsSubmitting(true);
+                  setFormErrors({});
+
+                  try {
+                    await z.mutate.vine.delete({ id: vine.id });
+
+                    setShowDeleteVineConfirmModal(false);
+                    setShowVineSettingsModal(false);
+                    navigateBack();
+                    onDeleteSuccess(`Vine ${vine.block}-${vine.id} deleted successfully`);
+                  } catch (error) {
+                    console.error('Error deleting vine:', error);
+                    setFormErrors({ submit: `Failed to delete vine: ${error}` });
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'DELETING...' : 'CONFIRM DELETE'}

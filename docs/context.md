@@ -42,10 +42,11 @@
 ### Code Style (from engineering-principles.md)
 1. **Fat arrow functions**: All functions use `const myFunc = () => {}`
 2. **Named exports**: Use `export const` instead of `export default`
-3. **Monolithic files**: Keep related components in single file, only split at 1000+ lines
+3. **Monolithic files**: Keep related components in single file, only split at 500-600 lines
 4. **CSS Modules only**: All styling via CSS Modules with theme tokens
 5. **No comments**: Code should be self-explanatory
 6. **Minimal changes**: Only modify what's explicitly requested
+7. **Component data fetching**: Components fetch their own data using hooks instead of prop drilling
 
 ### File Structure
 ```
@@ -208,16 +209,23 @@ Desktop uses a priority-first vertical scrolling layout with 1400px max-width ap
 
 See **`docs/roadmap.md`** for the complete development roadmap.
 
+**Current Status (as of Nov 9, 2025):**
+Phase 1 (Core Vine Management) is **complete**! All vine and block management features are fully functional.
+
 **Current Priority:**
-Fix vine sync issue on main branch (Zero). See `docs/next-steps-zero-sync.md` for debugging steps.
+Phase 2: QR Code → STL conversion for 3D printable vine tags
+
+**Completed Features:**
+1. ✅ Vine creation with validation and batch support (quantity field)
+2. ✅ Block management system (create/edit/delete blocks with vine migration)
+3. ✅ Real-time sync with PostgreSQL via Zero
+4. ✅ Self-contained component architecture with minimal prop drilling
 
 **Upcoming Features:**
-1. Block management system (create/edit blocks)
-2. Quantity field for batch vine creation
-3. QR code → STL conversion for 3D printable vine tags
-4. QR code scanning functionality
-5. Weather API integration
-6. Enhanced grape tracking features
+1. QR code → STL conversion for 3D printable vine tags
+2. QR code scanning functionality
+3. Weather API integration
+4. Enhanced grape tracking features
 
 ## Important Notes
 
@@ -416,4 +424,5 @@ yarn dev
 6. Review database setup section above for current branch
 7. All styling must use CSS variables from index.css
 8. Follow fat arrow + named export patterns
-9. Keep components in single files until they exceed 1000 lines
+9. Keep components in single files until they exceed 500-600 lines
+10. Let components fetch their own data using hooks when possible

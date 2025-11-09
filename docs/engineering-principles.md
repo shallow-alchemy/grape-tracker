@@ -163,6 +163,101 @@ const processData = (data) => {
 - **Easier to test**, reason about, and refactor
 - **Extract logic** from handlers into pure functions for reusability
 
+### Component Data Fetching
+- **Components fetch their own data** using custom hooks instead of relying on prop drilling
+- **Pass `z` (Zero instance)** to components, let them query what they need
+- **Parent components handle**: navigation, success messages, which modal is open
+- **Child components handle**: data fetching, mutations, form state, validation
+
+**Pattern: Self-Contained Components**
+```jsx
+// BAD: Prop drilling data through multiple levels
+<AddVineModal
+  blocks={blocks}
+  vinesData={vinesData}
+  vineyardData={vineyardData}
+  formErrors={formErrors}
+  isSubmitting={isSubmitting}
+  handleAddVine={handleAddVine}
+  setFormErrors={setFormErrors}
+  setIsSubmitting={setIsSubmitting}
+/>
+
+// GOOD: Component fetches its own data and manages its own state
+<AddVineModal
+  isOpen={showModal}
+  onClose={() => setShowModal(false)}
+  z={z}
+  onSuccess={(message, vineId) => {
+    showSuccessMessage(message);
+    if (vineId) navigateToVine(vineId);
+  }}
+/>
+
+// Inside AddVineModal
+const AddVineModal = ({ isOpen, onClose, z, onSuccess }) => {
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch own data
+  const vinesData = useVines(z);
+  const blocks = useBlocks(z).map(transformBlockData);
+  const vineyardData = useVineyard(z);
+
+  // Handle own mutations
+  const handleSubmit = async (formData) => {
+    setIsSubmitting(true);
+    try {
+      await z.mutate.vine.insert(formData);
+      onSuccess('Vine created');
+      onClose();
+    } catch (error) {
+      setFormErrors({ submit: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return <Modal>...</Modal>;
+};
+```
+
+**Benefits:**
+- Fewer props (4 instead of 10+)
+- Each component owns its responsibilities
+- Parent doesn't need to know implementation details
+- Easier to refactor and test
+
+### React Hooks Rules
+- **All hooks must be called unconditionally** at the top level of the component
+- **Never put early returns before hooks** - this violates Rules of Hooks
+- **Early returns must come AFTER all hooks** (useState, useEffect, custom hooks, etc.)
+
+```jsx
+// BAD: Early return before hooks
+const MyComponent = ({ isOpen, data }) => {
+  if (!isOpen) return null; // ❌ Early return before hooks
+
+  const [state, setState] = useState(null); // Hook called conditionally
+  useEffect(() => { ... }, []); // Hook called conditionally
+
+  return <div>...</div>;
+};
+
+// GOOD: All hooks first, then early returns
+const MyComponent = ({ isOpen, data }) => {
+  const [state, setState] = useState(null); // ✅ Hook always called
+  useEffect(() => { ... }, []); // ✅ Hook always called
+
+  if (!isOpen) return null; // ✅ Early return after all hooks
+
+  return <div>...</div>;
+};
+```
+
+**Why this matters:**
+React tracks hooks by call order. If hooks are called conditionally, React's internal hook tracking breaks, causing errors like "Rendered more hooks than during the previous render."
+
 ```jsx
 // BAD: Impure function with side effects
 let errorCount = 0;
