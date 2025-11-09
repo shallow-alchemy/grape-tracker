@@ -73,11 +73,8 @@ export const VineyardView = ({
   };
 
   const handleGearIconClick = () => {
-    if (selectedBlock) {
-      setShowEditBlockModal(true);
-    } else {
-      setShowVineyardSettingsModal(true);
-    }
+    if (selectedBlock) return setShowEditBlockModal(true);
+    setShowVineyardSettingsModal(true);
   };
 
   if (selectedVine) {

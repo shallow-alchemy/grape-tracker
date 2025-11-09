@@ -1,7 +1,5 @@
 # Engineering Principles for Claude Code
 
-**Note:** See `additional-patterns.md` for emerging patterns being considered for full adoption into these principles.
-
 ## Core Development Philosophy
 
 ### 1. Minimal Code Additions
@@ -165,15 +163,31 @@ const processData = (data) => {
 - **Easier to test**, reason about, and refactor
 - **Extract logic** from handlers into pure functions for reusability
 
-### Component Data Fetching
+### Component Data Fetching & Dependency Injection
+
+#### Use Context for Dependency Injection
+- **Use React Context to provide dependencies** app-wide (Zero instance, auth, etc.)
+- **Eliminates prop drilling** through component trees
+- **Components access context directly** via custom hooks
+
+```jsx
+// GOOD: Context provider at app root
+<ZeroProvider>
+  <VineyardView />
+</ZeroProvider>
+
+// Any component can access Zero
+const zero = useZero();
+```
+
+#### Self-Contained Components Pattern
 - **Components fetch their own data** using custom hooks instead of relying on prop drilling
-- **Pass `z` (Zero instance)** to components, let them query what they need
 - **Parent components handle**: navigation, success messages, which modal is open
 - **Child components handle**: data fetching, mutations, form state, validation
+- **Aim for 50-70% prop reduction** as a quality metric
 
-**Pattern: Self-Contained Components**
 ```jsx
-// BAD: Prop drilling data through multiple levels
+// BAD: Prop drilling data through multiple levels (10+ props)
 <AddVineModal
   blocks={blocks}
   vinesData={vinesData}
@@ -185,11 +199,10 @@ const processData = (data) => {
   setIsSubmitting={setIsSubmitting}
 />
 
-// GOOD: Component fetches its own data and manages its own state
+// GOOD: Component fetches its own data and manages its own state (3 props)
 <AddVineModal
   isOpen={showModal}
   onClose={() => setShowModal(false)}
-  z={z}
   onSuccess={(message, vineId) => {
     showSuccessMessage(message);
     if (vineId) navigateToVine(vineId);
@@ -197,20 +210,21 @@ const processData = (data) => {
 />
 
 // Inside AddVineModal
-const AddVineModal = ({ isOpen, onClose, z, onSuccess }) => {
+const AddVineModal = ({ isOpen, onClose, onSuccess }) => {
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch own data
-  const vinesData = useVines(z);
-  const blocks = useBlocks(z).map(transformBlockData);
-  const vineyardData = useVineyard(z);
+  // Fetch own data using context internally
+  const zero = useZero();
+  const vinesData = useVines();
+  const blocks = useBlocks().map(transformBlockData);
+  const vineyardData = useVineyard();
 
   // Handle own mutations
   const handleSubmit = async (formData) => {
     setIsSubmitting(true);
     try {
-      await z.mutate.vine.insert(formData);
+      await zero.mutate.vine.insert(formData);
       onSuccess('Vine created');
       onClose();
     } catch (error) {
@@ -225,12 +239,72 @@ const AddVineModal = ({ isOpen, onClose, z, onSuccess }) => {
 ```
 
 **Benefits:**
-- Fewer props (4 instead of 10+)
+- Fewer props (3 instead of 10+)
 - Each component owns its responsibilities
 - Parent doesn't need to know implementation details
 - Easier to refactor and test
 
+#### State Ownership Principle
+**Rule:** If the parent doesn't read the state or coordinate it with siblings, it belongs in the child.
+
+```jsx
+// BAD: Parent managing child-only state
+const VineyardView = () => {
+  const [showQRModal, setShowQRModal] = useState(false);
+  return <VineDetailsView showQRModal={showQRModal} setShowQRModal={setShowQRModal} />;
+};
+
+// GOOD: Child owns its UI state
+const VineDetailsView = () => {
+  const [showQRModal, setShowQRModal] = useState(false);
+  // Use modal internally
+};
+
+// GOOD: Parent coordinates between multiple children
+const VineyardView = () => {
+  const handleGearIconClick = () => {
+    if (selectedBlock) setShowEditBlockModal(true);
+    else setShowVineyardSettingsModal(true);
+  };
+  // State affects which modal opens, so parent owns it
+};
+```
+
+#### No Prop/Query Duplication
+**Never pass data as a prop that the component also queries for.** Pick one source of truth.
+
+```jsx
+// BAD: Component receives blocks AND queries for blocks
+const Component = ({ blocks }) => {
+  const blocksData = useBlocks();  // DUPLICATION!
+  const blocksTransformed = blocksData.map(transform);
+};
+
+// GOOD: Component queries once, parent doesn't pass
+const Component = () => {
+  const blocksData = useBlocks();
+  const blocks = blocksData.map(transform);
+};
+```
+
+#### Computed Props Should Move Inside
+If a prop can be computed from data the component already has, compute it internally.
+
+```jsx
+// BAD: Parent computes derived value
+const vineUrl = `${origin}/vineyard/vine/${vine.id}`;
+<VineDetailsView vineUrl={vineUrl} />
+
+// GOOD: Child computes from data it already has
+<VineDetailsView vine={vine} />
+
+// Inside VineDetailsView:
+const vineUrl = `${origin}/vineyard/vine/${vine.id}`;
+```
+
 ### React Hooks Rules
+
+#### Hook Call Order
 - **All hooks must be called unconditionally** at the top level of the component
 - **Never put early returns before hooks** - this violates Rules of Hooks
 - **Early returns must come AFTER all hooks** (useState, useEffect, custom hooks, etc.)
@@ -260,54 +334,59 @@ const MyComponent = ({ isOpen, data }) => {
 **Why this matters:**
 React tracks hooks by call order. If hooks are called conditionally, React's internal hook tracking breaks, causing errors like "Rendered more hooks than during the previous render."
 
+#### Safe useEffect Dependencies
+**When you don't know if a library memoizes properties, depend on the stable parent instance, not destructured properties.**
+
 ```jsx
-// BAD: Impure function with side effects
-let errorCount = 0;
-const validateVineForm = (vineData) => {
-  const errors = {};
-  if (!vineData.block) {
-    errors.block = 'Block is required';
-    errorCount++; // Side effect
-  }
-  console.log('Validating...'); // Side effect
-  return errors;
-};
+// ❌ UNSAFE - destructured property may cause re-renders
+const { query } = useZero();
+useEffect(() => {
+  query.vine.run();
+}, [query]); // query reference might change every render!
 
-// GOOD: Pure function
-const validateVineForm = (vineData) => {
-  const errors = {};
-  if (!vineData.block) {
-    errors.block = 'Block is required';
-  }
-  return errors;
-};
+// ✅ SAFE - depend on stable instance
+const zero = useZero();
+useEffect(() => {
+  zero.query.vine.run();
+}, [zero]); // zero is stable from context
+```
 
-// BAD: Handler doing everything
-const handleAddVine = async (vineData) => {
-  const errors = {};
-  if (!vineData.block) errors.block = 'Block is required';
-  if (Object.keys(errors).length > 0) {
-    setFormErrors(errors);
-    return;
-  }
-  await z.mutate.vine.insert(vineData);
-};
+#### Custom Hooks Should Use Context Internally
+**Hooks should consume context internally to simplify their API.**
 
-// GOOD: Pure validation function + handler
-const validateVineForm = (vineData) => {
-  const errors = {};
-  if (!vineData.block) errors.block = 'Block is required';
-  return errors;
-};
+```jsx
+// BAD: Parameter passing through every call site
+export const useVines = (z: Zero<Schema>) => {
+  useEffect(() => {...}, [z]);
+}
 
-const handleAddVine = async (vineData) => {
-  const errors = validateVineForm(vineData); // Pure function
-  if (Object.keys(errors).length > 0) {
-    setFormErrors(errors);
-    return;
-  }
-  await z.mutate.vine.insert(vineData);
-};
+// Every call site needs to pass z
+const vines = useVines(z);
+
+// GOOD: Context consumed internally
+export const useVines = () => {
+  const zero = useZero();
+  useEffect(() => {...}, [zero]);
+}
+
+// Cleaner call sites
+const vines = useVines();
+```
+
+### Variable Naming
+**Descriptive names over terse abbreviations.** Makes code self-documenting.
+
+```jsx
+// BAD: Terse abbreviation
+const z = useZero();
+await z.mutate.vine.insert(...);
+
+// GOOD: Descriptive name
+const zero = useZero();
+await zero.mutate.vine.insert(...);
+
+// Exception: Loop indices, widely understood abbreviations (i, j, id, etc.)
+for (let i = 0; i < items.length; i++) { ... }
 ```
 
 ### File Organization Priorities
@@ -375,6 +454,11 @@ export const MyComponent = () => { ... };
 5. **Are all functions fat arrow style?** If no, convert to const declarations
 6. **Am I using const exports instead of default?** If possible, prefer named exports
 7. **Can I use an early return instead of if/else?** If yes, prefer early returns for flatter code
+8. **Is the component fetching its own data?** If no, consider self-contained pattern
+9. **Am I passing data AND querying for it?** If yes, remove duplication
+10. **Does parent coordinate this state?** If no, move state to child
+11. **Can this value be computed from existing data?** If yes, don't pass as prop
+12. **Are variable names descriptive?** If no, use full names over abbreviations
 
 ### When considering abstraction:
 1. **Is this file over 500-600 lines?** If yes, strongly consider splitting
@@ -416,6 +500,11 @@ A good Claude Code implementation will:
 - ✅ Keep related functionality co-located in single files
 - ✅ Use CSS Modules with theme tokens exclusively
 - ✅ Use const exports and fat arrow functions consistently
+- ✅ Have self-contained components with minimal props (50-70% reduction)
+- ✅ Use context for dependency injection, no prop drilling
+- ✅ Have clear state ownership (parent coordinates, child owns)
+- ✅ Have no prop/query duplication
+- ✅ Use descriptive variable names
 - ✅ Be immediately greppable and debuggable
 - ✅ Require no cleanup or refactoring
 

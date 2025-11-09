@@ -1,6 +1,8 @@
-# Additional Patterns Under Consideration
+# Additional Patterns - ARCHIVED
 
-These patterns emerged from recent refactoring work and are being evaluated for full adoption into the engineering principles.
+**Note: These patterns have been fully incorporated into `engineering-principles.md` and are now official project standards.**
+
+This document is kept for historical reference showing how these patterns emerged from refactoring work.
 
 ## 1. Self-Contained Component Pattern
 
