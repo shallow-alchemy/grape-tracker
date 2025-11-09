@@ -1,49 +1,38 @@
 import { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { FiSettings } from 'react-icons/fi';
-import { type Zero } from '@rocicorp/zero';
-import { type Schema } from '../../schema';
 import { Modal } from './Modal';
+import { useZero } from '../contexts/ZeroContext';
 import { useBlocks, useVineyard } from './vineyard-hooks';
 import { transformBlockData } from './vineyard-utils';
 import styles from '../App.module.css';
 
 type VineDetailsViewProps = {
-  z: Zero<Schema>;
   vine: any;
-  vineUrl: string;
-  showQRModal: boolean;
-  setShowQRModal: (show: boolean) => void;
-  showVineSettingsModal: boolean;
-  setShowVineSettingsModal: (show: boolean) => void;
-  showDeleteVineConfirmModal: boolean;
-  setShowDeleteVineConfirmModal: (show: boolean) => void;
   onUpdateSuccess: (message: string) => void;
   onDeleteSuccess: (message: string) => void;
   navigateBack: () => void;
 };
 
 export const VineDetailsView = ({
-  z,
   vine,
-  vineUrl,
-  showQRModal,
-  setShowQRModal,
-  showVineSettingsModal,
-  setShowVineSettingsModal,
-  showDeleteVineConfirmModal,
-  setShowDeleteVineConfirmModal,
   onUpdateSuccess,
   onDeleteSuccess,
   navigateBack,
 }: VineDetailsViewProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [showVineSettingsModal, setShowVineSettingsModal] = useState(false);
+  const [showDeleteVineConfirmModal, setShowDeleteVineConfirmModal] = useState(false);
 
-  const blocksData = useBlocks(z);
-  const vineyardData = useVineyard(z);
+  const zero = useZero();
+  const blocksData = useBlocks();
+  const vineyardData = useVineyard();
   const blocks = blocksData.map(transformBlockData);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const vineUrl = vine ? `${window.location.origin}/vineyard/vine/${vine.id}` : '';
 
   useEffect(() => {
     if (showQRModal && canvasRef.current && vineUrl) {
@@ -73,7 +62,7 @@ export const VineDetailsView = ({
       URL.revokeObjectURL(url);
 
       if (vine && !vine.qrGenerated) {
-        z.mutate.vine.update({
+        zero.mutate.vine.update({
           id: vine.id,
           qrGenerated: Date.now(),
           updatedAt: Date.now(),
@@ -199,7 +188,7 @@ export const VineDetailsView = ({
                 const formData = new FormData(e.currentTarget);
                 const now = Date.now();
 
-                await z.mutate.vine.update({
+                await zero.mutate.vine.update({
                   id: vine.id,
                   block: formData.get('block') as string,
                   variety: (formData.get('variety') as string).toUpperCase(),
@@ -340,7 +329,7 @@ export const VineDetailsView = ({
                   setFormErrors({});
 
                   try {
-                    await z.mutate.vine.delete({ id: vine.id });
+                    await zero.mutate.vine.delete({ id: vine.id });
 
                     setShowDeleteVineConfirmModal(false);
                     setShowVineSettingsModal(false);

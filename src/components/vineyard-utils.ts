@@ -40,6 +40,18 @@ export const generateVineId = (_block: string, vinesData: VineDataRaw[]): { id: 
   return { id: vineId, sequenceNumber: nextNumber };
 };
 
+export const generateBatchVineIds = (_block: string, vinesData: VineDataRaw[], quantity: number): Array<{ id: string; sequenceNumber: number }> => {
+  const maxNumber = vinesData.length > 0
+    ? Math.max(...vinesData.map(v => v.sequenceNumber))
+    : 0;
+
+  return Array.from({ length: quantity }, (_, i) => {
+    const sequenceNumber = maxNumber + i + 1;
+    const id = sequenceNumber.toString().padStart(3, '0');
+    return { id, sequenceNumber };
+  });
+};
+
 export const prepareBlockDeletionState = (blockId: string, allBlocks: BlockData[]) => {
   const availableBlocks = allBlocks.filter(b => b.id !== blockId);
   return {

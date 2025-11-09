@@ -1,5 +1,7 @@
 # Engineering Principles for Claude Code
 
+**Note:** See `additional-patterns.md` for emerging patterns being considered for full adoption into these principles.
+
 ## Core Development Philosophy
 
 ### 1. Minimal Code Additions

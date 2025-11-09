@@ -1,10 +1,9 @@
-import { Zero } from '@rocicorp/zero';
-import { useUser, UserButton } from '@clerk/clerk-react';
+import { UserButton } from '@clerk/clerk-react';
 import { Button } from 'react-aria-components';
 import { Router, Route, Link } from 'wouter';
 import { WiDaySunny, WiCloudy, WiRain, WiThunderstorm, WiStrongWind, WiSnow, WiSnowflakeCold } from 'react-icons/wi';
-import { useState, useEffect } from 'react';
-import { schema, type Schema } from '../schema';
+import { useState } from 'react';
+import { ZeroProvider } from './contexts/ZeroContext';
 import { VineyardView } from './components/VineyardView';
 import styles from './App.module.css';
 
@@ -235,49 +234,29 @@ export const WineryView = () => {
 };
 
 export const App = () => {
-  const { user } = useUser();
-  const [z, setZ] = useState<Zero<Schema> | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      const zero = new Zero<Schema>({
-        userID: user.id,
-        server: process.env.PUBLIC_ZERO_SERVER || 'http://localhost:4848',
-        schema,
-      });
-      setZ(zero);
-
-      return () => {
-        zero.close();
-      };
-    }
-  }, [user?.id]);
-
-  if (!user || !z) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <Router>
-      <div className={styles.app}>
-        <header className={styles.header}>
-          <Link href="/" className={styles.appTitle}>GILBERT</Link>
-          <nav className={styles.nav}>
-            <Link href="/vineyard" className={styles.navLink}>VINEYARD</Link>
-            <Link href="/winery" className={styles.navLink}>WINERY</Link>
-          </nav>
-          <UserButton />
-        </header>
-        <Route path="/" component={DashboardView} />
-        <Route path="/vineyard/vine/:id">
-          {(params) => <VineyardView z={z} initialVineId={params.id} />}
-        </Route>
-        <Route path="/vineyard/block/:id">
-          {(params) => <VineyardView z={z} initialBlockId={params.id} />}
-        </Route>
-        <Route path="/vineyard">{() => <VineyardView z={z} />}</Route>
-        <Route path="/winery" component={WineryView} />
-      </div>
-    </Router>
+    <ZeroProvider>
+      <Router>
+        <div className={styles.app}>
+          <header className={styles.header}>
+            <Link href="/" className={styles.appTitle}>GILBERT</Link>
+            <nav className={styles.nav}>
+              <Link href="/vineyard" className={styles.navLink}>VINEYARD</Link>
+              <Link href="/winery" className={styles.navLink}>WINERY</Link>
+            </nav>
+            <UserButton />
+          </header>
+          <Route path="/" component={DashboardView} />
+          <Route path="/vineyard/vine/:id">
+            {(params) => <VineyardView initialVineId={params.id} />}
+          </Route>
+          <Route path="/vineyard/block/:id">
+            {(params) => <VineyardView initialBlockId={params.id} />}
+          </Route>
+          <Route path="/vineyard">{() => <VineyardView />}</Route>
+          <Route path="/winery" component={WineryView} />
+        </div>
+      </Router>
+    </ZeroProvider>
   );
 };

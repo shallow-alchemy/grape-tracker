@@ -1,28 +1,26 @@
 import { useState } from 'react';
-import { type Zero } from '@rocicorp/zero';
-import { type Schema } from '../../schema';
 import { Modal } from './Modal';
 import { type VineyardFormData } from './vineyard-types';
+import { useZero } from '../contexts/ZeroContext';
 import { useVineyard } from './vineyard-hooks';
 import styles from '../App.module.css';
 
 type VineyardSettingsModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  z: Zero<Schema>;
   onSuccess: (message: string) => void;
 };
 
 export const VineyardSettingsModal = ({
   isOpen,
   onClose,
-  z,
   onSuccess,
 }: VineyardSettingsModalProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const vineyardData = useVineyard(z);
+  const zero = useZero();
+  const vineyardData = useVineyard();
   return (
     <Modal
       isOpen={isOpen}
@@ -55,7 +53,7 @@ export const VineyardSettingsModal = ({
 
               const now = Date.now();
 
-              await z.mutate.vineyard.update({
+              await zero.mutate.vineyard.update({
                 id: 'default',
                 name: vineyardFormData.name,
                 location: vineyardFormData.location,

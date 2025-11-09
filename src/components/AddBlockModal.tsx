@@ -1,25 +1,24 @@
 import { useState } from 'react';
-import { type Zero } from '@rocicorp/zero';
-import { type Schema } from '../../schema';
 import { Modal } from './Modal';
 import { type BlockFormData } from './vineyard-types';
+import { useZero } from '../contexts/ZeroContext';
 import styles from '../App.module.css';
 
 type AddBlockModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  z: Zero<Schema>;
   onSuccess: (message: string) => void;
 };
 
 export const AddBlockModal = ({
   isOpen,
   onClose,
-  z,
   onSuccess,
 }: AddBlockModalProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const zero = useZero();
   return (
     <Modal
       isOpen={isOpen}
@@ -47,7 +46,7 @@ export const AddBlockModal = ({
             const blockId = blockData.name.replace(/^BLOCK\s+/, '').trim();
             const now = Date.now();
 
-            await z.mutate.block.insert({
+            await zero.mutate.block.insert({
               id: blockId,
               name: blockData.name.toUpperCase(),
               location: blockData.location || '',

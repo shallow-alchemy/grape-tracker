@@ -1,12 +1,17 @@
-import { type VineData } from './vineyard-types';
 import styles from '../App.module.css';
+import { useVines } from './vineyard-hooks';
+import { transformVineData, filterVinesByBlock } from './vineyard-utils';
 
 type VineyardViewVineListProps = {
-  vines: VineData[];
+  selectedBlock: string | null;
   navigateToVine: (vineId: string) => void;
 };
 
-export const VineyardViewVineList = ({ vines, navigateToVine }: VineyardViewVineListProps) => {
+export const VineyardViewVineList = ({ selectedBlock, navigateToVine }: VineyardViewVineListProps) => {
+  const vinesData = useVines();
+  const filteredVinesData = filterVinesByBlock(vinesData, selectedBlock);
+  const vines = filteredVinesData.map(transformVineData);
+
   return (
     <div className={styles.vineList}>
       {vines.map((vine) => (

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { type Zero } from '@rocicorp/zero';
-import { type Schema } from '../../schema';
 import { Modal } from './Modal';
+import { useZero } from '../contexts/ZeroContext';
 import { useVines, useBlocks } from './vineyard-hooks';
 import { transformBlockData } from './vineyard-utils';
 import styles from '../App.module.css';
@@ -10,7 +9,6 @@ type DeleteBlockConfirmModalProps = {
   isOpen: boolean;
   onClose: () => void;
   deleteBlockId: string | null;
-  z: Zero<Schema>;
   onSuccess: (message: string) => void;
 };
 
@@ -18,7 +16,6 @@ export const DeleteBlockConfirmModal = ({
   isOpen,
   onClose,
   deleteBlockId,
-  z,
   onSuccess,
 }: DeleteBlockConfirmModalProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -26,8 +23,9 @@ export const DeleteBlockConfirmModal = ({
   const [deleteVines, setDeleteVines] = useState(false);
   const [deleteMigrateToBlock, setDeleteMigrateToBlock] = useState<string | null>(null);
 
-  const vinesData = useVines(z);
-  const blocksData = useBlocks(z);
+  const zero = useZero();
+  const vinesData = useVines();
+  const blocksData = useBlocks();
   const blocks = blocksData.map(transformBlockData);
 
   const blockToDelete = blocks.find(b => b.id === deleteBlockId);
@@ -149,12 +147,12 @@ export const DeleteBlockConfirmModal = ({
                 if (vineCount > 0) {
                   if (deleteVines) {
                     await Promise.all(
-                      vinesToMigrate.map((v) => z.mutate.vine.delete({ id: v.id }))
+                      vinesToMigrate.map((v) => zero.mutate.vine.delete({ id: v.id }))
                     );
                   } else if (deleteMigrateToBlock) {
                     await Promise.all(
                       vinesToMigrate.map((v) =>
-                        z.mutate.vine.update({
+                        zero.mutate.vine.update({
                           id: v.id,
                           block: deleteMigrateToBlock,
                           updatedAt: Date.now(),
@@ -164,7 +162,7 @@ export const DeleteBlockConfirmModal = ({
                   }
                 }
 
-                await z.mutate.block.delete({ id: deleteBlockId });
+                await zero.mutate.block.delete({ id: deleteBlockId });
 
                 onClose();
                 setDeleteMigrateToBlock(null);

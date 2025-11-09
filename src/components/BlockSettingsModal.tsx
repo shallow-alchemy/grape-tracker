@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { type Zero } from '@rocicorp/zero';
-import { type Schema } from '../../schema';
 import { Modal } from './Modal';
 import { type BlockFormData } from './vineyard-types';
+import { useZero } from '../contexts/ZeroContext';
 import { useVines, useBlocks } from './vineyard-hooks';
 import { transformBlockData } from './vineyard-utils';
 import styles from '../App.module.css';
@@ -11,7 +10,6 @@ type BlockSettingsModalProps = {
   isOpen: boolean;
   onClose: () => void;
   selectedBlock: string | null;
-  z: Zero<Schema>;
   onSuccess: (message: string) => void;
   onDeleteClick: (blockId: string) => void;
 };
@@ -20,15 +18,15 @@ export const BlockSettingsModal = ({
   isOpen,
   onClose,
   selectedBlock,
-  z,
   onSuccess,
   onDeleteClick,
 }: BlockSettingsModalProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const vinesData = useVines(z);
-  const blocksData = useBlocks(z);
+  const zero = useZero();
+  const vinesData = useVines();
+  const blocksData = useBlocks();
   const blocks = blocksData.map(transformBlockData);
 
   const blockToEdit = blocks.find(b => b.id === selectedBlock);
@@ -63,7 +61,7 @@ export const BlockSettingsModal = ({
 
             const now = Date.now();
 
-            await z.mutate.block.update({
+            await zero.mutate.block.update({
               id: selectedBlock!,
               name: blockData.name.toUpperCase(),
               location: blockData.location || '',
