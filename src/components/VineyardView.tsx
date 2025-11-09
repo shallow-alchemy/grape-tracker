@@ -1,33 +1,20 @@
 import { Zero } from '@rocicorp/zero';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import QRCode from 'qrcode';
 import JSZip from 'jszip';
+import QRCode from 'qrcode';
 import { FiSettings } from 'react-icons/fi';
 import { type Schema } from '../../schema';
 import { Modal } from './Modal';
 import styles from '../App.module.css';
-
-const calculateAge = (plantingDate: Date): string => {
-  const years = new Date().getFullYear() - plantingDate.getFullYear();
-  return `${years} YRS`;
-};
-
-const generateVineId = (_block: string, vinesData: any[]): { id: string; sequenceNumber: number } => {
-  const maxNumber = vinesData.length > 0
-    ? Math.max(...vinesData.map(v => v.sequenceNumber))
-    : 0;
-  const nextNumber = maxNumber + 1;
-  const vineId = nextNumber.toString().padStart(3, '0');
-  return { id: vineId, sequenceNumber: nextNumber };
-};
+import { calculateAge, generateVineId, prepareBlockDeletionState } from './vineyard-utils';
+import { VineDetailsView } from './VineDetailsView';
 
 export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Schema>; initialVineId?: string; initialBlockId?: string }) => {
   const [, setLocation] = useLocation();
   const [selectedVine, setSelectedVine] = useState<string | null>(initialVineId || null);
   const [showAddVineModal, setShowAddVineModal] = useState(false);
   const [showAddBlockModal, setShowAddBlockModal] = useState(false);
-  const [showManageBlocksModal, setShowManageBlocksModal] = useState(false);
   const [showEditBlockModal, setShowEditBlockModal] = useState(false);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [showDeleteVineConfirmModal, setShowDeleteVineConfirmModal] = useState(false);
@@ -38,7 +25,6 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
   const [blocksData, setBlocksData] = useState<any[]>([]);
   const [vineyardData, setVineyardData] = useState<any>(null);
   const [selectedBlock, setSelectedBlock] = useState<string | null>(initialBlockId || null);
-  const [editingBlock, setEditingBlock] = useState<string | null>(null);
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
   const [deleteMigrateToBlock, setDeleteMigrateToBlock] = useState<string | null>(null);
   const [deleteVines, setDeleteVines] = useState(false);
@@ -46,7 +32,6 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const loadVines = async () => {
@@ -155,19 +140,6 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
 
   const selectedVineData = selectedVine ? vines.find((v: any) => v.id === selectedVine) : null;
   const vineUrl = selectedVineData ? `${window.location.origin}/vineyard/vine/${selectedVineData.id}` : '';
-
-  useEffect(() => {
-    if (showQRModal && canvasRef.current && vineUrl) {
-      QRCode.toCanvas(canvasRef.current, vineUrl, {
-        width: 400,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#ffffff',
-        },
-      });
-    }
-  }, [showQRModal, vineUrl]);
 
   const validateVineForm = (vineData: { block: string; variety: string; plantingDate: Date; health: string }): Record<string, string> => {
     const errors: Record<string, string> = {};
@@ -306,7 +278,6 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
         updatedAt: now,
       });
 
-      setEditingBlock(null);
       setShowEditBlockModal(false);
       setSuccessMessage(`Block ${blockData.name} updated successfully`);
       setTimeout(() => setSuccessMessage(null), 3000);
@@ -348,8 +319,6 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
       await z.mutate.block.delete({ id: deleteBlockId });
 
       setShowDeleteConfirmModal(false);
-      setShowManageBlocksModal(false);
-      setEditingBlock(null);
       setDeleteBlockId(null);
       setDeleteMigrateToBlock(null);
       setDeleteVines(false);
@@ -506,278 +475,27 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
   };
 
   if (selectedVine) {
-    const vine = selectedVineData;
-
-    const handleDownloadSVG = () => {
-      QRCode.toString(vineUrl, {
-        type: 'svg',
-        width: 400,
-        margin: 2,
-      }).then((svg: string) => {
-        const blob = new Blob([svg], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `vine-${vine?.block}-${vine?.id}.svg`;
-        link.click();
-        URL.revokeObjectURL(url);
-
-        if (vine && !vine.qrGenerated) {
-          z.mutate.vine.update({
-            id: vine.id,
-            qrGenerated: Date.now(),
-            updatedAt: Date.now(),
-          });
-        }
-      });
-    };
-
     return (
-      <div className={styles.vineDetails}>
-        <button className={styles.backButton} onClick={navigateBack}>
-          {'<'} BACK TO VINES
-        </button>
-        <div className={styles.vineDetailsHeader}>
-          <h1 className={styles.vineDetailsTitle}>VINE {vine?.block}-{vine?.id}</h1>
-          <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
-            <button className={styles.actionButton} onClick={() => setShowQRModal(true)}>
-              GENERATE TAG
-            </button>
-            <button
-              className={styles.iconButton}
-              onClick={() => setShowVineSettingsModal(true)}
-              title="Vine Settings"
-            >
-              <FiSettings size={20} />
-            </button>
-          </div>
-        </div>
-        <div className={styles.vineDetailsGrid}>
-          <div className={styles.vineDetailsSection}>
-            <h2 className={styles.sectionTitle}>DETAILS</h2>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>BLOCK</span>
-              <span className={styles.detailValue}>{vine?.block}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>VARIETY</span>
-              <span className={styles.detailValue}>{vine?.variety}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>AGE</span>
-              <span className={styles.detailValue}>{vine?.age}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>HEALTH</span>
-              <span className={styles.detailValue}>{vine?.health}</span>
-            </div>
-          </div>
-          <div className={styles.vineDetailsSection}>
-            <h2 className={styles.sectionTitle}>PHOTOS</h2>
-            <p className={styles.sectionPlaceholder}>No photos uploaded</p>
-          </div>
-          <div className={styles.vineDetailsSection}>
-            <h2 className={styles.sectionTitle}>TRAINING & PRUNING</h2>
-            <p className={styles.sectionPlaceholder}>No notes yet</p>
-          </div>
-          <div className={styles.vineDetailsSection}>
-            <h2 className={styles.sectionTitle}>DISEASE NOTES</h2>
-            <p className={styles.sectionPlaceholder}>No disease notes</p>
-          </div>
-          <div className={styles.vineDetailsSection}>
-            <h2 className={styles.sectionTitle}>WATERING LOG</h2>
-            <p className={styles.sectionPlaceholder}>No watering records</p>
-          </div>
-          <div className={styles.vineDetailsSection}>
-            <h2 className={styles.sectionTitle}>SPUR PLANNING</h2>
-            <p className={styles.sectionPlaceholder}>No spur plans</p>
-          </div>
-        </div>
-
-        <Modal
-          isOpen={showQRModal}
-          onClose={() => setShowQRModal(false)}
-          title={`VINE TAG - ${vine?.block}-${vine?.id}`}
-        >
-          <div className={styles.qrContainer}>
-                <canvas ref={canvasRef} className={styles.qrCanvas} />
-                <div className={styles.qrInfo}>
-                  <div className={styles.qrVineId}>{vine?.block}-{vine?.id}</div>
-                  <div className={styles.qrVariety}>{vine?.variety}</div>
-                  <div className={styles.qrBlock}>BLOCK {vine?.block}</div>
-                </div>
-                <div className={styles.qrUrl}>{vineUrl}</div>
-              </div>
-              <div className={styles.formActions}>
-                <button
-                  type="button"
-                  className={styles.formButtonSecondary}
-                  onClick={() => setShowQRModal(false)}
-                >
-                  CLOSE
-                </button>
-                <button
-                  type="button"
-                  className={styles.formButton}
-                  onClick={handleDownloadSVG}
-                >
-                  DOWNLOAD SVG
-                </button>
-              </div>
-        </Modal>
-
-        <Modal
-          isOpen={showVineSettingsModal}
-          onClose={() => {
-            setShowVineSettingsModal(false);
-            setFormErrors({});
-            setIsSubmitting(false);
-          }}
-          title="VINE SETTINGS"
-          size="medium"
-          closeDisabled={isSubmitting}
-        >
-          {vine && (
-            <form
-              className={styles.vineForm}
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                handleUpdateVine(vine.id, {
-                  block: formData.get('block') as string,
-                  variety: formData.get('variety') as string,
-                  plantingDate: new Date(formData.get('plantingDate') as string),
-                });
-              }}
-            >
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>BLOCK</label>
-                <select
-                  name="block"
-                  className={styles.formSelect}
-                  defaultValue={vine.block}
-                  required
-                >
-                  {blocks.map((block) => (
-                    <option key={block.id} value={block.id}>
-                      {block.name}
-                    </option>
-                  ))}
-                </select>
-                <div className={styles.formHint}>Vineyard block where this vine is located</div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>VARIETY</label>
-                {vineyardData && vineyardData.varieties && vineyardData.varieties.length > 0 ? (
-                  <select
-                    name="variety"
-                    className={styles.formSelect}
-                    defaultValue={vine.variety}
-                    required
-                  >
-                    {vineyardData.varieties.map((variety: string) => (
-                      <option key={variety} value={variety}>
-                        {variety}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <>
-                    <input
-                      type="text"
-                      name="variety"
-                      className={styles.formInput}
-                      defaultValue={vine.variety}
-                      onChange={(e) => {
-                        e.target.value = e.target.value.toUpperCase();
-                      }}
-                      required
-                    />
-                    <div className={styles.formHint}>Add varieties in Vineyard Settings to use dropdown</div>
-                  </>
-                )}
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>PLANTING DATE</label>
-                <input
-                  type="date"
-                  name="plantingDate"
-                  className={styles.formInput}
-                  defaultValue={vine.plantingDate.toISOString().split('T')[0]}
-                  required
-                />
-              </div>
-
-              {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
-
-              <div className={styles.formActions}>
-                <button type="submit" className={styles.formButton} disabled={isSubmitting}>
-                  {isSubmitting ? 'SAVING...' : 'SAVE SETTINGS'}
-                </button>
-              </div>
-
-              <div style={{ marginTop: 'var(--spacing-xl)', paddingTop: 'var(--spacing-xl)', borderTop: '1px solid var(--color-border)' }}>
-                <button
-                  type="button"
-                  className={styles.deleteButton}
-                  onClick={() => {
-                    setShowVineSettingsModal(false);
-                    setShowDeleteVineConfirmModal(true);
-                  }}
-                  disabled={isSubmitting}
-                >
-                  DELETE VINE
-                </button>
-              </div>
-            </form>
-          )}
-        </Modal>
-
-        <Modal
-          isOpen={showDeleteVineConfirmModal}
-          onClose={() => {
-            setShowDeleteVineConfirmModal(false);
-            setFormErrors({});
-          }}
-          title="DELETE VINE"
-          size="medium"
-          closeDisabled={isSubmitting}
-        >
-          {vine && (
-            <div>
-              <p style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--color-text-secondary)' }}>
-                Are you sure you want to delete <strong style={{ color: 'var(--color-text-accent)' }}>vine {vine.block}-{vine.id}</strong>? This action cannot be undone.
-              </p>
-
-              {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
-
-              <div className={styles.formActions}>
-                <button
-                  type="button"
-                  className={styles.formButtonSecondary}
-                  onClick={() => {
-                    setShowDeleteVineConfirmModal(false);
-                    setFormErrors({});
-                  }}
-                  disabled={isSubmitting}
-                >
-                  CANCEL
-                </button>
-                <button
-                  type="button"
-                  className={styles.deleteButton}
-                  onClick={() => handleDeleteVine(vine.id, vine.block)}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'DELETING...' : 'CONFIRM DELETE'}
-                </button>
-              </div>
-            </div>
-          )}
-        </Modal>
-      </div>
+      <VineDetailsView
+        z={z}
+        vine={selectedVineData}
+        vineUrl={vineUrl}
+        blocks={blocks}
+        vineyardData={vineyardData}
+        showQRModal={showQRModal}
+        setShowQRModal={setShowQRModal}
+        showVineSettingsModal={showVineSettingsModal}
+        setShowVineSettingsModal={setShowVineSettingsModal}
+        showDeleteVineConfirmModal={showDeleteVineConfirmModal}
+        setShowDeleteVineConfirmModal={setShowDeleteVineConfirmModal}
+        formErrors={formErrors}
+        setFormErrors={setFormErrors}
+        isSubmitting={isSubmitting}
+        setIsSubmitting={setIsSubmitting}
+        handleUpdateVine={handleUpdateVine}
+        handleDeleteVine={handleDeleteVine}
+        navigateBack={navigateBack}
+      />
     );
   }
 
@@ -1096,156 +814,6 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
                 </button>
               </div>
             </form>
-      </Modal>
-
-      <Modal
-        isOpen={showManageBlocksModal}
-        onClose={() => {
-          setShowManageBlocksModal(false);
-          setEditingBlock(null);
-          setFormErrors({});
-        }}
-        title="MANAGE BLOCKS"
-        size="large"
-        closeDisabled={isSubmitting}
-      >
-        {!editingBlock ? (
-          <div>
-            <div className={styles.blockListContainer}>
-              {blocks.map((block) => (
-                <div
-                  key={block.id}
-                  className={styles.manageBlockItem}
-                  onClick={() => setEditingBlock(block.id)}
-                >
-                  <div className={styles.manageBlockName}>{block.name}</div>
-                  <div className={styles.manageBlockDetails}>
-                    {block.location && <span>{block.location}</span>}
-                    {block.sizeAcres > 0 && <span>{block.sizeAcres} acres</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div>
-            <button
-              className={styles.backButton}
-              onClick={() => {
-                setEditingBlock(null);
-                setFormErrors({});
-              }}
-            >
-              {'<'} BACK TO BLOCKS
-            </button>
-            {(() => {
-              const blockToEdit = blocks.find(b => b.id === editingBlock);
-              if (!blockToEdit) return null;
-
-              const vineCountInBlock = vinesData.filter((v: any) => v.block === editingBlock).length;
-
-              return (
-                <form
-                  className={styles.vineForm}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.currentTarget);
-                    handleUpdateBlock(editingBlock, {
-                      name: formData.get('name') as string,
-                      location: formData.get('location') as string || undefined,
-                      sizeAcres: formData.get('sizeAcres') ? Number(formData.get('sizeAcres')) : undefined,
-                      soilType: formData.get('soilType') as string || undefined,
-                      notes: formData.get('notes') as string || undefined,
-                    });
-                  }}
-                >
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>BLOCK NAME</label>
-                    <input
-                      type="text"
-                      name="name"
-                      className={styles.formInput}
-                      defaultValue={blockToEdit.name}
-                      onChange={(e) => {
-                        e.target.value = e.target.value.toUpperCase();
-                      }}
-                      required
-                    />
-                    {formErrors.name && <div className={styles.formError}>{formErrors.name}</div>}
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>LOCATION (OPTIONAL)</label>
-                    <input
-                      type="text"
-                      name="location"
-                      className={styles.formInput}
-                      defaultValue={blockToEdit.location}
-                      placeholder="North section, near barn"
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>SIZE IN ACRES (OPTIONAL)</label>
-                    <input
-                      type="number"
-                      name="sizeAcres"
-                      className={styles.formInput}
-                      defaultValue={blockToEdit.sizeAcres || 0}
-                      step="0.1"
-                      min="0"
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>SOIL TYPE (OPTIONAL)</label>
-                    <input
-                      type="text"
-                      name="soilType"
-                      className={styles.formInput}
-                      defaultValue={blockToEdit.soilType}
-                      placeholder="Clay, sandy loam, etc."
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>NOTES (OPTIONAL)</label>
-                    <textarea
-                      name="notes"
-                      className={styles.formTextarea}
-                      defaultValue={blockToEdit.notes}
-                      placeholder="Any additional notes..."
-                      rows={3}
-                    />
-                  </div>
-                  {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
-                  <div className={styles.formActions}>
-                    <button type="submit" className={styles.formButton} disabled={isSubmitting}>
-                      {isSubmitting ? 'UPDATING...' : 'UPDATE BLOCK'}
-                    </button>
-                  </div>
-                  <div style={{ marginTop: 'var(--spacing-xl)', paddingTop: 'var(--spacing-xl)', borderTop: '1px solid var(--color-border)' }}>
-                    <button
-                      type="button"
-                      className={styles.deleteButton}
-                      onClick={() => {
-                        setDeleteBlockId(editingBlock);
-                        const availableBlocks = blocks.filter(b => b.id !== editingBlock);
-                        if (availableBlocks.length > 0) {
-                          setDeleteMigrateToBlock(availableBlocks[0].id);
-                          setDeleteVines(false);
-                        } else {
-                          setDeleteMigrateToBlock(null);
-                          setDeleteVines(true);
-                        }
-                        setShowDeleteConfirmModal(true);
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      DELETE BLOCK {vineCountInBlock > 0 && `(${vineCountInBlock} VINES)`}
-                    </button>
-                  </div>
-                </form>
-              );
-            })()}
-          </div>
-        )}
       </Modal>
 
       <Modal
@@ -1571,15 +1139,10 @@ export const VineyardView = ({ z, initialVineId, initialBlockId }: { z: Zero<Sch
                   type="button"
                   className={styles.deleteButton}
                   onClick={() => {
-                    setDeleteBlockId(selectedBlock);
-                    const availableBlocks = blocks.filter(b => b.id !== selectedBlock);
-                    if (availableBlocks.length > 0) {
-                      setDeleteMigrateToBlock(availableBlocks[0].id);
-                      setDeleteVines(false);
-                    } else {
-                      setDeleteMigrateToBlock(null);
-                      setDeleteVines(true);
-                    }
+                    const deletionState = prepareBlockDeletionState(selectedBlock!, blocks);
+                    setDeleteBlockId(deletionState.deleteBlockId);
+                    setDeleteMigrateToBlock(deletionState.deleteMigrateToBlock);
+                    setDeleteVines(deletionState.deleteVines);
                     setShowEditBlockModal(false);
                     setShowDeleteConfirmModal(true);
                   }}

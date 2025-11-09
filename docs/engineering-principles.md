@@ -12,10 +12,11 @@
 ### 2. Abstraction-Last Approach
 - **Start with large, monolithic files** containing many exports
 - **Build functionality in a single file first** before considering separation
-- **Only abstract into multiple files when:**
-  - The single file becomes genuinely unwieldy (1000+ lines)
-  - Specific reusability patterns emerge
-  - Performance optimization requires it
+- **Split files at 500-600 lines** OR when any of these occur:
+  - Visual scan test fails: Can't mentally map the entire file in one scroll-through
+  - Duplicate patterns emerge: Finding yourself copy-pasting within the same file
+  - Multiple responsibility: File handles more than one primary concern
+  - Hard to debug: Stack traces don't clearly identify what part of file has issues
 - **Prefer co-location** of related functionality over premature separation
 
 ### 3. CSS Architecture
@@ -27,6 +28,29 @@
   - Spacing: `var(--spacing-xs)`, `var(--spacing-sm)`
   - Breakpoints: `var(--breakpoint-md)`, `var(--breakpoint-lg)`
 - **Never hardcode design values** - always reference theme tokens
+
+### 4. DRY Within Monoliths
+- **Extract utility functions** when logic duplicates within same file
+- **Use helper components** for repeated UI patterns (forms, modals)
+- **Centralize state logic** when multiple UI paths affect same state
+- **The Duplication Detector**: If you copy-paste more than 10 lines within a single file, immediately extract to a function or component
+- **Pattern: Before copy-paste, ask:**
+  - Have I implemented this exact logic elsewhere in this file?
+  - Should this be extracted to a utility function instead?
+  - Is this file becoming too complex to audit?
+
+### 5. Cleanup on Refactor
+- **When changing architecture**, audit for orphaned code
+- **Remove redundant UI paths** before adding new ones
+- **Search for similar patterns** after extracting logic
+- **Test all entry points** after consolidation
+- **Delete unused state, handlers, and modals** immediately
+
+### 6. Single Responsibility for UI Paths
+- **One modal per entity action** (e.g., one "edit block" modal, not two)
+- **Multiple entry points OK**, but must render same component
+- **State determines content**, not separate modals for same purpose
+- **Avoid parallel implementations** of the same user action
 
 ## Implementation Guidelines
 
@@ -156,9 +180,10 @@ export const MyComponent = () => { ... };
 6. **Am I using const exports instead of default?** If possible, prefer named exports
 
 ### When considering abstraction:
-1. **Is this file over 1000 lines?** If no, keep as single file
-2. **Is there genuine reuse across different contexts?** If no, don't abstract
-3. **Would separation make debugging harder?** If yes, don't abstract
+1. **Is this file over 500-600 lines?** If yes, strongly consider splitting
+2. **Are you copy-pasting within the file?** If yes, extract immediately
+3. **Is there genuine reuse across different contexts?** If no, don't abstract
+4. **Would separation make debugging harder?** If yes, reconsider approach
 
 ## Theme Integration
 
