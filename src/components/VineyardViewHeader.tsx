@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FiSettings } from 'react-icons/fi';
 import JSZip from 'jszip';
 import { useZero } from '../contexts/ZeroContext';
-import { useVines, useBlocks } from './vineyard-hooks';
+import { useVines, useBlocks, useVineyard } from './vineyard-hooks';
 import { transformVineData, transformBlockData, filterVinesByBlock } from './vineyard-utils';
 import { generate3MF } from './vine-stake-3d';
 import styles from '../App.module.css';
@@ -30,6 +30,7 @@ export const VineyardViewHeader = ({
   const zero = useZero();
   const vinesData = useVines();
   const blocksData = useBlocks();
+  const vineyardData = useVineyard();
 
   const filteredVinesData = filterVinesByBlock(vinesData, selectedBlock);
   const vines = filteredVinesData.map(transformVineData);
@@ -53,11 +54,17 @@ export const VineyardViewHeader = ({
 
       const zip = new JSZip();
 
+      const vineyardName = vineyardData?.name || 'Vineyard';
+
       for (const vine of vinesToGenerate) {
         const vineUrl = `${window.location.origin}/vineyard/vine/${vine.id}`;
         const stlBlob = await generate3MF(vineUrl);
 
-        zip.file(`vine-${vine.block}-${vine.id}-qr.stl`, stlBlob);
+        const block = blocks.find(b => b.id === vine.block);
+        const blockName = block?.name || vine.block;
+        const filename = `${vineyardName}-${blockName}-${vine.id}.stl`;
+
+        zip.file(filename, stlBlob);
 
         if (!vine.qrGenerated) {
           await zero.mutate.vine.update({

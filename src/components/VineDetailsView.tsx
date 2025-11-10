@@ -80,7 +80,10 @@ export const VineDetailsView = ({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `vine-${vine.block}-${vine.id}-qr.stl`;
+      const vineyardName = vineyardData?.name || 'Vineyard';
+      const block = blocks.find(b => b.id === vine.block);
+      const blockName = block?.name || vine.block;
+      link.download = `${vineyardName}-${blockName}-${vine.id}.stl`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
