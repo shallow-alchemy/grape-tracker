@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { FiSettings } from 'react-icons/fi';
 import JSZip from 'jszip';
-import QRCode from 'qrcode';
 import { useZero } from '../contexts/ZeroContext';
 import { useVines, useBlocks } from './vineyard-hooks';
 import { transformVineData, transformBlockData, filterVinesByBlock } from './vineyard-utils';
+import { generate3MF } from './vine-stake-3d';
 import styles from '../App.module.css';
 
 type VineyardViewHeaderProps = {
@@ -55,13 +55,9 @@ export const VineyardViewHeader = ({
 
       for (const vine of vinesToGenerate) {
         const vineUrl = `${window.location.origin}/vineyard/vine/${vine.id}`;
-        const svg = await QRCode.toString(vineUrl, {
-          type: 'svg',
-          width: 400,
-          margin: 2,
-        });
+        const stlBlob = await generate3MF(vineUrl);
 
-        zip.file(`vine-${vine.block}-${vine.id}.svg`, svg);
+        zip.file(`vine-${vine.block}-${vine.id}-qr.stl`, stlBlob);
 
         if (!vine.qrGenerated) {
           await zero.mutate.vine.update({

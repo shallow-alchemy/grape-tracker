@@ -85,17 +85,34 @@ Gilbert generates 3D printable QR code tags for physical vine identification in 
 ### Quick Start
 
 1. **Generate Tag**: Navigate to any vine detail page and click "DOWNLOAD 3D FILE"
-2. **Combine**: Run `stlto3mf` to merge with the base STL
+2. **Batch Process**: Use the batch-merge-stl tool to merge all QR tags with the base
 3. **Print**: Import to your slicer and print with white + black filament
 
-### Commands
+### Batch Processing (Recommended)
+
+```bash
+# Install the batch processing tool
+cd scripts/batch-merge-stl
+cargo install --path .
+
+# Process all vine tags in downloads folder (scale base from inches to mm)
+batch-merge-stl -b assets/Base.stl -s 25.4 downloads/
+
+# Process with custom output directory
+batch-merge-stl -b assets/Base.stl -s 25.4 -o ready-to-print/ downloads/
+
+# Process only vine tags (skip other STL files)
+batch-merge-stl -b assets/Base.stl -s 25.4 -p "vine-*-qr.stl" downloads/
+```
+
+### Manual Processing (Single Files)
 
 ```bash
 # Download generates: vine-A-001-qr.stl
-# Base file is at: assets/VineTagBase.stl
+# Base file is at: assets/Base.stl
 
-# Combine base + QR layer into single 3MF
-stlto3mf --output vine-A-001.3mf assets/VineTagBase.stl vine-A-001-qr.stl
+# Combine base + QR layer into single 3MF (manual scaling needed)
+stlto3mf --output vine-A-001.3mf assets/Base.stl vine-A-001-qr.stl
 
 # Install stlto3mf (if needed)
 # https://github.com/mpapierski/stlto3mf

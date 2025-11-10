@@ -7,8 +7,8 @@ import { serialize as serializeSTL } from '@jscad/stl-serializer';
 const { cuboid } = primitives;
 const { union } = booleans;
 
-const QR_SIZE = 2.0;
-const QR_HEIGHT = 0.079;
+const QR_SIZE = 50.8;
+const QR_HEIGHT = 2.0;
 
 const createQRCodeJSCAD = async (vineUrl: string) => {
   const qrMatrix = await QRCode.create(vineUrl, {
