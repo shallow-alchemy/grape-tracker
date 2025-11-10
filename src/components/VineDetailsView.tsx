@@ -5,6 +5,7 @@ import { Modal } from './Modal';
 import { useZero } from '../contexts/ZeroContext';
 import { useBlocks, useVineyard } from './vineyard-hooks';
 import { transformBlockData } from './vineyard-utils';
+import { generate3MF } from './vine-stake-3d';
 import styles from '../App.module.css';
 
 type VineDetailsViewProps = {
@@ -69,6 +70,32 @@ export const VineDetailsView = ({
         });
       }
     });
+  };
+
+  const handleDownload3MF = async () => {
+    if (!vine) return;
+
+    try {
+      const blob = await generate3MF(vine.id, vine.block, vineUrl);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `vine-${vine.block}-${vine.id}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      if (!vine.qrGenerated) {
+        zero.mutate.vine.update({
+          id: vine.id,
+          qrGenerated: Date.now(),
+          updatedAt: Date.now(),
+        });
+      }
+    } catch (error) {
+      console.error('Error generating 3MF file:', error);
+    }
   };
 
   return (
@@ -161,6 +188,13 @@ export const VineDetailsView = ({
                 onClick={handleDownloadSVG}
               >
                 DOWNLOAD SVG
+              </button>
+              <button
+                type="button"
+                className={styles.formButton}
+                onClick={handleDownload3MF}
+              >
+                DOWNLOAD 3D FILE
               </button>
             </div>
       </Modal>

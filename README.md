@@ -14,14 +14,17 @@ A mobile-first web application built with React, TypeScript, and Zero sync engin
 ## Prerequisites
 
 - Node.js >= 22 (Note: Node 20 will work but shows warnings)
+- Yarn (package manager)
 - Docker (for PostgreSQL)
 - PostgreSQL database
 
 ## Setup
 
+**Note:** This project uses Yarn as the package manager. Please use `yarn` instead of `npm`.
+
 1. Install dependencies:
 ```bash
-npm install
+yarn install
 ```
 
 2. Configure environment variables:
@@ -37,20 +40,20 @@ docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password postgres
 
 4. Start the Zero cache server:
 ```bash
-npm run zero-cache
+yarn zero-cache
 ```
 
 5. In a separate terminal, start the dev server:
 ```bash
-npm run dev
+yarn dev
 ```
 
 ## Available Scripts
 
-- `npm run dev` - Start the development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run zero-cache` - Start the Zero cache server
+- `yarn dev` - Start the development server
+- `yarn build` - Build for production
+- `yarn preview` - Preview production build
+- `yarn zero-cache` - Start the Zero cache server
 
 ## Project Structure
 

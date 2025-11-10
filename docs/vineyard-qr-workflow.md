@@ -97,7 +97,7 @@ For now, blocks are simply string identifiers (A, B, C) that vines reference.
 ## Technical Implementation
 
 ### QR Code Generation
-- **Library**: `qrcode` (npm package)
+- **Library**: `qrcode` (installed via yarn)
 - **Format**: SVG (vector graphics, perfect for scaling/3D conversion)
 - **Content**: Full URL to vine detail page
 - **Size**: Configurable, default appropriate for 3D printing (suggested: 200x200px base)

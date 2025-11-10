@@ -20,6 +20,7 @@ This is **Gilbert**, a mobile-first grape tracking app with an 80s hacker termin
 
 - **App Name**: Gilbert
 - **Stack**: React + TypeScript + Clerk + Zero + Rsbuild
+- **Package Manager**: Yarn (use `yarn` not `npm`)
 - **Styling**: CSS Modules only, all values from CSS variables in `src/index.css`
 - **Code Style**: Fat arrow functions, named exports, monolithic files
 - **Theme**: Faded black (#1a1c1a) + muted greens (#3a7a3a, #65a165), monospace fonts
