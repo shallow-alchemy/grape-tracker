@@ -76,11 +76,11 @@ export const VineDetailsView = ({
     if (!vine) return;
 
     try {
-      const blob = await generate3MF(vine.id, vine.block, vineUrl);
+      const blob = await generate3MF(vineUrl);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `vine-${vine.block}-${vine.id}.zip`;
+      link.download = `vine-${vine.block}-${vine.id}-qr.stl`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -94,7 +94,7 @@ export const VineDetailsView = ({
         });
       }
     } catch (error) {
-      console.error('Error generating 3MF file:', error);
+      console.error('Error generating QR STL file:', error);
     }
   };
 

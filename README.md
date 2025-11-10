@@ -77,3 +77,32 @@ The app is optimized for mobile usage with:
 - Touch-friendly UI
 - Mobile web app capabilities
 - Offline-first data sync with Zero
+
+## 3D Printable Vine Tags
+
+Gilbert generates 3D printable QR code tags for physical vine identification in the vineyard.
+
+### Quick Start
+
+1. **Generate Tag**: Navigate to any vine detail page and click "DOWNLOAD 3D FILE"
+2. **Combine**: Run `stlto3mf` to merge with the base STL
+3. **Print**: Import to your slicer and print with white + black filament
+
+### Commands
+
+```bash
+# Download generates: vine-A-001-qr.stl
+# Base file is at: assets/VineTagBase.stl
+
+# Combine base + QR layer into single 3MF
+stlto3mf --output vine-A-001.3mf assets/VineTagBase.stl vine-A-001-qr.stl
+
+# Install stlto3mf (if needed)
+# https://github.com/mpapierski/stlto3mf
+```
+
+### Tag Specifications
+
+- **Size**: 2" × 2" (50.8mm × 50.8mm) square
+- **Base**: 0.125" thick white layer with mounting fixture
+- **QR Pattern**: 2mm raised black layer
