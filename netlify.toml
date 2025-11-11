@@ -1,6 +1,7 @@
 [build]
   command = "yarn build"
   publish = "dist"
+  ignore = "git diff --quiet HEAD^ HEAD -- . ':!backend' ':!migrations' ':!docs'"
 
 [[redirects]]
   from = "/*"
