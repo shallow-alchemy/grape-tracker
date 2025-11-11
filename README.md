@@ -4,19 +4,27 @@ A mobile-first web application built with React, TypeScript, and Zero sync engin
 
 ## Tech Stack
 
-- **React** - UI library
+### Frontend
+- **React 19** - UI library
 - **TypeScript** - Type safety
 - **rsBuild** - Build tool
 - **Zero** - Local-first sync engine
 - **React Aria Components** - Accessible UI components
 - **CSS Modules** - Scoped styling
 
+### Backend
+- **Rust** - Systems programming language
+- **Axum** - Web framework
+- **SQLx** - Database toolkit with migrations
+- **PostgreSQL** - Database
+
 ## Prerequisites
 
 - Node.js >= 22 (Note: Node 20 will work but shows warnings)
 - Yarn (package manager)
-- Docker (for PostgreSQL)
-- PostgreSQL database
+- Rust (latest stable) - for backend
+- PostgreSQL database with `wal_level = logical`
+- Optional: Docker (for PostgreSQL)
 
 ## Setup
 
@@ -28,46 +36,58 @@ yarn install
 ```
 
 2. Configure environment variables:
-Copy `.env.example` to `.env` and update with your database credentials:
 ```bash
+# Backend environment
+cd backend && cp .env.example .env && cd ..
+
+# Root environment (if needed)
 cp .env.example .env
 ```
 
-3. Start PostgreSQL (if using Docker):
-```bash
-docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password postgres
-```
+3. Ensure PostgreSQL is running with `gilbert` database and `wal_level = logical`
 
-4. Start the Zero cache server:
-```bash
-yarn zero-cache
-```
-
-5. In a separate terminal, start the dev server:
+4. Start all services:
 ```bash
 yarn dev
 ```
 
+This runs zero-cache (port 4848), backend (port 3001), and frontend (port 3000) concurrently.
+
 ## Available Scripts
 
-- `yarn dev` - Start the development server
-- `yarn build` - Build for production
+### Development
+- `yarn dev` - Start all services (zero-cache + backend + frontend) - **recommended**
+- `yarn dev:frontend` - Start frontend dev server only (port 3000)
+- `yarn dev:backend` - Start Axum backend only (port 3001)
+- `yarn dev:zero` - Start Zero cache server only (port 4848)
+
+### Production
+- `yarn build` - Build frontend for production
 - `yarn preview` - Preview production build
-- `yarn zero-cache` - Start the Zero cache server
+
+### Backend
+- `yarn backend` - Run backend server
+- `yarn backend:watch` - Run backend with hot reload (requires cargo-watch)
 
 ## Project Structure
 
 ```
 .
-├── src/
+├── src/                 # Frontend React app
 │   ├── App.tsx          # Main app component
 │   ├── App.module.css   # App styles
 │   ├── index.tsx        # Entry point
 │   └── index.css        # Global styles
-├── schema.ts            # Zero schema and permissions
+├── backend/             # Axum Rust backend
+│   ├── src/
+│   │   └── main.rs      # Server entry point
+│   └── Cargo.toml       # Rust dependencies
+├── migrations/          # Database migrations (SQL)
+├── docs/                # Project documentation
+├── schema.ts            # Zero sync schema and permissions
 ├── rsbuild.config.ts    # rsBuild configuration
 ├── tsconfig.json        # TypeScript configuration
-└── index.html           # HTML template
+└── package.json         # Node dependencies and scripts
 ```
 
 ## Mobile-First Features

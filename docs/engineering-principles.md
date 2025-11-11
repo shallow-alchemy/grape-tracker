@@ -2,6 +2,17 @@
 
 ## Core Development Philosophy
 
+### 0. Research Before Implementation
+- **ALWAYS investigate existing code FIRST** before implementing new features or making changes
+- **Read the relevant files thoroughly** - understand what's already implemented and how it works
+- **Check for existing solutions** - the codebase may already have working code that solves the problem
+- **Research available libraries** - understand what's possible with the tech stack before designing solutions
+- **Ask clarifying questions** if unclear about existing implementation or user requirements
+- **Document findings** - when you discover existing patterns, note them before proposing changes
+- **Avoid rework** - spending 10 minutes researching saves hours of implementing the wrong solution
+
+**Example:** Before implementing STL file generation on the backend, check if the frontend already has working STL generation code. If it does, evaluate whether to keep it, move it, or replicate it - don't build from scratch without knowing what exists.
+
 ### 1. Minimal Code Additions
 - **Make the smallest possible changes** to accomplish the task
 - **Never add comments** - code should be self-explanatory

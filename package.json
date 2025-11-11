@@ -4,11 +4,15 @@
   "description": "Mobile-first web app with Zero sync",
   "type": "module",
   "scripts": {
-    "dev": "rsbuild dev",
+    "dev": "concurrently -n \"zero,backend,frontend\" -c \"cyan,magenta,green\" \"yarn dev:zero\" \"yarn dev:backend\" \"yarn dev:frontend\"",
+    "dev:frontend": "rsbuild dev",
+    "dev:backend": "cd backend && cargo run",
+    "dev:zero": "npx zero-cache-dev --schema-path schema.js",
     "build": "rsbuild build",
     "preview": "rsbuild preview",
     "zero-cache": "npx zero-cache-dev --schema-path schema.js",
-    "zero-cache:dev": "npx zero-cache-dev --schema-path schema.js"
+    "backend": "cd backend && cargo run",
+    "backend:watch": "cd backend && cargo watch -x run"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +25,7 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@types/three": "^0.181.0",
+    "concurrently": "^9.2.1",
     "typescript": "^5.9.3"
   },
   "dependencies": {

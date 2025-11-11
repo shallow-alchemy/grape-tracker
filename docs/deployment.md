@@ -4,177 +4,409 @@
 
 **Local development:**
 ```bash
-yarn zero-cache:dev  # Dev zero-cache server
-yarn dev             # Frontend dev server
+yarn dev  # Runs zero-cache, backend, and frontend concurrently
 ```
 
-**Production:** Railway runs `yarn zero-cache` automatically
+**Production:** Railway deploys zero-cache and backend automatically, Netlify deploys frontend
 
 ## Architecture
 
 ```
-Netlify (Frontend) → Railway (zero-cache) → PostgreSQL (Railway)
+┌─────────────────────────────────────────────────┐
+│ Railway Project                                 │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  PostgreSQL (wal_level=logical)                │
+│      ↑           ↑                              │
+│      │           │                              │
+│  zero-cache   axum-backend                     │
+│   (port 4848)  (port 3001)                     │
+│      ↑           ↑                              │
+└──────┼───────────┼──────────────────────────────┘
+       │           │
+       │           │
+   ┌───┴───────────┴────┐
+   │   Netlify Frontend │
+   │   - Zero sync      │
+   │   - STL generation │
+   └────────────────────┘
 ```
 
-## Step-by-Step Deployment
+**Data Flow:**
+- **Domain Data:** Frontend ↔ Zero Cache ↔ PostgreSQL
+- **Migrations:** Backend (sqlx) → PostgreSQL
+- **STL Files:** Generated client-side in browser
 
-### 1. Railway Setup
+---
 
-**A. Create Project & Add PostgreSQL:**
+## Step 1: Railway PostgreSQL Setup
+
+### 1.1 Create PostgreSQL Service
+
 1. Go to [railway.app](https://railway.app) and create account
 2. New Project → Add PostgreSQL
 3. Wait for provisioning
+4. Note the `DATABASE_URL` from Variables tab
 
-**B. Configure PostgreSQL:**
+### 1.2 Enable Logical Replication
+
+**Required for Zero sync to work.**
+
 Click PostgreSQL service → Data tab → Query:
 ```sql
 ALTER SYSTEM SET wal_level = logical;
 ```
-Then Settings tab → Restart Database
+
+Then Settings tab → **Restart Database** (critical step!)
 
 Verify with:
 ```sql
 SHOW wal_level;  -- Should return "logical"
 ```
 
-**C. Create Schema:**
-In PostgreSQL Query tab:
-```sql
-CREATE TABLE vineyard (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  location TEXT,
-  varieties TEXT[],
-  "createdAt" BIGINT NOT NULL,
-  "updatedAt" BIGINT NOT NULL
-);
+**Note:** The database must be restarted for the change to take effect.
 
-CREATE TABLE block (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  location TEXT,
-  "sizeAcres" NUMERIC,
-  "soilType" TEXT,
-  notes TEXT,
-  "createdAt" BIGINT NOT NULL,
-  "updatedAt" BIGINT NOT NULL
-);
+---
 
-CREATE TABLE vine (
-  id TEXT PRIMARY KEY,
-  block TEXT NOT NULL,
-  "sequenceNumber" INTEGER NOT NULL,
-  variety TEXT NOT NULL,
-  "plantingDate" BIGINT NOT NULL,
-  health TEXT NOT NULL,
-  notes TEXT NOT NULL,
-  "qrGenerated" BIGINT NOT NULL,
-  "createdAt" BIGINT NOT NULL,
-  "updatedAt" BIGINT NOT NULL,
-  FOREIGN KEY (block) REFERENCES block(id)
-);
+## Step 2: Railway Backend Deployment (Axum)
 
-CREATE INDEX idx_vine_block ON vine(block);
-CREATE INDEX idx_vine_variety ON vine(variety);
+The backend handles database migrations automatically using sqlx.
+
+### 2.1 Add Backend Service
+
+1. In Railway project, click "New" → "GitHub Repo"
+2. Select your `grape-tracker` repository
+3. Railway will detect the Rust project
+
+### 2.2 Configure Service Settings
+
+**Settings → Build:**
+- Root Directory: `backend`
+- Build Command: `cargo build --release`
+- Start Command: `./target/release/gilbert-backend`
+
+**Settings → Watch Paths:**
+```
+backend/**
+migrations/**
 ```
 
-**D. Deploy Zero-Cache Service:**
-1. New → GitHub Repo → Connect grape-tracker
-2. Railway auto-deploys
-3. Variables tab, add:
+### 2.3 Environment Variables
+
+In backend service Variables tab, add:
+
+```bash
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+PORT=3001
+RUST_LOG=info
+```
+
+**Note:** The `${{Postgres.DATABASE_URL}}` syntax references your PostgreSQL service's connection string.
+
+### 2.4 Deploy
+
+1. Click "Deploy" or push to GitHub to trigger deploy
+2. Watch logs for:
    ```
-   ZERO_UPSTREAM_DB=${{Postgres.DATABASE_URL}}
-   ZERO_REPLICA_FILE=/tmp/sync-replica.db
-   ZERO_AUTH_SECRET=<generate-strong-secret>
-   PORT=4848
+   INFO Connecting to database...
+   INFO Running migrations...
+   INFO Server starting on 0.0.0.0:3001
    ```
 
-   Generate secret:
-   ```bash
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-   ```
+### 2.5 Generate Public URL
 
-4. Settings → Networking → Generate Domain
-5. Copy URL (e.g., `https://your-app.up.railway.app`)
+1. Settings → Networking → Generate Domain
+2. Copy the URL (e.g., `https://gilbert-backend.up.railway.app`)
 
-**E. Test:**
-Visit `https://your-app.up.railway.app/health`
+### 2.6 Verify Deployment
+
+Test the health endpoint:
+```bash
+curl https://your-backend.up.railway.app/health
+```
+
+Expected response:
+```json
+{
+  "status": "ok",
+  "database": "connected"
+}
+```
+
+**Database Migrations:**
+
+The backend automatically runs migrations on startup. You can verify by connecting to PostgreSQL:
+
+```bash
+# Connect to Railway PostgreSQL
+psql $DATABASE_URL
+
+# Check migration history
+SELECT * FROM _sqlx_migrations ORDER BY installed_on DESC;
+
+# List tables
+\dt
+```
+
+You should see: `vineyard`, `block`, `vine`, `_sqlx_migrations`
+
+---
+
+## Step 3: Railway Zero-Cache Deployment
+
+### 3.1 Add Zero-Cache Service
+
+1. New → GitHub Repo → Connect `grape-tracker`
+2. Railway auto-detects and deploys
+
+### 3.2 Environment Variables
+
+Variables tab, add:
+```bash
+ZERO_UPSTREAM_DB=${{Postgres.DATABASE_URL}}
+ZERO_REPLICA_FILE=/tmp/sync-replica.db
+ZERO_AUTH_SECRET=<generate-strong-secret>
+PORT=4848
+```
+
+Generate auth secret:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### 3.3 Generate Public URL
+
+1. Settings → Networking → Generate Domain
+2. Copy URL (e.g., `https://zero-cache.up.railway.app`)
+
+### 3.4 Verify Deployment
+
+Visit `https://your-zero-cache.up.railway.app/health`
+
 Should see: `{"status":"ok","timestamp":"..."}`
 
-### 2. Netlify Setup
+---
 
-**A. Connect Repo:**
+## Step 4: Netlify Frontend Deployment
+
+### 4.1 Connect Repository
+
 1. Add new site → Import existing project
-2. Choose GitHub → Select grape-tracker
+2. Choose GitHub → Select `grape-tracker`
 3. Build settings (auto-detected from netlify.toml):
    - Build command: `yarn build`
    - Publish directory: `dist`
 
-**B. Environment Variables:**
+### 4.2 Environment Variables
+
 Site configuration → Environment variables:
-```
-PUBLIC_ZERO_SERVER=https://your-app.up.railway.app
+```bash
+PUBLIC_ZERO_SERVER=https://your-zero-cache.up.railway.app
 PUBLIC_CLERK_PUBLISHABLE_KEY=<your-clerk-key>
+VITE_BACKEND_URL=https://your-backend.up.railway.app
 ```
 
-**C. Deploy:**
-Click "Deploy site"
+**Where to find Railway URLs:**
+- Go to each Railway service → Settings → Domains
+- Copy the generated domain
 
-### 3. Clerk Configuration
+### 4.3 Deploy
+
+Click "Deploy site" and wait for build to complete.
+
+---
+
+## Step 5: Clerk Configuration
 
 1. [Clerk Dashboard](https://dashboard.clerk.com)
-2. Select application
+2. Select your application
 3. Paths → Update:
    - Home URL: `https://your-site.netlify.app`
    - Sign-in URL: `https://your-site.netlify.app`
 
+---
+
 ## Verification Checklist
 
-- [ ] Railway zero-cache health check returns OK
-- [ ] PostgreSQL `wal_level` is `logical`
-- [ ] All tables created in database
-- [ ] Netlify build succeeded
-- [ ] Netlify env vars set correctly
-- [ ] Clerk URLs updated
-- [ ] Can sign in on production site
+**Railway Backend:**
+- [ ] Health endpoint returns `{"status":"ok","database":"connected"}`
+- [ ] Migrations ran successfully (check logs)
+- [ ] Database has vineyard, block, vine tables
+
+**Railway Zero-Cache:**
+- [ ] Health check returns OK
+- [ ] Connected to PostgreSQL with `wal_level=logical`
+
+**Netlify Frontend:**
+- [ ] Build succeeded
+- [ ] Environment variables set
+- [ ] Can sign in with Clerk
+- [ ] Can create vines
 - [ ] Data syncs between devices
+
+---
+
+## Database Migrations
+
+### How It Works
+
+1. Migrations live in `migrations/` directory
+2. Backend runs migrations automatically on startup using sqlx
+3. Migration history tracked in `_sqlx_migrations` table
+4. **Never manually create tables** - always use migrations
+
+### Adding New Migrations
+
+```bash
+cd backend
+
+# Create new migration file
+sqlx migrate add your_migration_name
+
+# Edit the generated SQL file
+# migrations/20251111000002_add_photos.sql
+
+# Test locally
+cargo run
+
+# Commit and push
+git add migrations/
+git commit -m "Add migration for photos table"
+git push
+```
+
+Railway will automatically run the new migration on next deploy.
+
+### Checking Migration Status
+
+```bash
+# Connect to Railway PostgreSQL
+psql $DATABASE_URL
+
+# View migration history
+SELECT version, description, installed_on, success
+FROM _sqlx_migrations
+ORDER BY installed_on DESC;
+```
+
+### Migration Best Practices
+
+1. **Always use migrations** - never manually ALTER tables in production
+2. **Test locally first** - run `cargo run` to verify migration works
+3. **Idempotent migrations** - use `IF NOT EXISTS` where applicable
+4. **One logical change per migration** - easier to track and rollback
+5. **Descriptive names** - `add_photos_table` not `migration1`
+
+---
 
 ## Troubleshooting
 
-**Zero-cache crashes:**
-- Check Railway logs
-- Verify `ZERO_UPSTREAM_DB` and `ZERO_AUTH_SECRET` are set
-- Confirm PostgreSQL is running
+### Backend Won't Start
 
-**Frontend can't connect:**
-- Verify `PUBLIC_ZERO_SERVER` matches Railway URL exactly
-- Check Railway service is running
-- Ensure Railway domain is public
+**Error: "Failed to connect to database"**
+- Verify `DATABASE_URL` is set correctly
+- Check PostgreSQL service is running
+- Test connection: `psql $DATABASE_URL`
 
-**Sync not working:**
-- Verify `wal_level = logical` in PostgreSQL
-- Check Railway logs for errors
-- Test health endpoint
+**Error: "Failed to run migrations"**
+- Check migration SQL syntax
+- Look for conflicting migrations
+- Verify `migrations/` directory is included in deployment
 
-## Updating
+**Error: "Address already in use"**
+- Railway assigns ports automatically
+- Ensure you're using `$PORT` environment variable
 
-**Backend:** Push to GitHub → Railway auto-deploys
-**Frontend:** Push to GitHub → Netlify auto-deploys
+### Zero-Cache Connection Issues
 
-## Costs (Free Tier)
+**"Cannot connect to database"**
+- Verify `ZERO_UPSTREAM_DB` matches PostgreSQL `DATABASE_URL`
+- Check `wal_level = logical` is set (and database restarted!)
 
-- **Railway:** $5 credit/month (should cover both services)
-- **Netlify:** 100GB bandwidth/month
-- **Clerk:** 10,000 MAUs
+**"Schema not found"**
+- Ensure migrations have run (backend creates tables)
+- Verify zero-cache can read from PostgreSQL
+
+### Frontend Sync Issues
+
+**"Failed to connect to Zero"**
+- Check `PUBLIC_ZERO_SERVER` URL is correct
+- Verify zero-cache service is running
+- Test zero-cache health endpoint
+
+**"Data not syncing"**
+- Confirm `wal_level = logical` (common issue!)
+- Check zero-cache logs for errors
+- Verify tables exist in database
+
+---
+
+## Updating Services
+
+**Backend:**
+```bash
+git add backend/
+git commit -m "Update backend"
+git push
+```
+Railway auto-deploys. Migrations run automatically if new ones added.
+
+**Frontend:**
+```bash
+git add src/
+git commit -m "Update frontend"
+git push
+```
+Netlify auto-deploys.
+
+**Adding Migrations:**
+```bash
+cd backend
+sqlx migrate add new_feature
+# Edit SQL file
+git add migrations/
+git commit -m "Add migration"
+git push
+```
+Railway runs new migration on next backend deploy.
+
+---
+
+## Cost Estimates (Free Tier)
+
+- **Railway:** $5 credit/month
+  - PostgreSQL: ~$2/month
+  - Zero-cache: ~$1/month
+  - Backend: ~$1/month
+- **Netlify:** 100GB bandwidth/month (plenty for MVP)
+- **Clerk:** 10,000 MAUs free
+
+---
 
 ## Local Development
 
+**Option A: Full dev server (recommended)**
 ```bash
-# Terminal 1: Zero-cache dev server
-yarn zero-cache:dev
-
-# Terminal 2: Frontend dev server
 yarn dev
 ```
+Runs zero-cache, backend, and frontend concurrently.
 
-Uses local PostgreSQL with `.env` configuration.
+**Option B: Individual services**
+```bash
+# Terminal 1: Zero-cache dev server
+yarn dev:zero
+
+# Terminal 2: Backend dev server
+yarn dev:backend
+
+# Terminal 3: Frontend dev server
+yarn dev:frontend
+```
+
+**Requirements:**
+- Local PostgreSQL with `wal_level = logical`
+- `.env` configured (see `backend/.env.example`)
+
+---
+
+**Last Updated:** Nov 11, 2025

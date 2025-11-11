@@ -6,3 +6,6 @@ dist
 .rsbuild
 .cache
 .env.production
+
+backend/target
+backend/.env
