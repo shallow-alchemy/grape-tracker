@@ -2,7 +2,16 @@
 
 ## Core Development Philosophy
 
-### 0. Research Before Implementation
+### 0. Never Touch Git
+- **NEVER run git commands** - all git operations must be performed manually by the user
+- **NO git add, git commit, git push, git checkout, git merge, or any other git commands**
+- **User maintains full control** over what gets committed and when
+- **You can suggest git commands** for the user to run, but never execute them
+- **Exception:** Using git commands for read-only inspection (git status, git log, git diff) is acceptable when debugging
+
+**Why:** Git operations are critical to version control. The user needs complete awareness and control over what changes are committed to the repository.
+
+### 1. Research Before Implementation
 - **ALWAYS investigate existing code FIRST** before implementing new features or making changes
 - **Read the relevant files thoroughly** - understand what's already implemented and how it works
 - **Check for existing solutions** - the codebase may already have working code that solves the problem
@@ -13,7 +22,7 @@
 
 **Example:** Before implementing STL file generation on the backend, check if the frontend already has working STL generation code. If it does, evaluate whether to keep it, move it, or replicate it - don't build from scratch without knowing what exists.
 
-### 1. Minimal Code Additions
+### 2. Minimal Code Additions
 - **Make the smallest possible changes** to accomplish the task
 - **Never add comments** - code should be self-explanatory
 - **Only modify code directly addressed by the prompt** - leave everything else untouched
@@ -458,18 +467,20 @@ export const MyComponent = () => { ... };
 ## Decision Framework
 
 ### When making code changes, ask:
-1. **Is this the minimal change needed?** If no, reduce scope
-2. **Am I only touching what the prompt addresses?** If no, revert unrelated changes
-3. **Can this stay in the existing file?** If yes, don't create new files
-4. **Am I using theme tokens?** If no, replace with CSS variables
-5. **Are all functions fat arrow style?** If no, convert to const declarations
-6. **Am I using const exports instead of default?** If possible, prefer named exports
-7. **Can I use an early return instead of if/else?** If yes, prefer early returns for flatter code
-8. **Is the component fetching its own data?** If no, consider self-contained pattern
-9. **Am I passing data AND querying for it?** If yes, remove duplication
-10. **Does parent coordinate this state?** If no, move state to child
-11. **Can this value be computed from existing data?** If yes, don't pass as prop
-12. **Are variable names descriptive?** If no, use full names over abbreviations
+0. **Am I about to run a git command?** If yes, STOP - suggest it to the user instead
+1. **Have I researched existing code first?** If no, read relevant files before implementing
+2. **Is this the minimal change needed?** If no, reduce scope
+3. **Am I only touching what the prompt addresses?** If no, revert unrelated changes
+4. **Can this stay in the existing file?** If yes, don't create new files
+5. **Am I using theme tokens?** If no, replace with CSS variables
+6. **Are all functions fat arrow style?** If no, convert to const declarations
+7. **Am I using const exports instead of default?** If possible, prefer named exports
+8. **Can I use an early return instead of if/else?** If yes, prefer early returns for flatter code
+9. **Is the component fetching its own data?** If no, consider self-contained pattern
+10. **Am I passing data AND querying for it?** If yes, remove duplication
+11. **Does parent coordinate this state?** If no, move state to child
+12. **Can this value be computed from existing data?** If yes, don't pass as prop
+13. **Are variable names descriptive?** If no, use full names over abbreviations
 
 ### When considering abstraction:
 1. **Is this file over 500-600 lines?** If yes, strongly consider splitting
