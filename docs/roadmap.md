@@ -233,9 +233,9 @@ const handleDownloadSVG = async () => {
 ---
 
 ### 2.2 QR Code to STL Workflow
-**Status:** ⏳ Planned
+**Status:** 🔄 In Progress
 
-**Goal:** Convert QR code SVG into a 3D printable vine tag/stake.
+**Goal:** Build Axum backend for migrations, file operations, and STL generation from QR codes.
 
 **Workflow:**
 ```
@@ -268,189 +268,256 @@ Vine URL → QR Code → SVG → STL → 3D Print
          └▼            ← Pointed end for ground
    ```
 
-**Implementation Options:**
+**Implementation Decision: Axum Backend**
 
-**Option A: Client-Side (Browser)**
-- Use library like `svg-to-3d` or `svg-mesh-3d`
-- Generate STL in browser
-- Download directly
+We're building an Axum (Rust) backend to handle:
+- Database migrations (using sqlx-cli)
+- File storage and serving
+- STL generation from QR codes
+- Future: Complex business logic Zero can't handle
 
-Pros:
-- No server needed
-- Instant generation
-- Works offline
+**Why Backend is Necessary:**
+- Zero is a sync engine, not a full backend framework
+- STL generation requires server-side 3D modeling
+- Need proper migration system for schema changes
+- File operations better handled server-side
 
-Cons:
-- Limited 3D modeling capabilities
-- Browser performance for complex models
-
-**Option B: Server-Side (Backend API)**
-- Use OpenSCAD, CADQuery, or similar
-- More control over stake design
-- Better for complex geometries
-
-Pros:
-- Professional 3D modeling tools
-- Precise control over dimensions
-- Can optimize for 3D printing
-
-Cons:
-- Requires backend service
-- Additional infrastructure
-
-**Option C: Hybrid Approach (Recommended)**
-- Generate QR SVG in browser (current)
-- Send SVG to backend API
-- Backend creates STL with stake design
-- Return STL for download
-
-**Recommended Libraries:**
-
-1. **Python + OpenSCAD** (server-side):
-   ```python
-   from solid import *
-   from solid.utils import *
-
-   def create_vine_stake(qr_svg_path):
-       # Create stake base
-       stake = cylinder(h=150, r=5)
-       stake = translate([0, 0, -150])(stake)
-
-       # Create top plate
-       plate = cube([75, 75, 3])
-       plate = translate([-37.5, -37.5, 0])(plate)
-
-       # Extrude QR code from SVG
-       qr_code = linear_extrude(height=2)(
-           import_svg(qr_svg_path)
-       )
-       qr_code = translate([-37.5, -37.5, 3])(qr_code)
-
-       # Combine
-       stake_assembly = stake + plate + qr_code
-
-       # Add point
-       point = cylinder(h=50, r1=5, r2=0)
-       point = translate([0, 0, -200])(point)
-
-       return stake_assembly + point
-   ```
-
-2. **Node.js + jscad** (server-side):
-   ```javascript
-   const { cylinder, cube, union, translate } = require('@jscad/modeling').primitives;
-   const { extrudeLinear } = require('@jscad/modeling').extrusions;
-
-   function createVineStake(qrSvg) {
-     // Convert SVG path to 2D geometry
-     const qrGeometry = svgToGeometry(qrSvg);
-
-     // Extrude to 3D
-     const qrCode = extrudeLinear({ height: 2 }, qrGeometry);
-
-     // Create stake components
-     const stake = cylinder({ height: 150, radius: 5 });
-     const plate = cube({ size: [75, 75, 3] });
-     const point = cylinder({ height: 50, radius1: 5, radius2: 0 });
-
-     // Assemble
-     return union(
-       translate([0, 0, -150], stake),
-       translate([-37.5, -37.5, 0], plate),
-       translate([-37.5, -37.5, 3], qrCode),
-       translate([0, 0, -200], point)
-     );
-   }
-   ```
-
-**Implementation Tasks:**
-
-- [ ] Research and choose 3D library (OpenSCAD vs jscad vs other)
-- [ ] Design stake geometry (dimensions, point, drainage)
-- [ ] Implement SVG → STL conversion
-- [ ] Add backend API endpoint: POST /api/vine/:id/generate-stl
-- [ ] Update UI to download STL instead of/in addition to SVG
-- [ ] Test print on 3D printer
-- [ ] Iterate on design (size, durability, readability)
-- [ ] Document printing settings (material, infill, supports)
-
-**Backend API Endpoint:**
-```typescript
-// server.js or new stl-generator.js
-app.post('/api/vine/:id/generate-stl', async (req, res) => {
-  const { id } = req.params;
-  const { qrSvg } = req.body; // SVG string from frontend
-
-  try {
-    // Generate 3D model with QR code
-    const stl = await generateVineStakeSTL(qrSvg, {
-      stakeHeight: 150,      // mm
-      plateSize: 75,         // mm
-      qrRaiseHeight: 2,      // mm
-      pointLength: 50,       // mm
-    });
-
-    // Return STL file
-    res.setHeader('Content-Type', 'application/sla');
-    res.setHeader('Content-Disposition', `attachment; filename="vine-${id}.stl"`);
-    res.send(stl);
-  } catch (error) {
-    console.error('Error generating STL:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+**Architecture:**
+```
+┌─────────────────────────────────────────────────┐
+│ Railway Project                                 │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  PostgreSQL (wal_level=logical)                │
+│      ↑           ↑                              │
+│      │           │                              │
+│  zero-cache   axum-backend                     │
+│   (port 4848)  (port 3001)                     │
+│      ↑           ↑                              │
+└──────┼───────────┼──────────────────────────────┘
+       │           │
+       │           │
+   ┌───┴───────────┴────┐
+   │   Netlify Frontend │
+   │   - Zero sync      │
+   │   - API calls      │
+   └────────────────────┘
 ```
 
-**Frontend Update:**
+---
+
+#### Step 1: Backend Setup & Migrations
+
+**Tasks:**
+
+- [ ] **1.1 Create Axum Project**
+  - Initialize Rust workspace: `backend/` directory
+  - Dependencies: `axum`, `tokio`, `sqlx`, `tower`, `tower-http`
+  - Basic project structure
+
+- [ ] **1.2 Database Connection**
+  - Set up SQLx connection pool
+  - Create `GET /health` endpoint
+  - Test database connectivity
+
+- [ ] **1.3 Migration System**
+  - Install `sqlx-cli`: `cargo install sqlx-cli --features postgres`
+  - Create `migrations/` directory
+  - Move current schema to migration: `001_initial_schema.sql`
+  - Tables: `vineyard`, `block`, `vine`
+  - Run migrations on backend startup
+
+- [ ] **1.4 Test Locally**
+  - Run backend with local PostgreSQL
+  - Verify migrations execute correctly
+  - Test idempotency (re-run doesn't break)
+
+**Dependencies:**
+```toml
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "postgres", "migrate"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["fs", "cors"] }
+serde = { version = "1", features = ["derive"] }
+```
+
+---
+
+#### Step 2: File Storage Infrastructure
+
+**Tasks:**
+
+- [ ] **2.1 Choose Storage Strategy**
+  - Decision needed: Railway volumes vs S3/R2
+  - Railway volumes: Simpler, coupled to Railway
+  - S3/R2: More flexible, portable
+
+- [ ] **2.2 File Upload Endpoint**
+  - Create `POST /api/files/upload`
+  - Accept multipart form data
+  - Store with unique ID
+  - Return file URL/ID
+
+- [ ] **2.3 File Serving Endpoint**
+  - Create `GET /api/files/:id`
+  - Stream file from storage
+  - Set content-type headers
+  - Handle 404s
+
+- [ ] **2.4 File Management**
+  - Decide on retention policy
+  - Optional: Cleanup job for old files
+
+---
+
+#### Step 3: STL Generation
+
+**Current State:** Using command-line tool outside app (manual workflow via imagetostl.com)
+
+**Goal:** Move STL generation to backend job, save files, expose in UI
+
+**Tasks:**
+
+- [ ] **3.1 Research STL Libraries**
+  - Options: Rust `truck`, `opencascade-rs`, or shell out to OpenSCAD
+  - Evaluate: ease of use, documentation, maintenance
+  - Document decision
+
+- [ ] **3.2 QR SVG → STL Conversion**
+  - Create Rust module for conversion
+  - Input: QR code SVG string + stake dimensions
+  - Output: STL file bytes
+  - Test with sample QR codes
+
+- [ ] **3.3 STL Generation Endpoint**
+  - Create `POST /api/vine/:id/generate-stl`
+  - Generate QR code on backend
+  - Convert to 3D stake STL
+  - Store file in file storage
+  - Return file URL
+
+- [ ] **3.4 Background Jobs (Optional)**
+  - If generation is slow (>2s), use job queue
+  - Options: `tokio::spawn`, dedicated queue
+  - Status endpoint: `GET /api/vine/:id/stl-status`
+
+**Endpoint Design:**
+```rust
+// POST /api/vine/:id/generate-stl
+async fn generate_stl(
+    Path(vine_id): Path<String>,
+) -> Result<Json<GenerateStlResponse>, StatusCode> {
+    // 1. Generate QR code for vine URL
+    // 2. Convert to 3D stake STL
+    // 3. Save file to storage
+    // 4. Return file URL
+}
+```
+
+---
+
+#### Step 4: Frontend Integration
+
+**Tasks:**
+
+- [ ] **4.1 Update QR Modal**
+  - Add "GENERATE 3D STAKE" button
+  - Call `POST /api/vine/:id/generate-stl`
+  - Show loading state
+  - Download STL when ready
+
+- [ ] **4.2 Batch Generation**
+  - "BATCH GENERATE STAKES" button
+  - Endpoint: `POST /api/block/:id/generate-stls`
+  - Generate STLs for all vines in block
+  - Return ZIP or array of URLs
+
+- [ ] **4.3 Display Generated Files**
+  - List previously generated STL files per vine
+  - "Re-download" button
+  - Timestamp of generation
+
+**Frontend Code:**
 ```typescript
 const handleGenerateStake = async () => {
-  // 1. Generate QR SVG
-  const svg = await QRCode.toString(vineUrl, {
-    type: 'svg',
-    width: 400,
-    margin: 2,
-  });
+  setLoading(true);
+  try {
+    const response = await fetch(`${API_URL}/api/vine/${vine.id}/generate-stl`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${await getToken()}` },
+    });
 
-  // 2. Send to backend
-  const response = await fetch(`${API_URL}/api/vine/${vine.id}/generate-stl`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ qrSvg: svg }),
-  });
+    const { fileUrl } = await response.json();
 
-  // 3. Download STL
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `vine-stake-${vine.id}.stl`;
-  link.click();
-  URL.revokeObjectURL(url);
-
-  // 4. Mark QR as generated
-  // ... existing code
-};
+    // Download STL file
+    window.open(fileUrl, '_blank');
+  } catch (error) {
+    console.error('Error generating STL:', error);
+  } finally {
+    setLoading(false);
+  }
+}
 ```
 
-**UI Updates:**
-```jsx
-// Add to vine details modal
-<div className={styles.qrActions}>
-  <button className={styles.formButton} onClick={handleDownloadSVG}>
-    DOWNLOAD SVG
-  </button>
-  <button className={styles.formButton} onClick={handleGenerateStake}>
-    GENERATE 3D STAKE
-  </button>
-</div>
-```
+---
 
-**3D Printing Documentation Needed:**
-- Recommended materials (PETG, ASA for outdoor use)
-- Print settings (layer height, infill, supports)
-- Post-processing (cleanup, UV coating)
-- Installation instructions
-- Expected lifespan in vineyard conditions
+#### Step 5: Railway Deployment
+
+**Tasks:**
+
+- [ ] **5.1 Add Axum Service to Railway**
+  - Create new service from GitHub repo
+  - Set build command: `cargo build --release --bin backend`
+  - Set start command: `./target/release/backend`
+  - Link to PostgreSQL service
+
+- [ ] **5.2 Environment Variables**
+  - `DATABASE_URL=${{Postgres.DATABASE_URL}}`
+  - `PORT=3001`
+  - `FILE_STORAGE_PATH=/app/storage` (or S3 credentials)
+  - `RUST_LOG=info`
+
+- [ ] **5.3 Update Frontend Environment**
+  - Netlify: Add `PUBLIC_API_URL=https://backend.railway.app`
+  - Update API calls to use `PUBLIC_API_URL`
+
+- [ ] **5.4 Test Full Stack**
+  - Create vine on production
+  - Generate STL via backend
+  - Download and verify STL file
+  - Test batch generation
+
+**Success Criteria:**
+- ✅ Migrations run automatically on Railway deploy
+- ✅ Backend serves health check
+- ✅ Can generate STL from vine QR code
+- ✅ Frontend displays generated STL files
+- ✅ Batch generation works for entire block
+- ✅ No manual SQL commands needed
+
+---
+
+#### Technical Decisions Needed
+
+1. **File Storage**: Railway volumes vs S3/R2?
+2. **STL Library**: Which Rust library for 3D modeling?
+3. **Job Queue**: Synchronous generation vs background jobs?
+4. **File Retention**: Keep files forever or expire after X days?
+5. **Authentication**: How does backend verify Clerk JWT tokens?
+
+---
+
+#### Timeline Estimate
+
+- **Step 1 (Backend + Migrations):** 4-6 hours
+- **Step 2 (File Storage):** 3-4 hours
+- **Step 3 (STL Generation):** 6-10 hours (depends on library complexity)
+- **Step 4 (Frontend Integration):** 3-4 hours
+- **Step 5 (Deployment):** 2-3 hours
+
+**Total:** ~18-27 hours of focused work
 
 ---
 
@@ -507,7 +574,7 @@ Visualize vineyard data (health trends, variety distribution, etc.)
 
 ---
 
-**Last Updated:** Nov 9, 2025
-**Current Phase:** Phase 2.2 (QR Code to STL Workflow)
+**Last Updated:** Nov 10, 2025
+**Current Phase:** Phase 2.2 (Axum Backend + STL Generation)
 **Completed:** Phase 1 (Core Vine Management) - All features complete
-**Next Up:** Phase 2.2 → 2.3 → Phase 3
+**Next Up:** Backend setup → File storage → STL generation → Deployment
