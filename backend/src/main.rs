@@ -41,7 +41,7 @@ async fn main() {
         .expect("Failed to connect to database");
 
     info!("Running migrations...");
-    sqlx::migrate!("../migrations")
+    sqlx::migrate!("./migrations")
         .run(&db)
         .await
         .expect("Failed to run migrations");
