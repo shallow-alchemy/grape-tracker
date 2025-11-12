@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { Html5Qrcode } from 'html5-qrcode';
+import QrScanner from 'qr-scanner';
 import styles from '../App.module.css';
 
 type QRScannerProps = {
@@ -11,71 +11,52 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerInitialized = useRef(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const scannerRef = useRef<QrScanner | null>(null);
 
   useEffect(() => {
-    if (scannerInitialized.current) return;
-    scannerInitialized.current = true;
+    if (!videoRef.current) return;
 
-    const scanner = new Html5Qrcode('qr-reader');
+    const scanner = new QrScanner(
+      videoRef.current,
+      (result) => {
+        setScanning(false);
+
+        try {
+          let vineId = result.data;
+
+          if (result.data.includes('/vineyard/vine/')) {
+            const match = result.data.match(/\/vineyard\/vine\/([^/?#]+)/);
+            if (match && match[1]) {
+              vineId = match[1];
+            }
+          }
+
+          scanner.stop();
+          setLocation(`/vineyard/vine/${vineId}`);
+          onClose();
+        } catch (err) {
+          setError('Invalid QR code format');
+          setScanning(true);
+        }
+      },
+      {
+        returnDetailedScanResult: true,
+        highlightScanRegion: true,
+        highlightCodeOutline: true,
+        preferredCamera: 'environment',
+      }
+    );
+
     scannerRef.current = scanner;
 
-    const handleSuccess = (decodedText: string) => {
-      setScanning(false);
-
-      try {
-        let vineId = decodedText;
-
-        if (decodedText.includes('/vineyard/vine/')) {
-          const match = decodedText.match(/\/vineyard\/vine\/([^/?#]+)/);
-          if (match && match[1]) {
-            vineId = match[1];
-          }
-        }
-
-        scanner.stop().then(() => {
-          setLocation(`/vineyard/vine/${vineId}`);
-          onClose();
-        }).catch(err => {
-          console.error('Error stopping scanner:', err);
-          setLocation(`/vineyard/vine/${vineId}`);
-          onClose();
-        });
-      } catch (err) {
-        setError('Invalid QR code format');
-        setScanning(true);
-      }
-    };
-
-    const handleError = (_errorMessage: string) => {
-      // Ignore decoding errors - they're normal when no QR code is visible
-    };
-
-    scanner.start(
-      { facingMode: 'environment' },
-      {
-        fps: 30,
-        qrbox: function(viewfinderWidth, viewfinderHeight) {
-          const minEdgePercentage = 0.7;
-          const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-          return {
-            width: qrboxSize,
-            height: qrboxSize
-          };
-        },
-        aspectRatio: 1.0,
-      },
-      handleSuccess,
-      handleError
-    ).then(() => {
+    scanner.start().then(() => {
       setScanning(true);
     }).catch(err => {
       console.error('Error starting scanner:', err);
-      if (err.toString().includes('NotAllowedError')) {
+      if (err.name === 'NotAllowedError') {
         setError('Camera permission denied. Please enable camera access in your browser settings.');
-      } else if (err.toString().includes('NotFoundError')) {
+      } else if (err.name === 'NotFoundError') {
         setError('No camera found on this device.');
       } else {
         setError('Failed to start camera. Please try again.');
@@ -83,17 +64,13 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
     });
 
     return () => {
-      if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(err => {
-          console.error('Error stopping scanner on cleanup:', err);
-        });
-      }
+      scanner.stop();
+      scanner.destroy();
     };
   }, [setLocation, onClose]);
 
   const handleRetry = () => {
     setError(null);
-    scannerInitialized.current = false;
     window.location.reload();
   };
 
@@ -122,7 +99,9 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
             </button>
           </div>
         ) : (
-          <div id="qr-reader" className={styles.qrScannerVideoContainer}></div>
+          <div className={styles.qrScannerVideoContainer}>
+            <video ref={videoRef} className={styles.qrScannerVideo}></video>
+          </div>
         )}
 
         <div className={styles.qrScannerInstructions}>

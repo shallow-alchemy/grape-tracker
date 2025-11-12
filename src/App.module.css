@@ -1440,6 +1440,12 @@
   overflow: hidden;
 }
 
+.qrScannerVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .qrScannerOverlayBox {
   position: absolute;
   top: 50%;
