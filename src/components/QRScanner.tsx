@@ -17,9 +17,13 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
   useEffect(() => {
     if (!videoRef.current) return;
 
+    let isActive = true;
+
     const scanner = new QrScanner(
       videoRef.current,
       (result) => {
+        if (!isActive) return;
+
         setScanning(false);
 
         try {
@@ -36,6 +40,7 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
           setLocation(`/vineyard/vine/${vineId}`);
           onClose();
         } catch (err) {
+          console.error('QR decode error:', err);
           setError('Invalid QR code format');
           setScanning(true);
         }
@@ -51,23 +56,33 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
     scannerRef.current = scanner;
 
     scanner.start().then(() => {
-      setScanning(true);
+      if (isActive) {
+        setScanning(true);
+      }
     }).catch(err => {
       console.error('Error starting scanner:', err);
+
+      if (!isActive) return;
+
+      let errorMsg = 'Unknown error';
+
       if (err.name === 'NotAllowedError') {
-        setError('Camera permission denied. Please enable camera access in your browser settings.');
+        errorMsg = 'Camera permission denied';
       } else if (err.name === 'NotFoundError') {
-        setError('No camera found on this device.');
+        errorMsg = 'No camera found';
       } else {
-        setError('Failed to start camera. Please try again.');
+        errorMsg = `Error: ${err.name || 'Unknown'} - ${err.message || err.toString()}`;
       }
+
+      setError(errorMsg);
     });
 
     return () => {
+      isActive = false;
       scanner.stop();
       scanner.destroy();
     };
-  }, [setLocation, onClose]);
+  }, []);
 
   const handleRetry = () => {
     setError(null);
