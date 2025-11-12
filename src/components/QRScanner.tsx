@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { QrReader } from 'react-qr-reader';
+import { Html5Qrcode } from 'html5-qrcode';
 import styles from '../App.module.css';
 
 type QRScannerProps = {
@@ -10,46 +10,82 @@ type QRScannerProps = {
 export const QRScanner = ({ onClose }: QRScannerProps) => {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
-  const [scanning, setScanning] = useState(true);
+  const [scanning, setScanning] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerInitialized = useRef(false);
 
-  const handleScan = (result: any) => {
-    if (result) {
+  useEffect(() => {
+    if (scannerInitialized.current) return;
+    scannerInitialized.current = true;
+
+    const scanner = new Html5Qrcode('qr-reader');
+    scannerRef.current = scanner;
+
+    const handleSuccess = (decodedText: string) => {
       setScanning(false);
-      const text = result?.text || result;
 
-      // Extract vine ID from URL
-      // Expected format: https://domain.com/vineyard/vine/VINE_ID or just VINE_ID
       try {
-        let vineId = text;
+        let vineId = decodedText;
 
-        // If it's a URL, extract the vine ID
-        if (text.includes('/vineyard/vine/')) {
-          const match = text.match(/\/vineyard\/vine\/([^/?#]+)/);
+        if (decodedText.includes('/vineyard/vine/')) {
+          const match = decodedText.match(/\/vineyard\/vine\/([^/?#]+)/);
           if (match && match[1]) {
             vineId = match[1];
           }
         }
 
-        // Navigate to the vine details
-        setLocation(`/vineyard/vine/${vineId}`);
-        onClose();
+        scanner.stop().then(() => {
+          setLocation(`/vineyard/vine/${vineId}`);
+          onClose();
+        }).catch(err => {
+          console.error('Error stopping scanner:', err);
+          setLocation(`/vineyard/vine/${vineId}`);
+          onClose();
+        });
       } catch (err) {
         setError('Invalid QR code format');
         setScanning(true);
       }
-    }
-  };
+    };
 
-  const handleError = (err: any) => {
-    console.error('QR Scanner error:', err);
-    if (err?.name === 'NotAllowedError') {
-      setError('Camera permission denied. Please enable camera access in your browser settings.');
-    } else if (err?.name === 'NotFoundError') {
-      setError('No camera found on this device.');
-    } else {
-      setError('Failed to start camera. Please try again.');
-    }
-    setScanning(false);
+    const handleError = (_errorMessage: string) => {
+      // Ignore decoding errors - they're normal when no QR code is visible
+    };
+
+    scanner.start(
+      { facingMode: 'environment' },
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+      },
+      handleSuccess,
+      handleError
+    ).then(() => {
+      setScanning(true);
+    }).catch(err => {
+      console.error('Error starting scanner:', err);
+      if (err.toString().includes('NotAllowedError')) {
+        setError('Camera permission denied. Please enable camera access in your browser settings.');
+      } else if (err.toString().includes('NotFoundError')) {
+        setError('No camera found on this device.');
+      } else {
+        setError('Failed to start camera. Please try again.');
+      }
+    });
+
+    return () => {
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch(err => {
+          console.error('Error stopping scanner on cleanup:', err);
+        });
+      }
+    };
+  }, [setLocation, onClose]);
+
+  const handleRetry = () => {
+    setError(null);
+    scannerInitialized.current = false;
+    window.location.reload();
   };
 
   return (
@@ -71,39 +107,25 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
             <div className={styles.qrScannerErrorText}>{error}</div>
             <button
               className={styles.qrScannerRetry}
-              onClick={() => {
-                setError(null);
-                setScanning(true);
-              }}
+              onClick={handleRetry}
             >
               TRY AGAIN
             </button>
           </div>
         ) : (
-          <div className={styles.qrScannerVideoContainer}>
-            {scanning && (
-              <QrReader
-                onResult={handleScan}
-                constraints={{
-                  facingMode: 'environment', // Use back camera on mobile
-                }}
-                // @ts-ignore - types are outdated
-                onLoad={() => setError(null)}
-                // @ts-ignore
-                onError={handleError}
-              />
-            )}
+          <>
+            <div id="qr-reader" className={styles.qrScannerVideoContainer}></div>
             <div className={styles.qrScannerOverlayBox}>
               <div className={styles.qrScannerCorner} style={{ top: 0, left: 0 }} />
               <div className={styles.qrScannerCorner} style={{ top: 0, right: 0 }} />
               <div className={styles.qrScannerCorner} style={{ bottom: 0, left: 0 }} />
               <div className={styles.qrScannerCorner} style={{ bottom: 0, right: 0 }} />
             </div>
-          </div>
+          </>
         )}
 
         <div className={styles.qrScannerInstructions}>
-          {scanning ? 'POSITION QR CODE WITHIN THE FRAME' : 'PROCESSING...'}
+          {scanning ? 'POSITION QR CODE WITHIN THE FRAME' : error ? '' : 'INITIALIZING CAMERA...'}
         </div>
       </div>
     </div>

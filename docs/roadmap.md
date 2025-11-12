@@ -154,21 +154,32 @@
 
 **Goal:** Scan vine tags in the field to view/edit vine details
 
-**Implementation Plan:**
-- Use device camera
-- Library: `html5-qrcode` or `react-qr-reader`
-- Scan → decode URL → navigate to vine details
-- Mobile-optimized (large scan button, fullscreen camera)
+**Current Implementation:**
+- Library: `react-qr-reader` v3.0.0-beta-1
+- Fullscreen scanner with camera view
+- Back camera on mobile (`facingMode: 'environment'`)
+- Green corner bracket overlay for targeting
+- 10 scans per second (scanDelay: 100ms)
+- 1280x720 video resolution
+- Handles both full vine URLs and vine IDs
+- Error handling for permissions and device issues
 
-**Tasks:**
-- [ ] Research and choose QR scanning library
-- [ ] Install dependency
-- [ ] Implement camera permission handling
-- [ ] Create fullscreen scanner view component
-- [ ] Handle QR code detection and URL extraction
-- [ ] Navigate to vine details on successful scan
-- [ ] Add error states and user feedback
-- [ ] Test on mobile devices
+**Code Location:**
+- `src/components/QRScanner.tsx` - Scanner component
+- `src/App.tsx` - Integration with dashboard QR button
+
+**Completed Tasks:**
+- [x] Research and choose QR scanning library
+- [x] Install dependency
+- [x] Implement camera permission handling
+- [x] Create fullscreen scanner view component
+- [x] Handle QR code detection and URL extraction
+- [x] Navigate to vine details on successful scan
+- [x] Add error states and user feedback
+
+**In Progress:**
+- [ ] Fix QR recognition performance (scanner shows camera but detection is slower than native camera app)
+- [ ] Test on mobile devices (ongoing)
 
 ---
 

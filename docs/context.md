@@ -11,7 +11,10 @@
 - **Routing**: Wouter (minimal router, ~1.5kb)
 - **Authentication**: Clerk
 - **Data Sync**: Rocicorp Zero
+- **Backend**: Rust/Axum server on Railway
+- **Database**: PostgreSQL on Railway with logical replication
 - **UI Components**: React Aria Components
+- **QR Scanning**: react-qr-reader (v3.0.0-beta-1)
 - **Icons**: react-icons (GiGrapes for sign-in, wi for weather icons)
 - **Styling**: CSS Modules with CSS custom properties
 
@@ -112,10 +115,11 @@ docs/
    - Day label + temperature
    - Compact design
 
-5. **QR Scan Button** (bottom 25vh):
+5. **QR Scan Button** (bottom 33.33vh):
    - Large green button optimized for thumb reach
    - Fixed at bottom, always visible
-   - No QR functionality yet (placeholder)
+   - Opens fullscreen QR scanner on click
+   - Scans vine QR codes to navigate to vine details
 
 **Mobile Layout Behavior:**
 - Full viewport height with no page scrolling
@@ -168,10 +172,24 @@ Desktop uses a priority-first vertical scrolling layout with 1400px max-width ap
 - `SuppliesNeeded`: Desktop panel - task-driven supply checklist
 - `TaskManagement`: Desktop panel - detailed todo list with checkboxes
 - `DesktopDashboard`: Container for 2x2 desktop panel grid
-- `DashboardView`: Main dashboard view combining weather + desktop panels
+- `DashboardView`: Main dashboard view combining weather + desktop panels + QR scanner
 - `VineyardView`: Placeholder for vineyard page
 - `WineryView`: Placeholder for winery page
 - `App`: Root app component with routing and auth
+
+### `QRScanner.tsx` (`src/components/QRScanner.tsx`)
+- **Library**: react-qr-reader v3.0.0-beta-1
+- **Component**: `QRScanner` - Fullscreen QR code scanner
+- **Features**:
+  - Fullscreen camera view with back camera on mobile (`facingMode: 'environment'`)
+  - Green corner bracket overlay for targeting guidance
+  - Automatic QR code detection (scans 10x per second)
+  - Handles both full vine URLs and vine IDs
+  - Navigates to `/vineyard/vine/:id` on successful scan
+  - Error handling for camera permissions and device issues
+  - Close button (✕) to exit scanner
+- **Video Settings**: 1280x720 resolution, 100ms scan delay
+- **Known Issue**: QR code recognition is slower than native camera apps
 
 ## Authentication Flow
 

@@ -29,6 +29,26 @@ sleep 2  # Allow time for cleanup
 lsof -ti:3001,4848 | xargs kill -9
 ```
 
+### 0.6. Never Edit Migrations After Creation
+- **NEVER edit a migration file after it has been created** - even if it hasn't been run yet
+- **NEVER modify the content of an existing migration file** - SQL migration tools track checksums
+- **If a migration has an error**, delete it and create a new one with a fresh timestamp/version number
+- **Clean up migration records** - if you delete a migration that was already applied, instruct the user to remove it from the migrations tracking table
+
+**Why:** Migration tools like SQLx, Flyway, and others track migrations by version number AND checksum. Editing a migration file changes its checksum but keeps the same version, causing "VersionMismatch" errors. Once a migration is created, it's immutable.
+
+**Example:**
+```bash
+# Bad - editing existing migration
+# Edit: migrations/20251111000002_add_field.sql
+
+# Good - delete and recreate with new version
+rm migrations/20251111000002_add_field.sql
+# Create: migrations/20251111000003_add_field.sql
+# Then instruct user to run:
+# DELETE FROM _sqlx_migrations WHERE version = 20251111000002;
+```
+
 ### 1. Research Before Implementation
 - **ALWAYS investigate existing code FIRST** before implementing new features or making changes
 - **Read the relevant files thoroughly** - understand what's already implemented and how it works
