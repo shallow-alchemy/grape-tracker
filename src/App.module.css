@@ -449,6 +449,27 @@
   background: var(--color-primary-500);
 }
 
+.mobileScanButton {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background: var(--color-primary-600);
+  border: var(--spacing-px) solid var(--color-primary-500);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-glow);
+}
+
+.mobileScanButton:hover {
+  background: var(--color-primary-500);
+  box-shadow: var(--shadow-glow-lg);
+}
+
 .desktopActions {
   display: none;
   gap: var(--spacing-md);
@@ -1169,6 +1190,10 @@
   }
 
   .scanButtonContainer {
+    display: none;
+  }
+
+  .mobileScanButton {
     display: none;
   }
 

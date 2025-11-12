@@ -12,6 +12,7 @@ type VineyardViewHeaderProps = {
   selectedBlock: string | null;
   setShowAddBlockModal: (show: boolean) => void;
   setShowAddVineModal: (show: boolean) => void;
+  setShowScanner: (show: boolean) => void;
   handleGearIconClick: () => void;
   onSuccess: (message: string) => void;
 };
@@ -21,6 +22,7 @@ export const VineyardViewHeader = ({
   selectedBlock,
   setShowAddBlockModal,
   setShowAddVineModal,
+  setShowScanner,
   handleGearIconClick,
   onSuccess,
 }: VineyardViewHeaderProps) => {
@@ -133,6 +135,7 @@ export const VineyardViewHeader = ({
           </div>
         )}
       </div>
+      <button className={styles.mobileScanButton} onClick={() => setShowScanner(true)}>SCAN TAG</button>
       <div className={styles.desktopActions}>
         <button className={styles.actionButton} onClick={() => setShowAddBlockModal(true)}>ADD BLOCK</button>
         <button className={styles.actionButton} onClick={() => setShowAddVineModal(true)}>ADD VINE</button>

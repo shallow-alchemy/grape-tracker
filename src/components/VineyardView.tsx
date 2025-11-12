@@ -11,6 +11,7 @@ import { AddBlockModal } from './AddBlockModal';
 import { DeleteBlockConfirmModal } from './DeleteBlockConfirmModal';
 import { VineyardSettingsModal } from './VineyardSettingsModal';
 import { BlockSettingsModal } from './BlockSettingsModal';
+import { QRScanner } from './QRScanner';
 
 export const VineyardView = ({
   initialVineId,
@@ -29,6 +30,7 @@ export const VineyardView = ({
   const [selectedBlock, setSelectedBlock] = useState<string | null>(initialBlockId || null);
   const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   const vinesData = useVines();
 
@@ -95,6 +97,7 @@ export const VineyardView = ({
         selectedBlock={selectedBlock}
         setShowAddBlockModal={setShowAddBlockModal}
         setShowAddVineModal={setShowAddVineModal}
+        setShowScanner={setShowScanner}
         handleGearIconClick={handleGearIconClick}
         onSuccess={showSuccessMessage}
       />
@@ -147,6 +150,8 @@ export const VineyardView = ({
           setShowDeleteConfirmModal(true);
         }}
       />
+
+      {showScanner && <QRScanner onClose={() => setShowScanner(false)} />}
     </div>
   );
 };
