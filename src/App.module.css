@@ -257,7 +257,7 @@
 .scanButton {
   flex-shrink: 0;
   min-height: 25vh;
-  margin: var(--spacing-lg);
+  margin: var(--spacing-lg) var(--spacing-lg) 0;
   background: var(--color-primary-600);
   border: var(--spacing-px) solid var(--color-primary-500);
   border-radius: var(--radius-lg);
