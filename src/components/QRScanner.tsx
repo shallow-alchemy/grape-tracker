@@ -55,8 +55,17 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
     scanner.start(
       { facingMode: 'environment' },
       {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
+        fps: 30,
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+          const minEdgePercentage = 0.7;
+          const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+          const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+          return {
+            width: qrboxSize,
+            height: qrboxSize
+          };
+        },
+        aspectRatio: 1.0,
       },
       handleSuccess,
       handleError
@@ -113,15 +122,7 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
             </button>
           </div>
         ) : (
-          <>
-            <div id="qr-reader" className={styles.qrScannerVideoContainer}></div>
-            <div className={styles.qrScannerOverlayBox}>
-              <div className={styles.qrScannerCorner} style={{ top: 0, left: 0 }} />
-              <div className={styles.qrScannerCorner} style={{ top: 0, right: 0 }} />
-              <div className={styles.qrScannerCorner} style={{ bottom: 0, left: 0 }} />
-              <div className={styles.qrScannerCorner} style={{ bottom: 0, right: 0 }} />
-            </div>
-          </>
+          <div id="qr-reader" className={styles.qrScannerVideoContainer}></div>
         )}
 
         <div className={styles.qrScannerInstructions}>
