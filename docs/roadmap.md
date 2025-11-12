@@ -1,10 +1,10 @@
 # Gilbert - Development Roadmap
 
-## Current Priority: Backend Deployment & 3D Printable Tags
+## Current Priority: QR Code Scanning
 
 **Status:** 🔄 In Progress (as of Nov 11, 2025)
 
-**Goal:** Deploy minimal Axum backend for database migrations, keep STL generation on frontend
+**Goal:** Implement QR code scanning to allow users to scan vine tags in the field
 
 ---
 
@@ -88,7 +88,7 @@
 ---
 
 ### 2.2 Backend Setup & Deployment
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 **Goal:** Deploy minimal Axum backend to handle database migrations via sqlx
 
@@ -133,32 +133,42 @@
 - **STL Files:** Generated client-side in browser (no backend needed)
 - **Future Jobs:** Frontend → Backend API (weather, analytics, etc.)
 
-**Remaining Tasks:**
+**Completed Tasks:**
 
-- [ ] **Railway Deployment**
+- [x] **Railway Deployment**
   - Add backend service to Railway project
   - Configure environment variables
   - Set build/start commands
   - Test migrations run automatically
   - Verify health endpoint
 
-- [ ] **Update Context Docs**
-  - Document current architecture
-  - Note that STL generation is frontend-only
-  - Explain backend role (migrations + future jobs)
+- [x] **Netlify Frontend Deployment**
+  - Connected frontend to Railway backend and zero-cache
+  - Configured environment variables
+  - Mobile layout optimized for scan button
 
 ---
 
 ### 2.3 QR Code Scanning
-**Status:** ⏳ Planned (after deployment)
+**Status:** 🔄 In Progress
 
 **Goal:** Scan vine tags in the field to view/edit vine details
 
-**Implementation:**
+**Implementation Plan:**
 - Use device camera
 - Library: `html5-qrcode` or `react-qr-reader`
 - Scan → decode URL → navigate to vine details
 - Mobile-optimized (large scan button, fullscreen camera)
+
+**Tasks:**
+- [ ] Research and choose QR scanning library
+- [ ] Install dependency
+- [ ] Implement camera permission handling
+- [ ] Create fullscreen scanner view component
+- [ ] Handle QR code detection and URL extraction
+- [ ] Navigate to vine details on successful scan
+- [ ] Add error states and user feedback
+- [ ] Test on mobile devices
 
 ---
 
@@ -204,6 +214,6 @@ Visualize vineyard data (health trends, variety distribution, etc.)
 ---
 
 **Last Updated:** Nov 11, 2025
-**Current Phase:** Phase 2.2 (Backend Deployment)
-**Completed:** Phase 1 (Core Vine Management) + Phase 2.1 (QR/STL Generation)
-**Next Up:** Railway backend deployment
+**Current Phase:** Phase 2.3 (QR Code Scanning)
+**Completed:** Phase 1 (Core Vine Management) + Phase 2.1 (QR/STL Generation) + Phase 2.2 (Backend Deployment)
+**Next Up:** QR code scanning implementation
