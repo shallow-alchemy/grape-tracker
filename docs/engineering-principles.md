@@ -11,6 +11,24 @@
 
 **Why:** Git operations are critical to version control. The user needs complete awareness and control over what changes are committed to the repository.
 
+### 0.5. Proper Process Management
+- **ALWAYS terminate background processes gracefully** with SIGTERM (kill -15) first
+- **NEVER use SIGKILL (kill -9)** unless absolutely necessary as a last resort
+- **Track background processes** - if you start a process, ensure it's properly cleaned up
+- **Graceful shutdown** - allow processes time to clean up resources before force-killing
+
+**Why:** Graceful termination allows processes to clean up resources properly, close connections, and save state. Force-killing with SIGKILL can leave files locked, sockets open, and corrupted state.
+
+**Example:**
+```bash
+# Good - graceful termination
+lsof -ti:3001,4848 | xargs kill -15
+sleep 2  # Allow time for cleanup
+
+# Bad - force kill without trying graceful first
+lsof -ti:3001,4848 | xargs kill -9
+```
+
 ### 1. Research Before Implementation
 - **ALWAYS investigate existing code FIRST** before implementing new features or making changes
 - **Read the relevant files thoroughly** - understand what's already implemented and how it works

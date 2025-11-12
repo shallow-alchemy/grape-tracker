@@ -5,6 +5,7 @@ import { WiDaySunny, WiCloudy, WiRain, WiThunderstorm, WiStrongWind, WiSnow, WiS
 import { useState } from 'react';
 import { ZeroProvider } from './contexts/ZeroContext';
 import { VineyardView } from './components/VineyardView';
+import { QRScanner } from './components/QRScanner';
 import styles from './App.module.css';
 
 export const WeatherSection = () => {
@@ -75,10 +76,10 @@ export const WeatherSection = () => {
   );
 };
 
-export const QRScanButton = () => {
+export const QRScanButton = ({ onClick }: { onClick: () => void }) => {
   return (
     <div className={styles.scanButtonContainer}>
-      <Button className={styles.scanButton}>
+      <Button className={styles.scanButton} onPress={onClick}>
         <div className={styles.scanIcon}>⊞</div>
         <div className={styles.scanText}>SCAN QR CODE</div>
       </Button>
@@ -217,11 +218,14 @@ export const DesktopDashboard = () => {
 };
 
 export const DashboardView = () => {
+  const [showScanner, setShowScanner] = useState(false);
+
   return (
     <>
       <WeatherSection />
-      <QRScanButton />
+      <QRScanButton onClick={() => setShowScanner(true)} />
       <DesktopDashboard />
+      {showScanner && <QRScanner onClose={() => setShowScanner(false)} />}
     </>
   );
 };
