@@ -14,7 +14,7 @@
 - **Backend**: Rust/Axum server on Railway
 - **Database**: PostgreSQL on Railway with logical replication
 - **UI Components**: React Aria Components
-- **QR Scanning**: react-qr-reader (v3.0.0-beta-1)
+- **QR Scanning**: html5-qrcode (v2.3.8)
 - **Icons**: react-icons (GiGrapes for sign-in, wi for weather icons)
 - **Styling**: CSS Modules with CSS custom properties
 
@@ -178,18 +178,20 @@ Desktop uses a priority-first vertical scrolling layout with 1400px max-width ap
 - `App`: Root app component with routing and auth
 
 ### `QRScanner.tsx` (`src/components/QRScanner.tsx`)
-- **Library**: react-qr-reader v3.0.0-beta-1
+- **Library**: html5-qrcode v2.3.8
 - **Component**: `QRScanner` - Fullscreen QR code scanner
 - **Features**:
   - Fullscreen camera view with back camera on mobile (`facingMode: 'environment'`)
   - Green corner bracket overlay for targeting guidance
-  - Automatic QR code detection (scans 10x per second)
+  - Automatic QR code detection (10 FPS)
+  - 250x250px scan box for focused detection
   - Handles both full vine URLs and vine IDs
   - Navigates to `/vineyard/vine/:id` on successful scan
   - Error handling for camera permissions and device issues
   - Close button (✕) to exit scanner
-- **Video Settings**: 1280x720 resolution, 100ms scan delay
-- **Known Issue**: QR code recognition is slower than native camera apps
+  - Proper scanner cleanup on unmount
+- **Configuration**: 10 FPS, 250x250px qrbox
+- **Status**: ✅ Working reliably on mobile
 
 ## Authentication Flow
 

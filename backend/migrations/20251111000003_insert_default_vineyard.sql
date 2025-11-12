@@ -6,7 +6,7 @@ VALUES (
   'default',
   'My Vineyard',
   '',
-  '[]'::jsonb,
+  ARRAY[]::TEXT[],
   EXTRACT(EPOCH FROM NOW()) * 1000,
   EXTRACT(EPOCH FROM NOW()) * 1000
 )
