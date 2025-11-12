@@ -87,20 +87,6 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
                 constraints={{
                   facingMode: 'environment', // Use back camera on mobile
                 }}
-                videoStyle={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-                containerStyle={{
-                  width: '100%',
-                  height: '100%',
-                }}
-                videoContainerStyle={{
-                  width: '100%',
-                  height: '100%',
-                  paddingTop: '0',
-                }}
                 // @ts-ignore - types are outdated
                 onLoad={() => setError(null)}
                 // @ts-ignore
