@@ -1,8 +1,8 @@
 import { UserButton } from '@clerk/clerk-react';
 import { Button } from 'react-aria-components';
 import { Router, Route, Link } from 'wouter';
-import { WiDaySunny, WiCloudy, WiRain, WiThunderstorm, WiStrongWind, WiSnow, WiSnowflakeCold } from 'react-icons/wi';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchWeather, getWeatherIcon, WeatherData } from './utils/weather';
 import { ZeroProvider } from './contexts/ZeroContext';
 import { VineyardView } from './components/VineyardView';
 import { QRScanner } from './components/QRScanner';
@@ -10,26 +10,106 @@ import styles from './App.module.css';
 
 export const WeatherSection = () => {
   const [showHighTemps, setShowHighTemps] = useState(true);
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadWeather = async () => {
+      try {
+        // Try to get user's location
+        if ('geolocation' in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              try {
+                const data = await fetchWeather(
+                  position.coords.latitude,
+                  position.coords.longitude
+                );
+                setWeatherData(data);
+                setLoading(false);
+              } catch (err) {
+                console.error('Error fetching weather:', err);
+                setError('Failed to load weather data');
+                setLoading(false);
+              }
+            },
+            async () => {
+              // If location denied, use default coordinates (San Francisco)
+              try {
+                const data = await fetchWeather(37.7749, -122.4194);
+                setWeatherData(data);
+                setLoading(false);
+              } catch (err) {
+                console.error('Error fetching weather:', err);
+                setError('Failed to load weather data');
+                setLoading(false);
+              }
+            }
+          );
+        } else {
+          // If geolocation not supported, use default coordinates
+          try {
+            const data = await fetchWeather(37.7749, -122.4194);
+            setWeatherData(data);
+            setLoading(false);
+          } catch (err) {
+            console.error('Error fetching weather:', err);
+            setError('Failed to load weather data');
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        console.error('Error in weather loading:', err);
+        setError('Failed to load weather data');
+        setLoading(false);
+      }
+    };
+
+    loadWeather();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className={styles.weatherSection}>
+        <div className={styles.currentWeather}>
+          <div className={styles.condition}>LOADING WEATHER...</div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || !weatherData) {
+    return (
+      <section className={styles.weatherSection}>
+        <div className={styles.currentWeather}>
+          <div className={styles.condition}>{error || 'NO WEATHER DATA'}</div>
+        </div>
+      </section>
+    );
+  }
+
+  const TodayIcon = getWeatherIcon(weatherData.forecast[0]?.weather_code || 0);
 
   return (
     <section className={styles.weatherSection}>
       <div className={styles.warnings}>
         <div className={styles.warningHeader}>WEATHER WARNINGS</div>
-        <div className={styles.warningItem}>FROST WARNING: NOV 15-17</div>
+        <div className={styles.warningItem}>NO ACTIVE WARNINGS</div>
       </div>
 
       <div className={styles.seasonalActivities}>
         <div className={styles.activityHeader}>WHAT'S NEXT</div>
         <div className={styles.seasonalActivitiesContent}>
           <div className={styles.activityItem}>
-            <span className={styles.activityText}>{'>'} HARVEST GRAPES BEFORE NOV 20</span>
+            <span className={styles.activityText}>{'>'} CHECK VINEYARD CONDITIONS</span>
           </div>
         </div>
       </div>
 
       <div className={styles.currentWeather}>
-        <div className={styles.temperature}>72°F</div>
-        <div className={styles.condition}>PARTLY CLOUDY</div>
+        <div className={styles.temperature}>{weatherData.current_temp_f}°F</div>
+        <div className={styles.condition}>{weatherData.current_condition}</div>
         <div className={styles.location}>CURRENT LOCATION</div>
       </div>
 
@@ -46,29 +126,22 @@ export const WeatherSection = () => {
         <div className={styles.forecastContent}>
           <div className={styles.todayWeatherDesktop}>
             <div className={styles.todayLabel}>TODAY</div>
-            <WiCloudy className={styles.todayIcon} />
-            <div className={styles.todayTemp}>72°F</div>
-            <div className={styles.todayCondition}>PARTLY CLOUDY</div>
+            <TodayIcon className={styles.todayIcon} />
+            <div className={styles.todayTemp}>{weatherData.current_temp_f}°F</div>
+            <div className={styles.todayCondition}>{weatherData.current_condition}</div>
           </div>
           <div className={styles.forecastDays}>
-            {[
-              { day: 'MON', temp: 65, icon: WiDaySunny },
-              { day: 'TUE', temp: 66, icon: WiCloudy },
-              { day: 'WED', temp: 67, icon: WiRain },
-              { day: 'THU', temp: 68, icon: WiThunderstorm },
-              { day: 'FRI', temp: 69, icon: WiStrongWind },
-              { day: 'SAT', temp: 70, icon: WiCloudy },
-              { day: 'SUN', temp: 71, icon: WiSnow },
-              { day: 'MON', temp: 72, icon: WiSnowflakeCold },
-              { day: 'TUE', temp: 73, icon: WiDaySunny },
-              { day: 'WED', temp: 74, icon: WiCloudy }
-            ].map((forecast, i) => (
-              <div key={i} className={styles.forecastDay}>
-                <div className={styles.dayLabel}>{forecast.day}</div>
-                <div className={styles.dayTemp}>{forecast.temp}°</div>
-                <forecast.icon className={styles.forecastIcon} />
-              </div>
-            ))}
+            {weatherData.forecast.map((day, i) => {
+              const Icon = getWeatherIcon(day.weather_code);
+              const temp = showHighTemps ? day.temp_high_f : day.temp_low_f;
+              return (
+                <div key={i} className={styles.forecastDay}>
+                  <div className={styles.dayLabel}>{day.day}</div>
+                  <div className={styles.dayTemp}>{temp}°</div>
+                  <Icon className={styles.forecastIcon} />
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
