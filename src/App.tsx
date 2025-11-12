@@ -77,10 +77,12 @@ export const WeatherSection = () => {
 
 export const QRScanButton = () => {
   return (
-    <Button className={styles.scanButton}>
-      <div className={styles.scanIcon}>⊞</div>
-      <div className={styles.scanText}>SCAN QR CODE</div>
-    </Button>
+    <div className={styles.scanButtonContainer}>
+      <Button className={styles.scanButton}>
+        <div className={styles.scanIcon}>⊞</div>
+        <div className={styles.scanText}>SCAN QR CODE</div>
+      </Button>
+    </div>
   );
 };
 

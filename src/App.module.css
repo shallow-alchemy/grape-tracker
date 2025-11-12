@@ -61,6 +61,7 @@
 .weatherSection {
   flex: 1;
   padding: var(--spacing-lg);
+  padding-bottom: calc(33.33vh + var(--spacing-xl));
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -254,10 +255,23 @@
   display: block;
 }
 
+.scanButtonContainer {
+  position: fixed;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: calc(33.33vh + var(--spacing-xl) + 1px);
+  background: var(--color-background);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 .scanButton {
-  flex-shrink: 0;
-  min-height: 25vh;
-  margin: var(--spacing-lg) var(--spacing-lg) 0;
+  width: calc(100% - 2 * var(--spacing-lg));
+  height: 33.33vh;
   background: var(--color-primary-600);
   border: var(--spacing-px) solid var(--color-primary-500);
   border-radius: var(--radius-lg);
@@ -272,8 +286,7 @@
   transition: all var(--transition-normal);
   cursor: pointer;
   touch-action: manipulation;
-  position: relative;
-  z-index: 0;
+  z-index: 10;
 }
 
 .scanButton:hover {
@@ -1155,7 +1168,7 @@
     overflow-y: auto;
   }
 
-  .scanButton {
+  .scanButtonContainer {
     display: none;
   }
 
