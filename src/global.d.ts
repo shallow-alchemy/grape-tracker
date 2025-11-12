@@ -4,7 +4,7 @@ declare module '*.module.css' {
 }
 
 interface ImportMetaEnv {
-  readonly VITE_BACKEND_URL?: string;
+  readonly PUBLIC_BACKEND_URL?: string;
 }
 
 interface ImportMeta {

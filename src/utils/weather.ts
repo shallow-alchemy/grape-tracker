@@ -25,7 +25,7 @@ export const getWeatherIcon = (code: number): IconType => {
 };
 
 export const fetchWeather = async (latitude: number, longitude: number): Promise<WeatherData> => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+  const backendUrl = import.meta.env.PUBLIC_BACKEND_URL || 'http://localhost:3001';
   const response = await fetch(`${backendUrl}/weather?latitude=${latitude}&longitude=${longitude}`);
 
   if (!response.ok) {
