@@ -5,11 +5,18 @@ import { WeatherAlertSettingsModal } from '../App';
 import styles from '../App.module.css';
 
 export const Weather = () => {
-  const [showHighTemps, setShowHighTemps] = useState(true);
+  const [showHighTemps, setShowHighTemps] = useState(() => {
+    const saved = localStorage.getItem('showHighTemps');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('showHighTemps', JSON.stringify(showHighTemps));
+  }, [showHighTemps]);
 
   const loadWeather = async () => {
     try {
@@ -110,7 +117,7 @@ export const Weather = () => {
             className={styles.tempToggle}
             onClick={() => setShowHighTemps(!showHighTemps)}
           >
-            {showHighTemps ? 'SHOW LOWS' : 'SHOW HIGHS'}
+            {showHighTemps ? 'HIGHS ↑' : 'LOWS ↓'}
           </button>
           <div className={styles.todayWeatherMobile}>
             <TodayIcon className={styles.todayIconMobile} />
