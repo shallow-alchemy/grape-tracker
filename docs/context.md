@@ -14,7 +14,9 @@
 - **Backend**: Rust/Axum server on Railway
 - **Database**: PostgreSQL on Railway with logical replication
 - **UI Components**: React Aria Components
-- **QR Scanning**: html5-qrcode (v2.3.8)
+- **QR Scanning**: qr-scanner v1.4.2 (nimiq)
+- **Weather API**: Open-Meteo (free, no API key)
+- **Location API**: Nominatim/OpenStreetMap (reverse geocoding)
 - **Icons**: react-icons (GiGrapes for sign-in, wi for weather icons)
 - **Styling**: CSS Modules with CSS custom properties
 

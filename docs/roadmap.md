@@ -155,17 +155,18 @@
 **Goal:** Scan vine tags in the field to view/edit vine details
 
 **Current Implementation:**
-- Library: `html5-qrcode` v2.3.8
+- Library: `qr-scanner` (nimiq) v1.4.2
 - Fullscreen scanner with camera view
-- Back camera on mobile (`facingMode: 'environment'`)
-- Green corner bracket overlay for targeting
-- 10 FPS scanning with 250x250px focused scan box
+- Back camera on mobile (`preferredCamera: 'environment'`)
+- Built-in scan region highlighting
 - Handles both full vine URLs and vine IDs
 - Error handling for permissions and device issues
+- Mobile-only "SCAN TAG" button in vineyard header
 
 **Code Location:**
 - `src/components/QRScanner.tsx` - Scanner component
-- `src/App.tsx` - Integration with dashboard QR button
+- `src/components/VineyardViewHeader.tsx` - Mobile scan button
+- `src/components/VineyardView.tsx` - Scanner integration
 
 **Completed Tasks:**
 - [x] Research and choose QR scanning library
@@ -175,20 +176,118 @@
 - [x] Handle QR code detection and URL extraction
 - [x] Navigate to vine details on successful scan
 - [x] Add error states and user feedback
-- [x] Switch to html5-qrcode for better detection
+- [x] Switch to qr-scanner for better mobile performance
+- [x] Fix race condition causing mobile crashes
 - [x] Test on mobile devices - working reliably
 
 ---
 
-## Phase 3: Additional Features (Future)
+## Phase 3: Additional Features
 
 ### 3.1 Weather API Integration
-Replace mock weather data with real API (OpenWeatherMap, etc.)
+**Status:** ✅ Complete
 
-### 3.2 Task Management
+**Goal:** Replace mock weather data with real API integration
+
+**Current Implementation:**
+- Backend: Axum `/weather` endpoint
+- Weather API: Open-Meteo (free, no API key required)
+- Location API: Nominatim/OpenStreetMap for reverse geocoding
+- Frontend: Real-time weather display with user location
+- Geolocation: Browser API with fallback to default location
+- Data: Current temperature, conditions, 10-day forecast with highs/lows
+- Toggle: Switch between high/low temperatures in forecast
+
+**Code Location:**
+- `backend/src/main.rs` - Weather endpoint with Open-Meteo & Nominatim integration
+- `src/utils/weather.ts` - Weather fetching utility & icon mapping
+- `src/App.tsx` - WeatherSection component with real data
+
+**API Details:**
+- Open-Meteo: 10,000 requests/day free tier, 16-day forecast
+- Nominatim: Reverse geocoding for location names
+- Environment variable: `PUBLIC_BACKEND_URL` (Rsbuild uses `PUBLIC_` prefix)
+
+**Completed Tasks:**
+- [x] Research weather API options (Open-Meteo vs OpenWeatherMap vs WeatherAPI)
+- [x] Add backend weather endpoint with Open-Meteo integration
+- [x] Add reverse geocoding with Nominatim for location names
+- [x] Convert Celsius to Fahrenheit
+- [x] Map WMO weather codes to conditions and icons
+- [x] Refactor WeatherSection to use real data
+- [x] Add geolocation support with fallback
+- [x] Add loading and error states
+- [x] Fix Rsbuild environment variable (PUBLIC_ prefix)
+- [x] Test on desktop and mobile
+
+---
+
+### 3.2 Weather Alerts System
+**Status:** 🔄 In Progress (as of Nov 12, 2025)
+
+**Goal:** Create a dynamic, configurable alerts system starting with weather alerts
+
+**Architecture:**
+- Alert settings stored per vineyard in PostgreSQL (`alert_settings` table)
+- Settings stored as JSONB for flexibility
+- Alerts calculated on-demand when weather data is fetched (no stored weather data)
+- Single endpoint returns both weather + calculated alerts
+
+**Database Schema:**
+```sql
+CREATE TABLE alert_settings (
+  vineyard_id TEXT PRIMARY KEY,
+  settings JSONB NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+```
+
+**Alert Types (Phase 1 - Weather):**
+1. Temperature alerts (high/low thresholds with days out)
+2. Frost warnings (temp < 32°F)
+3. Snow alerts (weather code 71-86)
+4. Rain alerts (weather code 51-67)
+5. Thunderstorm alerts (weather code 95-99)
+6. Fog alerts (weather code 45-48)
+
+**API Design:**
+- `GET /weather?lat=X&lon=Y&vineyard_id=Z` - Returns weather + alerts
+- `GET /alert-settings/:vineyard_id` - Fetch settings
+- `POST /alert-settings/:vineyard_id` - Update settings
+
+**Frontend Components:**
+- Gear icon in weather panel (desktop) to open settings modal
+- Alert settings modal with toggles and thresholds
+- Dynamic "Alerts" component (replaces static "Weather Warnings")
+- Settings persist across all users in vineyard
+
+**Design Principles:**
+- Decentralized UX: each feature can define its own alerts
+- Settings accessible from relevant context (e.g., weather panel for weather alerts)
+- General-purpose alert panel at top of dashboard
+
+**Future Extensions:**
+- Task alerts (deadline approaching)
+- Vine health alerts (disease detection)
+- Harvest alerts (optimal harvest window)
+
+**Tasks:**
+- [ ] Create alert_settings database migration
+- [ ] Add backend endpoints for alert settings CRUD
+- [ ] Implement alert calculation logic in /weather endpoint
+- [ ] Update weather response type to include alerts array
+- [ ] Reposition weather panel controls (gear icon + temp toggle)
+- [ ] Create weather alert settings modal component
+- [ ] Implement alert detection logic based on user settings
+- [ ] Refactor "Weather Warnings" to dynamic "Alerts" component
+- [ ] Test on desktop and mobile
+
+---
+
+### 3.3 Task Management
 Real seasonal task tracking based on vineyard operations
 
-### 3.3 Harvest Tracking
+### 3.4 Harvest Tracking
 Record harvest dates, yields, quality metrics per vine
 
 ### 3.4 Photo Uploads
@@ -221,7 +320,7 @@ Visualize vineyard data (health trends, variety distribution, etc.)
 
 ---
 
-**Last Updated:** Nov 11, 2025
-**Current Phase:** Phase 2.3 (QR Code Scanning)
-**Completed:** Phase 1 (Core Vine Management) + Phase 2.1 (QR/STL Generation) + Phase 2.2 (Backend Deployment)
-**Next Up:** QR code scanning implementation
+**Last Updated:** Nov 12, 2025
+**Current Phase:** Phase 3 (Additional Features)
+**Completed:** Phase 1 (Core Vine Management) + Phase 2 (QR Code & 3D Tags) + Phase 3.1 (Weather API)
+**Next Up:** Task Management, Harvest Tracking, or Photo Uploads

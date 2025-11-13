@@ -4,7 +4,9 @@ import { WiDaySunny, WiCloudy, WiRain, WiThunderstorm, WiSnow, WiFog } from 'rea
 export type WeatherData = {
   current_temp_f: number;
   current_condition: string;
+  location: string;
   forecast: DayForecast[];
+  alerts: Alert[];
 };
 
 export type DayForecast = {
@@ -12,6 +14,12 @@ export type DayForecast = {
   temp_high_f: number;
   temp_low_f: number;
   weather_code: number;
+};
+
+export type Alert = {
+  alert_type: string;
+  message: string;
+  severity: 'critical' | 'warning' | 'info';
 };
 
 export const getWeatherIcon = (code: number): IconType => {
@@ -24,9 +32,9 @@ export const getWeatherIcon = (code: number): IconType => {
   return WiCloudy; // Default
 };
 
-export const fetchWeather = async (latitude: number, longitude: number): Promise<WeatherData> => {
+export const fetchWeather = async (latitude: number, longitude: number, vineyardId = 'default'): Promise<WeatherData> => {
   const backendUrl = import.meta.env.PUBLIC_BACKEND_URL || 'http://localhost:3001';
-  const response = await fetch(`${backendUrl}/weather?latitude=${latitude}&longitude=${longitude}`);
+  const response = await fetch(`${backendUrl}/weather?latitude=${latitude}&longitude=${longitude}&vineyard_id=${vineyardId}`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch weather data');

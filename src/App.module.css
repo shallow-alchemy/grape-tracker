@@ -72,12 +72,19 @@
 }
 
 .currentWeather {
-  background: var(--color-surface);
-  border: var(--spacing-px) solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-xl);
-  text-align: center;
-  box-shadow: var(--shadow-glow);
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .currentWeather {
+    display: block;
+    background: var(--color-surface);
+    border: var(--spacing-px) solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xl);
+    text-align: center;
+    box-shadow: var(--shadow-glow);
+  }
 }
 
 .temperature {
@@ -118,9 +125,35 @@
   display: none;
 }
 
+.todayWeatherMobile {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-left: auto;
+  margin-right: var(--spacing-sm);
+}
+
+.todayIconMobile {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-accent);
+}
+
+.todayTempMobile {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+@media (min-width: 768px) {
+  .todayWeatherMobile {
+    display: none;
+  }
+}
+
 .forecastHeaderRow {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: var(--spacing-sm);
 }
@@ -132,6 +165,27 @@
   letter-spacing: 0.15em;
   text-transform: uppercase;
   margin: 0;
+  width: 50%;
+}
+
+@media (min-width: 768px) {
+  .forecastHeader {
+    width: 20%;
+  }
+}
+
+.forecastControls {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .forecastControls {
+    width: 100%;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
 }
 
 .tempToggle {
@@ -145,10 +199,39 @@
   letter-spacing: 0.1em;
   padding: var(--spacing-xs);
   transition: color var(--transition-fast);
+  width: 30%;
+}
+
+@media (min-width: 768px) {
+  .tempToggle {
+    width: 20%;
+  }
 }
 
 .tempToggle:hover {
   color: var(--color-text-accent);
+}
+
+.gearButton {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  transition: all var(--transition-fast);
+  line-height: 1;
+  display: none;
+}
+
+.gearButton:hover {
+  color: var(--color-text-accent);
+}
+
+@media (min-width: 768px) {
+  .gearButton {
+    display: block;
+  }
 }
 
 .forecastDays {
@@ -1219,10 +1302,6 @@
     grid-row: 1 / 2;
   }
 
-  .currentWeather {
-    display: none;
-  }
-
   .seasonalActivities {
     grid-column: 1 / 2;
     grid-row: 2 / 3;
@@ -1536,4 +1615,267 @@
 .qrScannerRetry:hover {
   background: var(--color-primary-700);
   border-color: var(--color-primary-600);
+}
+
+/* Alert Settings Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+}
+
+.modalOverlay .modal {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  background: var(--color-background);
+  border: var(--spacing-px) solid var(--color-border-accent);
+  border-radius: var(--radius-md);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.modalOverlay .modalContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+  border-bottom: var(--spacing-px) solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.modalHeader .modalTitle {
+  margin: 0;
+  flex: 1;
+}
+
+.modalClose {
+  font-size: var(--font-size-xl);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color var(--transition-fast);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.modalClose:hover {
+  color: var(--color-text-accent);
+}
+
+.modalFooter {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  padding: var(--spacing-lg);
+  border-top: var(--spacing-px) solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.modalButton {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: transparent;
+  border: var(--spacing-px) solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
+}
+
+.modalButton:hover {
+  border-color: var(--color-border-accent);
+  color: var(--color-text-primary);
+}
+
+.modalButtonPrimary {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-primary-600);
+  border: var(--spacing-px) solid var(--color-primary-500);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
+}
+
+.modalButtonPrimary:hover {
+  background: var(--color-primary-700);
+  border-color: var(--color-primary-600);
+}
+
+.modalButtonPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loadingText {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.alertSettingSection {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: var(--spacing-px) solid var(--color-border);
+}
+
+.alertSettingSection:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.alertSettingHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.alertSettingTitle {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toggleSwitch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggleSwitch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-border);
+  transition: all var(--transition-fast);
+  border-radius: 24px;
+}
+
+.toggleSlider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  border-radius: 50%;
+}
+
+.toggleSwitch input:checked + .toggleSlider {
+  background: var(--color-primary-600);
+  border-color: var(--color-primary-500);
+}
+
+.toggleSwitch input:checked + .toggleSlider:before {
+  transform: translateX(20px);
+  background: var(--color-text-primary);
+}
+
+.toggleSwitch input:focus + .toggleSlider {
+  box-shadow: 0 0 0 2px var(--color-primary-500);
+}
+
+.alertSettingDetails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.settingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.settingRow label {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex: 1;
+}
+
+.numberInput {
+  width: 80px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+  -moz-appearance: textfield;
+}
+
+.numberInput::-webkit-inner-spin-button,
+.numberInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.numberInput:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  background: var(--color-surface-elevated);
+}
+
+.numberInput:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
