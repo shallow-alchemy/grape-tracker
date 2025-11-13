@@ -223,7 +223,7 @@
 ---
 
 ### 3.2 Weather Alerts System
-**Status:** 🔄 In Progress (as of Nov 12, 2025)
+**Status:** ✅ Complete
 
 **Goal:** Create a dynamic, configurable alerts system starting with weather alerts
 
@@ -271,29 +271,63 @@ CREATE TABLE alert_settings (
 - Vine health alerts (disease detection)
 - Harvest alerts (optimal harvest window)
 
-**Tasks:**
-- [ ] Create alert_settings database migration
-- [ ] Add backend endpoints for alert settings CRUD
-- [ ] Implement alert calculation logic in /weather endpoint
-- [ ] Update weather response type to include alerts array
-- [ ] Reposition weather panel controls (gear icon + temp toggle)
-- [ ] Create weather alert settings modal component
-- [ ] Implement alert detection logic based on user settings
-- [ ] Refactor "Weather Warnings" to dynamic "Alerts" component
-- [ ] Test on desktop and mobile
+**Completed Tasks:**
+- [x] Create alert_settings database migration
+- [x] Add backend endpoints for alert settings CRUD
+- [x] Implement alert calculation logic in /weather endpoint
+- [x] Update weather response type to include alerts array
+- [x] Reposition weather panel controls (gear icon + temp toggle)
+- [x] Create weather alert settings modal component
+- [x] Implement alert detection logic based on user settings
+- [x] Refactor "Weather Warnings" to dynamic "Alerts" component
+- [x] Extract Alerts and Weather into separate components
+- [x] Mobile layout optimization for weather display
+- [x] Add localStorage for user's high/low temp toggle preference
+- [x] Update toggle UI to show current state ("HIGHS ↑" / "LOWS ↓")
+- [x] Test on desktop and mobile
 
 ---
 
-### 3.3 Task Management
+### 3.3 Winery Management
+**Status:** 🔄 In Progress (as of Nov 12, 2025)
+
+**Goal:** Track wine production from pre-harvest through bottling with measurements, stage tracking, and tasting notes.
+
+**Planning Document:** See `/docs/winery-planning.md` for complete data model, UI mockups, and implementation phases.
+
+**Current Implementation:**
+- ✅ Created winery planning document with database schema
+- ✅ Built static winery UI with 10 sample vintages
+- ✅ Created reusable `ListItem` component for consistent list styling
+- ✅ Established page consistency pattern using `.vineyardContainer` class
+- ✅ Header with "WINERY" label, "ADD VINTAGE", "MANAGE INVENTORY", and settings gear icon
+- 🔄 Vintage creation form (in progress)
+
+**Key Design Decisions:**
+1. **Reusable Components**: Extracted vineItem styling into `ListItem` component used by both VineyardView and WineryView
+2. **Page Consistency**: All main views use `.vineyardContainer` for consistent flex layout, padding, and scrolling behavior
+3. **Component Structure**: WineryView follows same header + list pattern as VineyardView for familiar UX
+4. **List Display**: Show year, name (variety), stage, volume, and status in compact list format
+
+**Next Steps:**
+- [ ] Create vintage database migration
+- [ ] Build vintage creation modal
+- [ ] Implement stage tracking
+- [ ] Add measurement entry form
+- [ ] Build vintage detail view
+
+---
+
+### 3.4 Task Management
 Real seasonal task tracking based on vineyard operations
 
-### 3.4 Harvest Tracking
+### 3.5 Harvest Tracking
 Record harvest dates, yields, quality metrics per vine
 
-### 3.4 Photo Uploads
+### 3.6 Photo Uploads
 Add photos to vine records (disease tracking, growth progress)
 
-### 3.5 Analytics Dashboard
+### 3.7 Analytics Dashboard
 Visualize vineyard data (health trends, variety distribution, etc.)
 
 ---
@@ -322,5 +356,6 @@ Visualize vineyard data (health trends, variety distribution, etc.)
 
 **Last Updated:** Nov 12, 2025
 **Current Phase:** Phase 3 (Additional Features)
-**Completed:** Phase 1 (Core Vine Management) + Phase 2 (QR Code & 3D Tags) + Phase 3.1 (Weather API)
-**Next Up:** Task Management, Harvest Tracking, or Photo Uploads
+**Completed:** Phase 1 (Core Vine Management) + Phase 2 (QR Code & 3D Tags) + Phase 3.1 (Weather API) + Phase 3.2 (Weather Alerts)
+**In Progress:** Phase 3.3 (Winery Management - vintage tracking UI)
+**Next Up:** Complete winery vintage creation, then Task Management, Harvest Tracking, or Photo Uploads

@@ -4,6 +4,7 @@ import { Router, Route, Link } from 'wouter';
 import { useState, useEffect } from 'react';
 import { ZeroProvider } from './contexts/ZeroContext';
 import { VineyardView } from './components/VineyardView';
+import { WineryView } from './components/WineryView';
 import { QRScanner } from './components/QRScanner';
 import { Weather } from './components/Weather';
 import styles from './App.module.css';
@@ -652,15 +653,6 @@ export const DashboardView = () => {
       <DesktopDashboard />
       {showScanner && <QRScanner onClose={() => setShowScanner(false)} />}
     </>
-  );
-};
-
-export const WineryView = () => {
-  return (
-    <div className={styles.viewContainer}>
-      <h1 className={styles.viewTitle}>WINERY</h1>
-      <p className={styles.viewPlaceholder}>Winery management coming soon...</p>
-    </div>
   );
 };
 

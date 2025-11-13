@@ -1,4 +1,5 @@
 import styles from '../App.module.css';
+import { ListItem } from './ListItem';
 import { useVines } from './vineyard-hooks';
 import { transformVineData, filterVinesByBlock } from './vineyard-utils';
 
@@ -15,20 +16,15 @@ export const VineyardViewVineList = ({ selectedBlock, navigateToVine }: Vineyard
   return (
     <div className={styles.vineList}>
       {vines.map((vine) => (
-        <div
+        <ListItem
           key={vine.id}
-          className={styles.vineItem}
+          id={`${vine.block}-${vine.id}`}
+          primaryInfo={vine.variety}
+          secondaryInfo={`BLOCK ${vine.block} • ${vine.age}`}
+          status={vine.health}
+          statusWarning={vine.health === 'NEEDS ATTENTION'}
           onClick={() => navigateToVine(vine.id)}
-        >
-          <div className={styles.vineId}>{vine.block}-{vine.id}</div>
-          <div className={styles.vineInfo}>
-            <div className={styles.vineVariety}>{vine.variety}</div>
-            <div className={styles.vineBlock}>BLOCK {vine.block} • {vine.age}</div>
-          </div>
-          <div className={`${styles.vineHealth} ${vine.health === 'NEEDS ATTENTION' ? styles.vineHealthWarning : ''}`}>
-            {vine.health}
-          </div>
-        </div>
+        />
       ))}
     </div>
   );
