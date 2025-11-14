@@ -119,6 +119,7 @@ export const Weather = () => {
           >
             {showHighTemps ? 'HIGHS ↑' : 'LOWS ↓'}
           </button>
+          <div className={styles.weatherLocation}>{weatherData.location}</div>
           <div className={styles.todayWeatherMobile}>
             <TodayIcon className={styles.todayIconMobile} />
             <div className={styles.todayTempMobile}>{weatherData.current_temp_f}°</div>
