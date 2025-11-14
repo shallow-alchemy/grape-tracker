@@ -289,32 +289,60 @@ CREATE TABLE alert_settings (
 ---
 
 ### 3.3 Winery Management
-**Status:** 🔄 In Progress (as of Nov 12, 2025)
+**Status:** 🔄 In Progress (as of Nov 13, 2025)
 
-**Goal:** Track wine production from pre-harvest through bottling with measurements, stage tracking, and tasting notes.
+**Goal:** Track wine production from growing season through bottling with measurements, stage tracking, task management, and tasting notes.
 
-**Planning Document:** See `/docs/winery-planning.md` for complete data model, UI mockups, and implementation phases.
+**Planning Documents:**
+- `/docs/winery-planning.md` - Original planning (vintage = wine)
+- `/docs/winery-backend-plan.md` - Backend implementation and data flow
+- `/docs/winery-frontend-plan.md` - Frontend component architecture (to be created)
 
-**Current Implementation:**
-- ✅ Created winery planning document with database schema
-- ✅ Built static winery UI with 10 sample vintages
-- ✅ Created reusable `ListItem` component for consistent list styling
-- ✅ Established page consistency pattern using `.vineyardContainer` class
-- ✅ Header with "WINERY" label, "ADD VINTAGE", "MANAGE INVENTORY", and settings gear icon
-- 🔄 Vintage creation form (in progress)
+**Revised Data Model:**
+- **Vintage** = Harvest from a variety in a year (source grapes)
+  - Stages: bud_break → flowering → fruiting → veraison → pre_harvest → harvest
+  - Includes harvest_weight_lbs and harvest_volume_gallons
+  - One vintage per variety per year
+- **Wine** = Finished product made from a vintage
+  - Required name field (e.g., "Lodi", "Azure")
+  - Stages: crush → primary_fermentation → secondary_fermentation → racking → oaking → aging → bottling
+  - Multiple wines can be created from one vintage (red, rosé, etc.)
+- **Tasks** = Configurable checklist items per stage and wine type
+  - Task templates define default tasks for each stage
+  - User confirms which tasks to create when transitioning stages
+  - Supports ad-hoc tasks
 
-**Key Design Decisions:**
-1. **Reusable Components**: Extracted vineItem styling into `ListItem` component used by both VineyardView and WineryView
-2. **Page Consistency**: All main views use `.vineyardContainer` for consistent flex layout, padding, and scrolling behavior
-3. **Component Structure**: WineryView follows same header + list pattern as VineyardView for familiar UX
-4. **List Display**: Show year, name (variety), stage, volume, and status in compact list format
+**Backend Implementation (COMPLETE ✅):**
+- ✅ Database migrations created (7 tables: vintage, wine, stage_history, task_template, task, measurement, measurement_range)
+- ✅ Measurement ranges seeded for all wine types (red, white, rosé, dessert, sparkling)
+- ✅ Default task templates seeded for all stages (vintage stages + wine stages)
+- ✅ Zero schema updated with all winery tables and permissions
+- ✅ Backend analysis complete: **No API endpoints needed** - Zero handles all operations
+
+**Key Backend Decisions:**
+1. **Vintage Stages**: Tracks growing season (bud_break through harvest)
+2. **Wine Stages**: Tracks winemaking process (crush through bottling)
+3. **Task Templates**: Wine-type specific (red ≠ white ≠ rosé)
+4. **User-Confirmed Tasks**: UI prompts user to select which tasks to create when stage transitions
+5. **Measurement Validation**: Frontend queries measurement_range table for real-time warnings
+6. **Zero-Only**: All CRUD operations through Zero sync, no backend API needed
+
+**Frontend Components (NEXT - Planning Phase):**
+1. 🔲 **Vintage Creation Form** - Add harvest with weight, volume, brix
+2. 🔲 **Wine Creation Form** - Create wine from vintage with required name
+3. 🔲 **Stage Transition UI** - Modal to select tasks when changing stages
+4. 🔲 **Task List Component** - Show/complete/skip tasks
+5. 🔲 **Measurement Form** - Enter pH/TA/Brix with real-time validation
+6. 🔲 **Winery Tab** - Main interface for managing vintages and wines
 
 **Next Steps:**
-- [ ] Create vintage database migration
-- [ ] Build vintage creation modal
-- [ ] Implement stage tracking
-- [ ] Add measurement entry form
-- [ ] Build vintage detail view
+- [ ] Create comprehensive frontend component plan (winery-frontend-plan.md)
+- [ ] Test migrations locally (verify tables and seed data)
+- [ ] Build vintage creation form (first component)
+- [ ] Build wine creation form (second component)
+- [ ] Implement stage transition logic with task selection
+- [ ] Build task management UI
+- [ ] Create measurement entry form with validation
 
 ---
 

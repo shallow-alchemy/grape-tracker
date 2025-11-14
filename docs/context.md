@@ -15,8 +15,8 @@
 - **Database**: PostgreSQL on Railway with logical replication
 - **UI Components**: React Aria Components
 - **QR Scanning**: qr-scanner v1.4.2 (nimiq)
-- **Weather API**: Open-Meteo (free, no API key)
-- **Location API**: Nominatim/OpenStreetMap (reverse geocoding)
+- **Weather API**: Open-Meteo (free, open-source, government weather models)
+- **Location API**: Nominatim/OpenStreetMap (reverse geocoding for city/state display)
 - **Icons**: react-icons (GiGrapes for sign-in, wi for weather icons)
 - **Styling**: CSS Modules with CSS custom properties
 
@@ -78,6 +78,49 @@ docs/
 - Navigation via wouter `<Link>` components
 - "GILBERT" title in header links back to home
 
+## Backend Architecture
+
+### Services Deployed on Railway
+
+```
+┌─────────────────────────────────────────────────┐
+│ Railway Project (Production)                   │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  PostgreSQL (wal_level=logical)                │
+│      ↑           ↑                              │
+│      │           │                              │
+│  zero-cache   axum-backend                     │
+│   (port 4848)  (port 3001)                     │
+│      ↑           ↑                              │
+└──────┼───────────┼──────────────────────────────┘
+       │           │
+   ┌───┴───────────┴────┐
+   │   Netlify Frontend │
+   │   - Zero sync      │
+   │   - Clerk auth     │
+   └────────────────────┘
+```
+
+**Service Responsibilities:**
+1. **PostgreSQL**: Source of truth for all data, logical replication enabled
+2. **zero-cache**: Real-time sync server, broadcasts changes to all connected clients
+3. **axum-backend**: Runs database migrations, provides REST APIs for server-side operations (weather, etc.)
+4. **Frontend**: React app, connects to both zero-cache (sync) and backend (APIs)
+
+**Why Zero Needs `wal_level=logical`:**
+- PostgreSQL has 3 wal_level settings: `minimal`, `replica`, `logical`
+- **`replica`** logs physical changes (disk bytes) - cannot decode what changed
+- **`logical`** logs semantic changes (INSERT/UPDATE/DELETE with table/column/value data)
+- Zero uses **logical replication slots** to stream decoded changes in real-time
+- Without logical level, Zero cannot understand what changed to broadcast to clients
+- Performance impact: <1% CPU, ~3-5% larger WAL files (negligible for most workloads)
+
+**Backend API vs Zero:**
+- **Zero handles**: All CRUD operations on domain data (vines, vintages, wines, tasks, measurements)
+- **Backend handles**: Server-side logic (weather API, migrations, future: emails, reports, analytics)
+- Frontend connects to both services simultaneously
+
 ## Current Features
 
 ### Sign-In Page (`index.tsx`)
@@ -116,6 +159,10 @@ docs/
    - 5x2 grid of daily forecasts
    - Day label + temperature
    - Compact design
+   - **Location indicator** (desktop only): Shows city/state from reverse geocoding (e.g., "SANDY, UTAH")
+     - Positioned after temp toggle button
+     - Right-aligned, nowrap, can overflow for long names
+     - Hidden on mobile to save space
 
 5. **QR Scan Button** (bottom 33.33vh):
    - Large green button optimized for thumb reach
@@ -435,6 +482,80 @@ yarn dev
 - Real-time sync functional ✅
 - Writes through backend API working ✅
 - Ready for testing
+
+### Winery Database Schema
+
+**Status**: Backend complete (Nov 13, 2025), frontend planning phase
+
+**Core Concept**: Vintage (harvest) → Wine (finished product)
+
+**Tables Created** (migrations: `20251113000001_create_winery_tables.sql`):
+
+1. **vintage** - Harvest records
+   - Tracks growing season from bud_break through harvest
+   - Stages: `bud_break | flowering | fruiting | veraison | pre_harvest | harvest`
+   - Fields: vintage_year, variety, block_ids (array), harvest_weight_lbs, harvest_volume_gallons, brix_at_harvest
+   - One vintage per variety per year (unique constraint)
+
+2. **wine** - Finished wine products made from vintages
+   - Tracks winemaking process from crush through bottling
+   - Stages: `crush | primary_fermentation | secondary_fermentation | racking | oaking | aging | bottling`
+   - Fields: vintage_id (FK), **name (required)**, wine_type (red|white|rosé|dessert|sparkling), volume_gallons, current_volume_gallons, status
+   - Multiple wines can be created from one vintage (e.g., red + rosé from same harvest)
+
+3. **stage_history** - Tracks stage transitions for vintages and wines
+   - Records when each stage started/completed
+   - Fields: entity_type (vintage|wine), entity_id, stage, started_at, completed_at, skipped, notes
+
+4. **task_template** - Configurable tasks per stage and wine type
+   - Defines default tasks for each stage
+   - Wine-type specific (red tasks ≠ white tasks ≠ rosé tasks)
+   - Fields: stage, entity_type, wine_type, name, description, frequency, default_enabled, sort_order
+   - Examples: "Punch cap" (2x daily for red primary fermentation), "Monitor temperature" (daily for white)
+
+5. **task** - Actual task instances
+   - Created from templates when user transitions to new stage
+   - Supports ad-hoc tasks (task_template_id = null)
+   - Fields: entity_type, entity_id, stage, name, due_date, completed_at, completed_by, notes, skipped
+
+6. **measurement** - Chemistry and tasting measurements
+   - Can be taken at any vintage or wine stage
+   - Fields: entity_type, entity_id, date, stage, ph, ta (titratable acid), brix, temperature, tasting_notes, notes
+
+7. **measurement_range** - Reference data for measurement validation
+   - Defines ideal ranges and warnings for each wine type
+   - Fields: wine_type, measurement_type, min_value, max_value, ideal_min, ideal_max, low_warning, high_warning
+   - Seeded with ranges for red, white, rosé, dessert, sparkling wines
+
+**Data Flow Example**:
+```
+Vintage: 2025 Cab Franc Harvest
+  ├─ harvest_weight_lbs: 150
+  ├─ harvest_volume_gallons: 12
+  ├─ current_stage: harvest
+  └─ Wines:
+       ├─ Wine: "Lodi" (red, 8 gallons)
+       │    ├─ current_stage: primary_fermentation
+       │    ├─ Tasks: ["Inoculate yeast", "Punch cap 2x daily", "Measure pH/TA/Brix"]
+       │    └─ Measurements: [pH: 3.4, TA: 6.2, Brix: 12]
+       │
+       └─ Wine: "Azure" (rosé, 4 gallons)
+            ├─ current_stage: secondary_fermentation
+            └─ Tasks: ["Monitor MLF progress"]
+```
+
+**Key Design Principles**:
+- **Vintages track grapes**, wines track finished products
+- **Wine names are required** to provide UI labels (can't just be "2025 Cab Franc Red")
+- **Task templates are wine-type specific** because red ≠ white ≠ rosé processes
+- **User confirms tasks** when transitioning stages (not auto-created)
+- **All operations through Zero** - no backend APIs needed for winery features
+- **Measurements validate in real-time** using measurement_range table
+
+**Seed Data Provided**:
+- Measurement ranges for all 5 wine types (pH, TA, Brix)
+- ~40 default task templates across all vintage/wine stages
+- Task templates for "default" vineyard (customizable per vineyard)
 
 ## Getting Started for New Claude Instances
 
