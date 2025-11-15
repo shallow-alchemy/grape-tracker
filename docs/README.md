@@ -34,11 +34,15 @@
 
 - [Local Development Setup](./03-setup/local-development.md) - PostgreSQL, Zero, Electric, troubleshooting
 
-### 04. Deployment
-**Production deployment guides**
+### 04. Product & Features
+**Feature planning, product roadmap, and specifications**
 
-- [Deployment Guide](./deployment.md) - Railway + Netlify deployment
-- [Bug Tracker](./bug-tracker.md) - Known deployment issues
+- [Product Planning Overview](./04-product/README.md) - Feature planning process
+- [Roadmap](./04-product/roadmap.md) - Product development roadmap and priorities
+- **Winery Features:**
+  - [Vintages UI Planning](./04-product/vintages_ui_planning.md) - Vintage (harvest) management UI
+  - [Winery Backend Plan](./04-product/winery-backend-plan.md) - Zero mutations, schema
+  - [Winery Frontend Plan](./04-product/winery-frontend-plan.md) - Wine production UI components
 
 ### 05. Testing
 **Test strategy, patterns, and coverage**
@@ -46,23 +50,24 @@
 - [Testing Guide](./05-testing/testing-guide.md) - rstest, mocking, React hooks, best practices
 - [Test Coverage Status](./05-testing/test-coverage-status.md) - Current coverage, todo problem, action plan
 
-### 06. Features
-**Feature specifications and implementation guides**
+### 06. Design System
+**Visual design, theming, and UI patterns**
 
-- [Roadmap](./roadmap.md) - Product development roadmap and priorities
 - [Theme & Design System](./theme.md) - 80s terminal aesthetic, mobile-first design
 - [Theme Tokens](./theme.json) - Colors, typography, spacing, effects
-- **Winery Features:**
-  - [Winery Backend Plan](./winery-backend-plan.md) - Zero mutations, schema
-  - [Winery Frontend Plan](./winery-frontend-plan.md) - Wine production UI components
-  - [Vintages UI Planning](./vintages_ui_planning.md) - Vintage (harvest) management UI
 
-### 07. Refactoring
+### 07. Deployment
+**Production deployment guides**
+
+- [Deployment Guide](./deployment.md) - Railway + Netlify deployment
+- [Bug Tracker](./bug-tracker.md) - Known deployment issues
+
+### 08. Refactoring
 **Code cleanup and technical debt**
 
 - [Code Cleanup Plan](./code-cleanup.md) - Refactoring priorities, anti-patterns to fix
 
-### 08. Critical Issues & Fixes
+### 09. Critical Issues & Fixes
 **Important post-mortems and solutions**
 
 - [Zero Provider Fix](./zero-provider-fix.md) - ⚠️ CRITICAL: How to properly use Zero's built-in provider
@@ -102,10 +107,13 @@
 → Check [Test Coverage Status](./05-testing/test-coverage-status.md)
 
 **...implement winery features**
-→ Read [Winery Frontend Plan](./winery-frontend-plan.md) and [Vintages UI Planning](./vintages_ui_planning.md)
+→ Read [Winery Frontend Plan](./04-product/winery-frontend-plan.md) and [Vintages UI Planning](./04-product/vintages_ui_planning.md)
 
 **...understand the product roadmap**
-→ See [Roadmap](./roadmap.md)
+→ See [Roadmap](./04-product/roadmap.md)
+
+**...plan a new feature**
+→ Read [Product Planning Overview](./04-product/README.md)
 
 **...understand the design system**
 → Read [Theme](./theme.md) and [Theme Tokens](./theme.json)
@@ -118,10 +126,11 @@
 - **01-onboarding**: Getting started quickly
 - **02-architecture**: System design and patterns
 - **03-setup**: Local development
-- **04-deployment**: Production deployment (files at root for now)
+- **04-product**: Feature planning, roadmap, and specifications
 - **05-testing**: Testing strategy and coverage
-- **06-features**: Feature specs (files at root for now)
-- **07-refactoring**: Cleanup plans (files at root for now)
+- **06-design**: Theme and UI patterns (files at root for now)
+- **07-deployment**: Production deployment (files at root for now)
+- **08-refactoring**: Cleanup plans (files at root for now)
 - **archive**: Old documentation versions
 
 ### Writing Style
@@ -163,9 +172,10 @@ When making significant changes:
 | Onboarding | ✅ Complete | Nov 2025 |
 | Architecture | ✅ Complete | Nov 2025 |
 | Setup | ✅ Complete | Nov 2025 |
+| Product | ✅ Complete | Nov 2025 |
 | Testing | ✅ Complete | Nov 2025 |
+| Design System | ✅ Complete | Nov 2025 |
 | Deployment | ✅ Complete | Nov 2025 |
-| Features | 🟡 Partial | Nov 2025 |
 | Refactoring | 🟡 In Progress | Nov 2025 |
 
 **Legend:**
