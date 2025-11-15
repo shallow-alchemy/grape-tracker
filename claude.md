@@ -25,6 +25,16 @@ This is **Gilbert**, a mobile-first grape tracking app with an 80s hacker termin
 - **Code Style**: Fat arrow functions, named exports, monolithic files
 - **Theme**: Faded black (#1a1c1a) + muted greens (#3a7a3a, #65a165), monospace fonts
 
+## IMPORTANT: Background Process Policy
+
+**NEVER leave `yarn dev` or any development servers running in background processes.**
+
+- The user will start the dev servers themselves when needed
+- If you need to check server output temporarily, run it in foreground with timeout
+- If you start a background process for testing, ALWAYS kill it before completing your task
+- Use `lsof -ti:PORT | xargs kill -9` to clean up any lingering processes
+- Common ports: 3000 (frontend), 3001 (backend), 4848 (zero-cache), 4849 (zero change-streamer)
+
 ## Current State
 
 ### Main Branch (Zero Sync)

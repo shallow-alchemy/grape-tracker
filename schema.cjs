@@ -8,8 +8,8 @@ var vineyardTable = (0, zero_1.table)('vineyard')
     name: (0, zero_1.string)(),
     location: (0, zero_1.string)(),
     varieties: (0, zero_1.json)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    createdAt: (0, zero_1.number)(),
+    updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
 var blockTable = (0, zero_1.table)('block')
@@ -17,139 +17,139 @@ var blockTable = (0, zero_1.table)('block')
     id: (0, zero_1.string)(),
     name: (0, zero_1.string)(),
     location: (0, zero_1.string)(),
-    size_acres: (0, zero_1.number)(),
-    soil_type: (0, zero_1.string)(),
+    sizeAcres: (0, zero_1.number)(),
+    soilType: (0, zero_1.string)(),
     notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    createdAt: (0, zero_1.number)(),
+    updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
 var vineTable = (0, zero_1.table)('vine')
     .columns({
     id: (0, zero_1.string)(),
     block: (0, zero_1.string)(),
-    sequence_number: (0, zero_1.number)(),
+    sequenceNumber: (0, zero_1.number)(),
     variety: (0, zero_1.string)(),
-    planting_date: (0, zero_1.number)(),
+    plantingDate: (0, zero_1.number)(),
     health: (0, zero_1.string)(),
     notes: (0, zero_1.string)(),
-    qr_generated: (0, zero_1.number)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    qrGenerated: (0, zero_1.number)(),
+    createdAt: (0, zero_1.number)(),
+    updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
 var vintageTable = (0, zero_1.table)('vintage')
     .columns({
     id: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)(),
-    vintage_year: (0, zero_1.number)(),
+    vineyardId: (0, zero_1.string)(),
+    vintageYear: (0, zero_1.number)(),
     variety: (0, zero_1.string)(),
-    block_ids: (0, zero_1.json)(),
-    current_stage: (0, zero_1.string)(),
-    harvest_date: (0, zero_1.number)(),
-    harvest_weight_lbs: (0, zero_1.number)(),
-    harvest_volume_gallons: (0, zero_1.number)(),
-    brix_at_harvest: (0, zero_1.number)(),
+    blockIds: (0, zero_1.json)(),
+    currentStage: (0, zero_1.string)(),
+    harvestDate: (0, zero_1.number)(),
+    harvestWeightLbs: (0, zero_1.number)(),
+    harvestVolumeGallons: (0, zero_1.number)(),
+    brixAtHarvest: (0, zero_1.number)(),
     notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    createdAt: (0, zero_1.number)(),
+    updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
 var wineTable = (0, zero_1.table)('wine')
     .columns({
     id: (0, zero_1.string)(),
-    vintage_id: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)(),
+    vintageId: (0, zero_1.string)(),
+    vineyardId: (0, zero_1.string)(),
     name: (0, zero_1.string)(),
-    wine_type: (0, zero_1.string)(),
-    volume_gallons: (0, zero_1.number)(),
-    current_volume_gallons: (0, zero_1.number)(),
-    current_stage: (0, zero_1.string)(),
+    wineType: (0, zero_1.string)(),
+    volumeGallons: (0, zero_1.number)(),
+    currentVolumeGallons: (0, zero_1.number)(),
+    currentStage: (0, zero_1.string)(),
     status: (0, zero_1.string)(),
-    last_tasting_notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    lastTastingNotes: (0, zero_1.string)(),
+    createdAt: (0, zero_1.number)(),
+    updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
-var stageHistoryTable = (0, zero_1.table)('stage_history')
+var stageHistoryTable = (0, zero_1.table)('stageHistory')
     .columns({
     id: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    entity_id: (0, zero_1.string)(),
+    entityType: (0, zero_1.string)(),
+    entityId: (0, zero_1.string)(),
     stage: (0, zero_1.string)(),
-    started_at: (0, zero_1.number)(),
-    completed_at: (0, zero_1.number)(),
-    skipped: (0, zero_1.boolean)(),
+    startedAt: (0, zero_1.number)(),
+    completedAt: (0, zero_1.number)(),
+    skipped: (0, zero_1.number)(),
     notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    createdAt: (0, zero_1.number)(),
+    updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
-var taskTemplateTable = (0, zero_1.table)('task_template')
+var taskTemplateTable = (0, zero_1.table)('taskTemplate')
     .columns({
     id: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)(),
+    vineyardId: (0, zero_1.string)(),
     stage: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    wine_type: (0, zero_1.string)(),
+    entityType: (0, zero_1.string)(),
+    wineType: (0, zero_1.string)(),
     name: (0, zero_1.string)(),
     description: (0, zero_1.string)(),
     frequency: (0, zero_1.string)(),
-    frequency_count: (0, zero_1.number)(),
-    frequency_unit: (0, zero_1.string)(),
-    default_enabled: (0, zero_1.boolean)(),
-    sort_order: (0, zero_1.number)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    frequencyCount: (0, zero_1.number)(),
+    frequencyUnit: (0, zero_1.string)(),
+    defaultEnabled: (0, zero_1.number)(),
+    sortOrder: (0, zero_1.number)(),
+    createdAt: (0, zero_1.number)(),
+    updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
 var taskTable = (0, zero_1.table)('task')
     .columns({
     id: (0, zero_1.string)(),
-    task_template_id: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    entity_id: (0, zero_1.string)(),
+    taskTemplateId: (0, zero_1.string)(),
+    entityType: (0, zero_1.string)(),
+    entityId: (0, zero_1.string)(),
     stage: (0, zero_1.string)(),
     name: (0, zero_1.string)(),
     description: (0, zero_1.string)(),
-    due_date: (0, zero_1.number)(),
-    completed_at: (0, zero_1.number)(),
-    completed_by: (0, zero_1.string)(),
+    dueDate: (0, zero_1.number)(),
+    completedAt: (0, zero_1.number)(),
+    completedBy: (0, zero_1.string)(),
     notes: (0, zero_1.string)(),
-    skipped: (0, zero_1.boolean)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    skipped: (0, zero_1.number)(),
+    createdAt: (0, zero_1.number)(),
+    updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
 var measurementTable = (0, zero_1.table)('measurement')
     .columns({
     id: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    entity_id: (0, zero_1.string)(),
+    entityType: (0, zero_1.string)(),
+    entityId: (0, zero_1.string)(),
     date: (0, zero_1.number)(),
     stage: (0, zero_1.string)(),
     ph: (0, zero_1.number)(),
     ta: (0, zero_1.number)(),
     brix: (0, zero_1.number)(),
     temperature: (0, zero_1.number)(),
-    tasting_notes: (0, zero_1.string)(),
+    tastingNotes: (0, zero_1.string)(),
     notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    createdAt: (0, zero_1.number)(),
+    updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
-var measurementRangeTable = (0, zero_1.table)('measurement_range')
+var measurementRangeTable = (0, zero_1.table)('measurementRange')
     .columns({
     id: (0, zero_1.string)(),
-    wine_type: (0, zero_1.string)(),
-    measurement_type: (0, zero_1.string)(),
-    min_value: (0, zero_1.number)(),
-    max_value: (0, zero_1.number)(),
-    ideal_min: (0, zero_1.number)(),
-    ideal_max: (0, zero_1.number)(),
-    low_warning: (0, zero_1.string)(),
-    high_warning: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
+    wineType: (0, zero_1.string)(),
+    measurementType: (0, zero_1.string)(),
+    minValue: (0, zero_1.number)(),
+    maxValue: (0, zero_1.number)(),
+    idealMin: (0, zero_1.number)(),
+    idealMax: (0, zero_1.number)(),
+    lowWarning: (0, zero_1.string)(),
+    highWarning: (0, zero_1.string)(),
+    createdAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
 exports.schema = (0, zero_1.createSchema)({
@@ -222,7 +222,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
             delete: zero_1.ANYONE_CAN,
         },
     },
-    stage_history: {
+    stageHistory: {
         row: {
             select: zero_1.ANYONE_CAN,
             insert: zero_1.ANYONE_CAN,
@@ -233,7 +233,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
             delete: zero_1.ANYONE_CAN,
         },
     },
-    task_template: {
+    taskTemplate: {
         row: {
             select: zero_1.ANYONE_CAN,
             insert: zero_1.ANYONE_CAN,
@@ -266,7 +266,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
             delete: zero_1.ANYONE_CAN,
         },
     },
-    measurement_range: {
+    measurementRange: {
         row: {
             select: zero_1.ANYONE_CAN,
             insert: zero_1.ANYONE_CAN,

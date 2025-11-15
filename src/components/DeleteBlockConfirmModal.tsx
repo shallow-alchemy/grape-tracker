@@ -155,7 +155,7 @@ export const DeleteBlockConfirmModal = ({
                         zero.mutate.vine.update({
                           id: v.id,
                           block: deleteMigrateToBlock,
-                          updatedAt: Date.now(),
+                          updated_at: Date.now(),
                         })
                       )
                     );

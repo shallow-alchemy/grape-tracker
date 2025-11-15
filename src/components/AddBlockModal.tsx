@@ -50,11 +50,11 @@ export const AddBlockModal = ({
               id: blockId,
               name: blockData.name.toUpperCase(),
               location: blockData.location || '',
-              sizeAcres: blockData.sizeAcres || 0,
-              soilType: blockData.soilType || '',
+              size_acres: blockData.sizeAcres || 0,
+              soil_type: blockData.soilType || '',
               notes: blockData.notes || '',
-              createdAt: now,
-              updatedAt: now,
+              created_at: now,
+              updated_at: now,
             });
 
             onClose();

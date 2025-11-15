@@ -1,4 +1,4 @@
-import { createSchema, table, string, number, json, ANYONE_CAN, definePermissions } from '@rocicorp/zero';
+import { createSchema, table, string, number, json, boolean, ANYONE_CAN, definePermissions } from '@rocicorp/zero';
 
 const vineyardTable = table('vineyard')
   .columns({
@@ -6,8 +6,8 @@ const vineyardTable = table('vineyard')
     name: string(),
     location: string(),
     varieties: json(),
-    createdAt: number(),
-    updatedAt: number(),
+    created_at: number(),
+    updated_at: number(),
   })
   .primaryKey('id');
 
@@ -16,11 +16,11 @@ const blockTable = table('block')
     id: string(),
     name: string(),
     location: string(),
-    sizeAcres: number(),
-    soilType: string(),
+    size_acres: number(),
+    soil_type: string(),
     notes: string(),
-    createdAt: number(),
-    updatedAt: number(),
+    created_at: number(),
+    updated_at: number(),
   })
   .primaryKey('id');
 
@@ -28,135 +28,135 @@ const vineTable = table('vine')
   .columns({
     id: string(),
     block: string(),
-    sequenceNumber: number(),
+    sequence_number: number(),
     variety: string(),
-    plantingDate: number(),
+    planting_date: number(),
     health: string(),
     notes: string(),
-    qrGenerated: number(),
-    createdAt: number(),
-    updatedAt: number(),
+    qr_generated: number(),
+    created_at: number(),
+    updated_at: number(),
   })
   .primaryKey('id');
 
 const vintageTable = table('vintage')
   .columns({
     id: string(),
-    vineyardId: string(),
-    vintageYear: number(),
+    vineyard_id: string(),
+    vintage_year: number(),
     variety: string(),
-    blockIds: json(),
-    currentStage: string(),
-    harvestDate: number(),
-    harvestWeightLbs: number(),
-    harvestVolumeGallons: number(),
-    brixAtHarvest: number(),
+    block_ids: json(),
+    current_stage: string(),
+    harvest_date: number(),
+    harvest_weight_lbs: number().optional(),
+    harvest_volume_gallons: number().optional(),
+    brix_at_harvest: number().optional(),
     notes: string(),
-    createdAt: number(),
-    updatedAt: number(),
+    created_at: number(),
+    updated_at: number(),
   })
   .primaryKey('id');
 
 const wineTable = table('wine')
   .columns({
     id: string(),
-    vintageId: string(),
-    vineyardId: string(),
+    vintage_id: string(),
+    vineyard_id: string(),
     name: string(),
-    wineType: string(),
-    volumeGallons: number(),
-    currentVolumeGallons: number(),
-    currentStage: string(),
+    wine_type: string(),
+    volume_gallons: number(),
+    current_volume_gallons: number(),
+    current_stage: string(),
     status: string(),
-    lastTastingNotes: string(),
-    createdAt: number(),
-    updatedAt: number(),
+    last_tasting_notes: string(),
+    created_at: number(),
+    updated_at: number(),
   })
   .primaryKey('id');
 
-const stageHistoryTable = table('stageHistory')
+const stageHistoryTable = table('stage_history')
   .columns({
     id: string(),
-    entityType: string(),
-    entityId: string(),
+    entity_type: string(),
+    entity_id: string(),
     stage: string(),
-    startedAt: number(),
-    completedAt: number(),
-    skipped: number(),
+    started_at: number(),
+    completed_at: number().optional(),
+    skipped: boolean(),
     notes: string(),
-    createdAt: number(),
-    updatedAt: number(),
+    created_at: number(),
+    updated_at: number(),
   })
   .primaryKey('id');
 
-const taskTemplateTable = table('taskTemplate')
+const taskTemplateTable = table('task_template')
   .columns({
     id: string(),
-    vineyardId: string(),
+    vineyard_id: string(),
     stage: string(),
-    entityType: string(),
-    wineType: string(),
+    entity_type: string(),
+    wine_type: string(),
     name: string(),
     description: string(),
     frequency: string(),
-    frequencyCount: number(),
-    frequencyUnit: string(),
-    defaultEnabled: number(),
-    sortOrder: number(),
-    createdAt: number(),
-    updatedAt: number(),
+    frequency_count: number(),
+    frequency_unit: string(),
+    default_enabled: boolean(),
+    sort_order: number(),
+    created_at: number(),
+    updated_at: number(),
   })
   .primaryKey('id');
 
 const taskTable = table('task')
   .columns({
     id: string(),
-    taskTemplateId: string(),
-    entityType: string(),
-    entityId: string(),
+    task_template_id: string(),
+    entity_type: string(),
+    entity_id: string(),
     stage: string(),
     name: string(),
     description: string(),
-    dueDate: number(),
-    completedAt: number(),
-    completedBy: string(),
+    due_date: number(),
+    completed_at: number(),
+    completed_by: string(),
     notes: string(),
-    skipped: number(),
-    createdAt: number(),
-    updatedAt: number(),
+    skipped: boolean(),
+    created_at: number(),
+    updated_at: number(),
   })
   .primaryKey('id');
 
 const measurementTable = table('measurement')
   .columns({
     id: string(),
-    entityType: string(),
-    entityId: string(),
+    entity_type: string(),
+    entity_id: string(),
     date: number(),
     stage: string(),
     ph: number(),
     ta: number(),
     brix: number(),
     temperature: number(),
-    tastingNotes: string(),
+    tasting_notes: string(),
     notes: string(),
-    createdAt: number(),
-    updatedAt: number(),
+    created_at: number(),
+    updated_at: number(),
   })
   .primaryKey('id');
 
-const measurementRangeTable = table('measurementRange')
+const measurementRangeTable = table('measurement_range')
   .columns({
     id: string(),
-    wineType: string(),
-    measurementType: string(),
-    minValue: number(),
-    maxValue: number(),
-    idealMin: number(),
-    idealMax: number(),
-    lowWarning: string(),
-    highWarning: string(),
-    createdAt: number(),
+    wine_type: string(),
+    measurement_type: string(),
+    min_value: number(),
+    max_value: number(),
+    ideal_min: number(),
+    ideal_max: number(),
+    low_warning: string(),
+    high_warning: string(),
+    created_at: number(),
   })
   .primaryKey('id');
 
@@ -235,7 +235,7 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
         delete: ANYONE_CAN,
       },
     },
-    stageHistory: {
+    stage_history: {
       row: {
         select: ANYONE_CAN,
         insert: ANYONE_CAN,
@@ -246,7 +246,7 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
         delete: ANYONE_CAN,
       },
     },
-    taskTemplate: {
+    task_template: {
       row: {
         select: ANYONE_CAN,
         insert: ANYONE_CAN,
@@ -279,7 +279,7 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
         delete: ANYONE_CAN,
       },
     },
-    measurementRange: {
+    measurement_range: {
       row: {
         select: ANYONE_CAN,
         insert: ANYONE_CAN,

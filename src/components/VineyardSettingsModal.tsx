@@ -58,7 +58,7 @@ export const VineyardSettingsModal = ({
                 name: vineyardFormData.name,
                 location: vineyardFormData.location,
                 varieties: vineyardFormData.varieties,
-                updatedAt: now,
+                updated_at: now,
               });
 
               onClose();

@@ -12,14 +12,14 @@ export type VineData = {
 export type VineDataRaw = {
   id: string;
   block: string;
-  sequenceNumber: number;
+  sequence_number: number;
   variety: string;
-  plantingDate: number;
+  planting_date: number;
   health: string;
   notes: string;
-  qrGenerated: number;
-  createdAt: number;
-  updatedAt: number;
+  qr_generated: number;
+  created_at: number;
+  updated_at: number;
 };
 
 export type BlockData = {
@@ -35,11 +35,11 @@ export type BlockDataRaw = {
   id: string;
   name: string;
   location: string;
-  sizeAcres: number;
-  soilType: string;
+  size_acres: number;
+  soil_type: string;
   notes: string;
-  createdAt: number;
-  updatedAt: number;
+  created_at: number;
+  updated_at: number;
 };
 
 export type VineyardData = {
@@ -47,8 +47,8 @@ export type VineyardData = {
   name: string;
   location: string;
   varieties: string[];
-  createdAt: number;
-  updatedAt: number;
+  created_at: number;
+  updated_at: number;
 };
 
 export type VineFormData = {

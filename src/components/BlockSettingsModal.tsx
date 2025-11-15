@@ -65,10 +65,10 @@ export const BlockSettingsModal = ({
               id: selectedBlock!,
               name: blockData.name.toUpperCase(),
               location: blockData.location || '',
-              sizeAcres: blockData.sizeAcres || 0,
-              soilType: blockData.soilType || '',
+              size_acres: blockData.sizeAcres || 0,
+              soil_type: blockData.soilType || '',
               notes: blockData.notes || '',
-              updatedAt: now,
+              updated_at: now,
             });
 
             onClose();

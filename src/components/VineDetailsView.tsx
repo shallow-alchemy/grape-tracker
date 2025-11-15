@@ -62,11 +62,11 @@ export const VineDetailsView = ({
       link.click();
       URL.revokeObjectURL(url);
 
-      if (vine && !vine.qrGenerated) {
+      if (vine && !vine.qr_generated) {
         zero.mutate.vine.update({
           id: vine.id,
-          qrGenerated: Date.now(),
-          updatedAt: Date.now(),
+          qr_generated: Date.now(),
+          updated_at: Date.now(),
         });
       }
     });
@@ -89,11 +89,11 @@ export const VineDetailsView = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      if (!vine.qrGenerated) {
+      if (!vine.qr_generated) {
         zero.mutate.vine.update({
           id: vine.id,
-          qrGenerated: Date.now(),
-          updatedAt: Date.now(),
+          qr_generated: Date.now(),
+          updated_at: Date.now(),
         });
       }
     } catch (error) {
@@ -229,8 +229,8 @@ export const VineDetailsView = ({
                   id: vine.id,
                   block: formData.get('block') as string,
                   variety: (formData.get('variety') as string).toUpperCase(),
-                  plantingDate: new Date(formData.get('plantingDate') as string).getTime(),
-                  updatedAt: now,
+                  planting_date: new Date(formData.get('plantingDate') as string).getTime(),
+                  updated_at: now,
                 });
 
                 setShowVineSettingsModal(false);
@@ -298,7 +298,7 @@ export const VineDetailsView = ({
                 type="date"
                 name="plantingDate"
                 className={styles.formInput}
-                defaultValue={vine.plantingDate.toISOString().split('T')[0]}
+                defaultValue={vine.planting_date.toISOString().split('T')[0]}
                 required
               />
             </div>

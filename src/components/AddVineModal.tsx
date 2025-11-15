@@ -65,14 +65,14 @@ export const AddVineModal = ({
               await zero.mutate.vine.insert({
                 id: newVineId,
                 block: vineData.block,
-                sequenceNumber,
+                sequence_number: sequenceNumber,
                 variety: vineData.variety.toUpperCase(),
-                plantingDate: vineData.plantingDate.getTime(),
+                planting_date: vineData.plantingDate.getTime(),
                 health: vineData.health,
                 notes: vineData.notes || '',
-                qrGenerated: 0,
-                createdAt: now,
-                updatedAt: now,
+                qr_generated: 0,
+                created_at: now,
+                updated_at: now,
               });
             }
 
@@ -157,7 +157,7 @@ export const AddVineModal = ({
             defaultValue={new Date().toISOString().split('T')[0]}
             required
           />
-          {formErrors.plantingDate && <div className={styles.formError}>{formErrors.plantingDate}</div>}
+          {formErrors.planting_date && <div className={styles.formError}>{formErrors.planting_date}</div>}
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>HEALTH STATUS</label>

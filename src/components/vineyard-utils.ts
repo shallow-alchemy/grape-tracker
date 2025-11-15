@@ -33,7 +33,7 @@ export const calculateAge = (plantingDate: Date): string => {
 
 export const generateVineId = (_block: string, vinesData: VineDataRaw[]): { id: string; sequenceNumber: number } => {
   const maxNumber = vinesData.length > 0
-    ? Math.max(...vinesData.map(v => v.sequenceNumber))
+    ? Math.max(...vinesData.map(v => v.sequence_number))
     : 0;
   const nextNumber = maxNumber + 1;
   const vineId = nextNumber.toString().padStart(3, '0');
@@ -42,7 +42,7 @@ export const generateVineId = (_block: string, vinesData: VineDataRaw[]): { id: 
 
 export const generateBatchVineIds = (_block: string, vinesData: VineDataRaw[], quantity: number): Array<{ id: string; sequenceNumber: number }> => {
   const maxNumber = vinesData.length > 0
-    ? Math.max(...vinesData.map(v => v.sequenceNumber))
+    ? Math.max(...vinesData.map(v => v.sequence_number))
     : 0;
 
   return Array.from({ length: quantity }, (_, i) => {
@@ -65,19 +65,19 @@ export const transformVineData = (vine: VineDataRaw): VineData => ({
   id: vine.id,
   block: vine.block,
   variety: vine.variety,
-  plantingDate: new Date(vine.plantingDate),
-  age: calculateAge(new Date(vine.plantingDate)),
+  plantingDate: new Date(vine.planting_date),
+  age: calculateAge(new Date(vine.planting_date)),
   health: vine.health,
   notes: vine.notes || '',
-  qrGenerated: vine.qrGenerated > 0,
+  qrGenerated: vine.qr_generated > 0,
 });
 
 export const transformBlockData = (block: BlockDataRaw): BlockData => ({
   id: block.id,
   name: block.name,
   location: block.location,
-  sizeAcres: block.sizeAcres,
-  soilType: block.soilType,
+  sizeAcres: block.size_acres,
+  soilType: block.soil_type,
   notes: block.notes,
 });
 

@@ -4,108 +4,55 @@
 **Backend**: ✅ Complete (migrations, schema, seed data)
 **Next**: Frontend component implementation
 
+**Related Documentation:**
+- [Vintages UI Planning](./vintages_ui_planning.md) - Vintage management UI (list, detail, edit, delete)
+- [Roadmap](./roadmap.md) - Overall project roadmap
+
+**Scope:**
+This document covers **wine production workflow** (creating wines from vintages, stage transitions, tasks, measurements). For vintage management (harvest records), see the vintages UI planning doc linked above.
+
 ---
 
 ## Component Architecture Overview
 
+**Note:** Vintage management UI is covered in [vintages_ui_planning.md](./vintages_ui_planning.md). This document focuses on wine production components.
+
 ```
-WineryView (Main Container)
+WineryView (Main Container - Wine Production)
   ├─ Header
   │    ├─ "WINERY" label
-  │    ├─ "ADD VINTAGE" button
   │    ├─ "ADD WINE" button
   │    ├─ "MANAGE INVENTORY" button
   │    └─ ⚙ Settings gear icon
   │
-  ├─ Vintage/Wine List
+  ├─ Wine List (status-based organization)
   │    ├─ Active Wines Section (status='active')
   │    ├─ Aging Wines Section (status='aging')
   │    └─ Bottled Wines Section (status='bottled')
   │
   └─ Modals (rendered conditionally)
-       ├─ AddVintageModal (Component #1)
-       ├─ AddWineModal (Component #2)
-       ├─ StageTransitionModal (Component #3)
-       ├─ TaskListModal (Component #4)
-       ├─ MeasurementModal (Component #5)
-       └─ InventoryManagementModal (Component #6)
+       ├─ AddWineModal (Component #1)
+       ├─ StageTransitionModal (Component #2)
+       ├─ TaskListModal (Component #3)
+       ├─ MeasurementModal (Component #4)
+       └─ InventoryManagementModal (Component #5)
 ```
 
 ---
 
 ## Component Breakdown
 
-### Component #1: Vintage Creation Form (`AddVintageModal`)
+### Vintage Management
 
-**Purpose**: Create a new vintage (harvest record)
+**Note:** Vintage creation and management is fully documented in [vintages_ui_planning.md](./vintages_ui_planning.md).
 
-**Trigger**: "ADD VINTAGE" button in header
+**Status:** ✅ `AddVintageModal` already implemented in `src/components/winery/AddVintageModal.tsx`
 
-**Form Fields:**
-```typescript
-{
-  vintageYear: number,        // Dropdown: current year ± 5 years
-  variety: string,            // Dropdown: CAB_FRANC, PINOT_NOIR, etc. (from existing vines)
-  blockIds: string[],         // Multi-select: which blocks harvested from
-  harvestDate: Date,          // Date picker (default: today)
-  harvestWeightLbs: number,   // Number input (optional)
-  harvestVolumeGallons: number, // Number input (optional)
-  brixAtHarvest: number,      // Number input (optional, 0-40 range)
-  currentStage: string,       // Fixed: 'bud_break' or dropdown (bud_break → harvest)
-  notes: string,              // Textarea (optional)
-}
-```
-
-**Validation:**
-- ✅ Vintage year required
-- ✅ Variety required
-- ✅ At least one block selected (or allow no blocks for off-site grapes)
-- ⚠️ Check uniqueness: vineyard_id + variety + vintage_year (unique constraint in DB)
-- ⚠️ If duplicate exists, show error: "2025 Cab Franc vintage already exists"
-
-**Zero Mutation:**
-```typescript
-await zero.mutate.vintage.insert({
-  id: crypto.randomUUID(),
-  vineyardId: 'default',
-  vintageYear: data.vintageYear,
-  variety: data.variety.toUpperCase(),
-  blockIds: data.blockIds,
-  currentStage: data.currentStage || 'bud_break',
-  harvestDate: data.harvestDate?.getTime() || null,
-  harvestWeightLbs: data.harvestWeightLbs || null,
-  harvestVolumeGallons: data.harvestVolumeGallons || null,
-  brixAtHarvest: data.brixAtHarvest || null,
-  notes: data.notes || '',
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-});
-
-// Also create initial stage history entry
-await zero.mutate.stageHistory.insert({
-  id: crypto.randomUUID(),
-  entityType: 'vintage',
-  entityId: vintageId,
-  stage: data.currentStage || 'bud_break',
-  startedAt: Date.now(),
-  completedAt: null,
-  skipped: 0,
-  notes: '',
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-});
-```
-
-**UI/UX:**
-- Modal with faded black background, green border
-- "CREATE VINTAGE" primary button
-- "CANCEL" secondary button
-- Show success message on creation
-- Close modal and refresh list
+Vintages represent harvest records (source grapes) and are managed separately from wine production. Users create vintages first, then create wines from those vintages.
 
 ---
 
-### Component #2: Wine Creation Form (`AddWineModal`)
+### Component #1: Wine Creation Form (`AddWineModal`)
 
 **Purpose**: Create a wine from an existing vintage
 
@@ -176,7 +123,7 @@ await zero.mutate.stageHistory.insert({
 
 ---
 
-### Component #3: Stage Transition UI (`StageTransitionModal`)
+### Component #2: Stage Transition UI (`StageTransitionModal`)
 
 **Purpose**: Move a vintage or wine to the next stage, creating tasks
 
@@ -317,7 +264,7 @@ const calculateDueDate = (frequency: string, startDate: number): number => {
 
 ---
 
-### Component #4: Task List Component (`TaskListView`)
+### Component #3: Task List Component (`TaskListView`)
 
 **Purpose**: Display and manage tasks for a vintage or wine
 
@@ -402,7 +349,7 @@ await zero.mutate.task.insert({
 
 ---
 
-### Component #5: Measurement Form (`MeasurementModal`)
+### Component #4: Measurement Form (`MeasurementModal`)
 
 **Purpose**: Record chemistry and tasting measurements with real-time validation
 
@@ -514,16 +461,17 @@ if (data.tastingNotes && entityType === 'wine') {
 
 ---
 
-### Component #6: Winery Tab / Main View (`WineryView`)
+### Component #5: Wine Production View (`WineProductionView`)
 
-**Purpose**: Main interface for viewing and managing vintages and wines
+**Purpose**: Main interface for viewing and managing wine production
+
+**Note:** This is separate from the vintages list view. See [vintages_ui_planning.md](./vintages_ui_planning.md) for vintage management UI.
 
 **Layout Structure:**
 
 ```
 ┌─────────────────────────────────────────────┐
-│ WINERY   [ADD VINTAGE] [ADD WINE] [MANAGE  │
-│                        INVENTORY] ⚙         │
+│ WINERY   [ADD WINE] [MANAGE INVENTORY] ⚙   │
 ├─────────────────────────────────────────────┤
 │                                             │
 │ ACTIVE WINES (3)                            │
@@ -591,10 +539,14 @@ const bottledWines = await zero.query.wine
 
 **Click Actions:**
 - **Click wine card**: Open wine detail view (shows stage history, all tasks, measurement history, etc.)
-- **Click "ADD VINTAGE"**: Open AddVintageModal
-- **Click "ADD WINE"**: Open AddWineModal
+- **Click "ADD WINE"**: Open AddWineModal (requires existing vintage)
 - **Click "MANAGE INVENTORY"**: Open inventory modal (bottled wines with bottle counts)
 - **Click ⚙**: Open winery settings (task template configuration)
+
+**Integration with Vintages:**
+- Wines are created FROM vintages (vintage selection required in AddWineModal)
+- To create a vintage, users navigate to vintages view (separate from wine production)
+- See [vintages_ui_planning.md](./vintages_ui_planning.md) for vintage creation workflow
 
 **Sections:**
 1. **Active Wines**: Wines currently being worked on (most attention needed)
@@ -611,22 +563,23 @@ const bottledWines = await zero.query.wine
 
 ## Implementation Order
 
-### Phase 1: Foundation (Components #1, #2, #6)
+### Phase 1: Foundation (Components #1, #5)
 1. ✅ Backend complete (migrations, seed data)
-2. 🔲 Create `WineryView` skeleton with header and empty states
-3. 🔲 Build `AddVintageModal` (Component #1)
-4. 🔲 Build `AddWineModal` (Component #2)
-5. 🔲 Update `WineryView` to display vintage/wine lists
-6. 🔲 Test creating vintages and wines end-to-end
+2. ✅ AddVintageModal complete (see vintages_ui_planning.md)
+3. 🔲 Build vintage management UI (see vintages_ui_planning.md)
+4. 🔲 Build `AddWineModal` (Component #1)
+5. 🔲 Create `WineProductionView` skeleton with header and empty states
+6. 🔲 Update view to display wine lists organized by status
+7. 🔲 Test creating vintages → creating wines end-to-end
 
 **Why this order?**
 - Establishes core data flow (create vintages → create wines)
 - Provides immediate value (can start tracking harvests)
 - Tests Zero sync with winery tables
 
-### Phase 2: Stage & Task Management (Components #3, #4)
-1. 🔲 Build `StageTransitionModal` (Component #3)
-2. 🔲 Build `TaskListView` (Component #4)
+### Phase 2: Stage & Task Management (Components #2, #3)
+1. 🔲 Build `StageTransitionModal` (Component #2)
+2. 🔲 Build `TaskListView` (Component #3)
 3. 🔲 Integrate task list into wine detail view
 4. 🔲 Test stage transitions with task creation
 5. 🔲 Test task completion and skipping
@@ -636,8 +589,8 @@ const bottledWines = await zero.query.wine
 - Tasks make stages actionable
 - Natural progression: create wine → advance through stages → complete tasks
 
-### Phase 3: Measurements (Component #5)
-1. 🔲 Build `MeasurementModal` (Component #5)
+### Phase 3: Measurements (Component #4)
+1. 🔲 Build `MeasurementModal` (Component #4)
 2. 🔲 Implement real-time validation against measurement_range
 3. 🔲 Display measurement history in wine detail view
 4. 🔲 Link measurement modal to "Measure pH/TA/Brix" tasks

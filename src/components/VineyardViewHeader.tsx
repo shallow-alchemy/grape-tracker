@@ -71,8 +71,8 @@ export const VineyardViewHeader = ({
         if (!vine.qrGenerated) {
           await zero.mutate.vine.update({
             id: vine.id,
-            qrGenerated: Date.now(),
-            updatedAt: Date.now(),
+            qr_generated: Date.now(),
+            updated_at: Date.now(),
           });
         }
       }
