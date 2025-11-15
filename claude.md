@@ -4,17 +4,29 @@
 
 This is **Gilbert**, a mobile-first grape tracking app with an 80s hacker terminal theme.
 
-**📖 Start here**: Read `docs/context.md` for complete project context, architecture, and current state.
+**📖 Start here**: Read **[`docs/README.md`](docs/README.md)** for complete documentation navigation.
 
 ## Essential Documentation
 
-1. **`docs/context.md`** - Complete project overview, tech stack, current features, database setup
-2. **`docs/roadmap.md`** - Development roadmap and feature priorities
-3. **`docs/zero-provider-fix.md`** - ⚠️ CRITICAL: How to properly use Zero's built-in provider (avoid "useZero must be used within ZeroProvider" error)
-4. **`docs/engineering-principles.md`** - Code standards (fat arrow functions, named exports, CSS Modules, minimal changes)
-5. **`docs/theme.md`** - Design philosophy (80s terminal aesthetic, mobile-first, accessibility)
-6. **`docs/theme.json`** - All design tokens (colors, typography, spacing, effects)
-7. **`docs/code-cleanup.md`** - Code cleanup plan and refactoring notes
+### Quick Start (Read These First)
+1. **[For AI Agents](docs/01-onboarding/for-ai-agents.md)** - Quick project context, priorities, essential files
+2. **[System Architecture](docs/02-architecture/system-architecture.md)** - How everything fits together
+3. **[Local Development Setup](docs/03-setup/local-development.md)** - Get up and running
+
+### Critical Technical Knowledge
+4. **[Zero Provider Fix](docs/zero-provider-fix.md)** - ⚠️ CRITICAL: Must use Zero's built-in provider
+5. **[Test Coverage Status](docs/05-testing/test-coverage-status.md)** - ⚠️ CRITICAL: 75% of tests are `todo`!
+6. **[Code Standards](docs/engineering-principles.md)** - Fat arrows, named exports, CSS Modules
+7. **[Testing Guide](docs/05-testing/testing-guide.md)** - rstest, mocking, React hooks, best practices
+
+### Reference Documentation
+8. **[Database Schema](docs/02-architecture/database-schema.md)** - All tables and relationships
+9. **[Deployment Guide](docs/deployment.md)** - Railway + Netlify production deployment
+10. **[Roadmap](docs/roadmap.md)** - Product development priorities
+11. **[Theme](docs/theme.md)** - 80s terminal aesthetic, mobile-first design
+12. **[Theme Tokens](docs/theme.json)** - Colors, typography, spacing values
+
+**See [`docs/README.md`](docs/README.md) for complete documentation index**
 
 ## Quick Reference
 
