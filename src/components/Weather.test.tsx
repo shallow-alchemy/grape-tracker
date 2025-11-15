@@ -114,7 +114,6 @@ describe('Weather', () => {
 
   describe('when weather fails to load', () => {
     test('displays error message to user', async () => {
-      const consoleErrorSpy = rs.spyOn(console, 'error').mockImplementation(() => {});
       const { fetchWeather } = require('../utils/weather');
       fetchWeather.mockRejectedValue(new Error('Network error'));
 
@@ -123,9 +122,6 @@ describe('Weather', () => {
       await waitFor(() => {
         expect(screen.getByText('Failed to load weather data')).toBeInTheDocument();
       });
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching weather:', expect.any(Error));
-      consoleErrorSpy.mockRestore();
     });
   });
 

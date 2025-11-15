@@ -169,7 +169,6 @@ export const DeleteBlockConfirmModal = ({
                 setDeleteVines(false);
                 onSuccess('Block deleted successfully');
               } catch (error) {
-                console.error('Error deleting block:', error);
                 setFormErrors({ submit: `Failed to delete block: ${error}` });
               } finally {
                 setIsSubmitting(false);

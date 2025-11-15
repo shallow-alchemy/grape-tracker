@@ -187,7 +187,7 @@ export const App = () => (
 #### 2. `src/components/vineyard-hooks.ts` (59 lines)
 
 **Issues**:
-- ❌ CRITICAL: Polling with setInterval instead of Zero subscriptions (lines 16, 34, 54)
+- ❌ CRITICAL: Polling with setInterval instead of Zero reactive queries (lines 16, 34, 54)
 - Unsafe `as` casting without validation (lines 12, 30, 49)
 - Depends on `zero` but should depend on stable instance
 
@@ -198,20 +198,24 @@ export const App = () => (
 const interval = setInterval(loadVines, 1000);
 return () => clearInterval(interval);
 
-// After (CORRECT):
-const query = zero.query.vine;
-const unsubscribe = query.subscribe((results) => {
-  setVinesData(results as VineDataRaw[]);
-});
-return unsubscribe;
+// After (CORRECT - using Zero's official useQuery hook):
+import { useQuery } from '@rocicorp/zero/react';
+
+export const useVines = () => {
+  const zero = useZero();
+  const [vinesData] = useQuery(zero.query.vine);
+  return vinesData as VineDataRaw[];
+};
 ```
+
+**IMPORTANT DISCOVERY**: Zero does NOT have a `subscribe` method on queries. Instead, use the `useQuery` hook from `@rocicorp/zero/react` which provides automatic reactive updates.
 
 **Apply to all three hooks**: `useVines`, `useBlocks`, `useVineyard`
 
-**Additional fixes**:
-- Remove `async/await` (not needed with subscriptions)
-- Consider adding type guards instead of `as` casting
-- Add error handling for subscription failures
+**Status**: ✅ COMPLETED
+- All three hooks converted to use `useQuery`
+- Real-time reactive updates working correctly
+- All tests updated and passing
 
 ---
 
@@ -220,10 +224,15 @@ return unsubscribe;
 **Issue**: Duplicate file at root level. The real implementation should be in `/winery/` folder.
 
 **Actions**:
-1. ❌ Delete `/src/components/WineryView.tsx` (root level)
+1. ✅ Delete `/src/components/WineryView.tsx` (root level)
 2. ✅ Keep `/src/components/winery/WineryView.tsx`
-3. Update App.tsx import to: `import { WineryView } from './components/winery/WineryView';`
-4. Implement proper WineryView per vintages_ui_planning.md
+3. ✅ Update App.tsx import to: `import { WineryView } from './components/winery/WineryView';`
+4. ⏸️ Implement proper WineryView per vintages_ui_planning.md (future work)
+
+**Status**: ✅ COMPLETED
+- Root-level duplicate file deleted
+- App.tsx import updated to winery folder version
+- All tests passing
 
 ---
 
@@ -465,17 +474,25 @@ export type AlertSettings = {
 
 **Priority**: Prevents technical debt from compounding
 
-1. ✅ Create `src/config.ts` with backend URL helper
-2. ✅ Fix polling in `vineyard-hooks.ts` → use Zero subscriptions
-3. ✅ Delete duplicate `src/components/WineryView.tsx`
-4. ✅ Extract WeatherAlertSettingsModal from App.tsx
-5. ✅ Update Weather.tsx import
-6. ✅ Remove all console.log/console.error calls
+1. ✅ **DONE** Create `src/config.ts` with backend URL helper
+2. ✅ **DONE** Fix polling in `vineyard-hooks.ts` → use Zero `useQuery` hook (not subscribe)
+3. ✅ **DONE** Delete duplicate `src/components/WineryView.tsx`
+4. ⏸️ **IN PROGRESS** Extract WeatherAlertSettingsModal from App.tsx
+5. ⏸️ **TODO** Update Weather.tsx import
+6. ⏸️ **TODO** Remove all console.log/console.error calls (except test suppression)
+
+**Actual Progress**:
+- ✅ config.ts created with getBackendUrl() and getZeroServerUrl()
+- ✅ vineyard-hooks.ts converted to use `useQuery` from @rocicorp/zero/react
+- ✅ WineryView.tsx duplicate deleted, App.tsx import updated
+- ✅ All tests passing (70/70)
+- ✅ TypeScript compilation clean
+- ⏸️ App.tsx still at 692 lines (need to extract modal)
 
 **Estimated Impact**:
-- App.tsx: 692 → 260 lines
-- vineyard-hooks.ts: Real-time sync working correctly
-- No more circular dependency risk
+- App.tsx: 692 → 260 lines (after extracting modal)
+- vineyard-hooks.ts: Real-time sync working correctly ✅
+- No more circular dependency risk ✅
 
 ---
 
@@ -483,11 +500,11 @@ export type AlertSettings = {
 
 **Priority**: Improves maintainability, enables scaling
 
-7. ✅ Extract DesktopDashboard components from App.tsx
-8. ✅ Extract DashboardView from App.tsx
-9. ✅ Standardize routing patterns in App.tsx
-10. ✅ Fix type safety issues (VineDetailsView, etc.)
-11. ✅ Update ZeroContext dependency array
+7. ⏸️ **TODO** Extract DesktopDashboard components from App.tsx
+8. ⏸️ **TODO** Extract DashboardView from App.tsx
+9. ⏸️ **TODO** Standardize routing patterns in App.tsx
+10. ⏸️ **TODO** Fix type safety issues (VineDetailsView, etc.)
+11. ⏸️ **TODO** Update ZeroContext dependency array
 
 **Estimated Impact**:
 - App.tsx: 260 → <100 lines

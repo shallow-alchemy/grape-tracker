@@ -113,7 +113,7 @@ export const VineDetailsView = ({
         });
       }
     } catch (error) {
-      console.error('Error generating QR STL file:', error);
+      // Error generating QR STL file
     }
   };
 
@@ -253,7 +253,6 @@ export const VineDetailsView = ({
                 setShowVineSettingsModal(false);
                 onUpdateSuccess('Vine settings updated successfully');
               } catch (error) {
-                console.error('Error updating vine:', error);
                 setFormErrors({ submit: `Failed to update vine: ${error}` });
               } finally {
                 setIsSubmitting(false);
@@ -390,7 +389,6 @@ export const VineDetailsView = ({
                     navigateBack();
                     onDeleteSuccess(`Vine ${vine.block}-${vine.id} deleted successfully`);
                   } catch (error) {
-                    console.error('Error deleting vine:', error);
                     setFormErrors({ submit: `Failed to delete vine: ${error}` });
                   } finally {
                     setIsSubmitting(false);

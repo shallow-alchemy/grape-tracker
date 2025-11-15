@@ -19,8 +19,6 @@ const createQRCodeJSCAD = async (vineUrl: string) => {
   const size = modules.size;
   const moduleSize = QR_SIZE / size;
 
-  console.log(`QR Code: ${size}x${size} modules, moduleSize: ${moduleSize.toFixed(3)}mm`);
-
   const blackCubes: any[] = [];
   let cubeCount = 0;
 
@@ -42,10 +40,7 @@ const createQRCodeJSCAD = async (vineUrl: string) => {
     }
   }
 
-  console.log(`Created ${cubeCount} black cubes for QR pattern`);
-  console.log('Unioning QR cubes...');
   const blackPattern = union(...blackCubes);
-  console.log('QR union complete');
 
   return blackPattern;
 };
@@ -53,14 +48,9 @@ const createQRCodeJSCAD = async (vineUrl: string) => {
 export const generate3MF = async (
   vineUrl: string
 ): Promise<Blob> => {
-  console.log('Generating QR code STL using JSCAD...');
-
   const blackPattern = await createQRCodeJSCAD(vineUrl);
 
-  console.log('Exporting QR pattern as STL...');
   const blackSTL = serializeSTL({ binary: true }, blackPattern);
-
-  console.log('STL export complete');
 
   return new Blob(blackSTL, { type: 'application/octet-stream' });
 };

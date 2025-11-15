@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchWeather, getWeatherIcon, WeatherData } from '../utils/weather';
 import { Alerts } from './Alerts';
-import { WeatherAlertSettingsModal } from '../App';
+import { WeatherAlertSettingsModal } from './weather/WeatherAlertSettingsModal';
 import styles from '../App.module.css';
 
 export const Weather = () => {
@@ -32,7 +32,6 @@ export const Weather = () => {
               setWeatherData(data);
               setLoading(false);
             } catch (err) {
-              console.error('Error fetching weather:', err);
               setError('Failed to load weather data');
               setLoading(false);
             }
@@ -44,7 +43,6 @@ export const Weather = () => {
               setWeatherData(data);
               setLoading(false);
             } catch (err) {
-              console.error('Error fetching weather:', err);
               setError('Failed to load weather data');
               setLoading(false);
             }
@@ -57,13 +55,11 @@ export const Weather = () => {
           setWeatherData(data);
           setLoading(false);
         } catch (err) {
-          console.error('Error fetching weather:', err);
           setError('Failed to load weather data');
           setLoading(false);
         }
       }
     } catch (err) {
-      console.error('Error in weather loading:', err);
       setError('Failed to load weather data');
       setLoading(false);
     }

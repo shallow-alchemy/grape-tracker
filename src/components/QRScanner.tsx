@@ -40,7 +40,6 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
           setLocation(`/vineyard/vine/${vineId}`);
           onClose();
         } catch (err) {
-          console.error('QR decode error:', err);
           setError('Invalid QR code format');
           setScanning(true);
         }
@@ -60,8 +59,6 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
         setScanning(true);
       }
     }).catch(err => {
-      console.error('Error starting scanner:', err);
-
       if (!isActive) return;
 
       let errorMsg = 'Unknown error';

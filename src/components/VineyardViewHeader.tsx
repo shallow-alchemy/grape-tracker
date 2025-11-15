@@ -94,7 +94,6 @@ export const VineyardViewHeader = ({
 
       onSuccess(`Generated ${vinesToGenerate.length} vine tag${vinesToGenerate.length > 1 ? 's' : ''}`);
     } catch (error) {
-      console.error('Error generating batch tags:', error);
       throw error;
     } finally {
       setIsGeneratingTags(false);

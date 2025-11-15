@@ -34,15 +34,9 @@ const mockSetLocation = rs.fn();
 
 const mockZero = {
   query: {
-    vine: {
-      run: rs.fn().mockResolvedValue(mockVinesData),
-    },
-    block: {
-      run: rs.fn().mockResolvedValue([]),
-    },
-    vineyard: {
-      run: rs.fn().mockResolvedValue([]),
-    },
+    vine: { data: mockVinesData },
+    block: { data: [] as any },
+    vineyard: { data: [] as any },
   },
   mutate: {
     vine: {
@@ -53,6 +47,21 @@ const mockZero = {
 
 rs.mock('../contexts/ZeroContext', () => ({
   useZero: () => mockZero,
+}));
+
+rs.mock('@rocicorp/zero/react', () => ({
+  useQuery: (query: any) => {
+    if (query === mockZero.query.vine) {
+      return [query.data];
+    }
+    if (query === mockZero.query.block) {
+      return [query.data];
+    }
+    if (query === mockZero.query.vineyard) {
+      return [query.data];
+    }
+    return [[]];
+  },
 }));
 
 rs.mock('wouter', () => ({
@@ -139,11 +148,11 @@ describe('VineyardView', () => {
 
   describe('when no vines exist', () => {
     beforeEach(() => {
-      mockZero.query.vine.run.mockResolvedValue([]);
+      mockZero.query.vine.data = [];
     });
 
     afterEach(() => {
-      mockZero.query.vine.run.mockResolvedValue(mockVinesData);
+      mockZero.query.vine.data = mockVinesData;
     });
 
     test.todo('shows empty state message to user', () => {
@@ -187,33 +196,35 @@ describe('VineyardView', () => {
   });
 
   describe('filtering by block', () => {
+    const mockBlockData = [
+      {
+        id: 'block-1',
+        name: 'North Block',
+        location: 'North',
+        size_acres: 2,
+        soil_type: 'Clay',
+        notes: '',
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      {
+        id: 'block-2',
+        name: 'South Block',
+        location: 'South',
+        size_acres: 3,
+        soil_type: 'Sandy',
+        notes: '',
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    ];
+
     beforeEach(() => {
-      mockZero.query.block.run.mockResolvedValue([
-        {
-          id: 'block-1',
-          name: 'North Block',
-          location: 'North',
-          size_acres: 2,
-          soil_type: 'Clay',
-          notes: '',
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
-        {
-          id: 'block-2',
-          name: 'South Block',
-          location: 'South',
-          size_acres: 3,
-          soil_type: 'Sandy',
-          notes: '',
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
-      ]);
+      mockZero.query.block.data = mockBlockData;
     });
 
     afterEach(() => {
-      mockZero.query.block.run.mockResolvedValue([]);
+      mockZero.query.block.data = [];
     });
 
     test.todo('user can select a block filter', async () => {

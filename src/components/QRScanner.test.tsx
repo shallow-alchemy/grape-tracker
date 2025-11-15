@@ -123,7 +123,6 @@ describe('QRScanner', () => {
 
   describe('camera permissions', () => {
     test('shows error message when camera access is denied', async () => {
-      const consoleErrorSpy = rs.spyOn(console, 'error').mockImplementation(() => {});
       mockQrScanner.start.mockRejectedValueOnce({ name: 'NotAllowedError', message: 'Permission denied' });
 
       render(<QRScanner onClose={rs.fn()} />);
@@ -131,13 +130,9 @@ describe('QRScanner', () => {
       await waitFor(() => {
         expect(screen.getByText(/camera permission/i)).toBeInTheDocument();
       });
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error starting scanner:', expect.any(Object));
-      consoleErrorSpy.mockRestore();
     });
 
     test('user can still close scanner after permission error', async () => {
-      const consoleErrorSpy = rs.spyOn(console, 'error').mockImplementation(() => {});
       const user = userEvent.setup();
       const onClose = rs.fn();
 
@@ -153,7 +148,6 @@ describe('QRScanner', () => {
       await user.click(closeButton);
 
       expect(onClose).toHaveBeenCalled();
-      consoleErrorSpy.mockRestore();
     });
   });
 

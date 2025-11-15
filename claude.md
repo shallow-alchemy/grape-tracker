@@ -10,11 +10,11 @@ This is **Gilbert**, a mobile-first grape tracking app with an 80s hacker termin
 
 1. **`docs/context.md`** - Complete project overview, tech stack, current features, database setup
 2. **`docs/roadmap.md`** - Development roadmap and feature priorities
-3. **`docs/next-steps-zero-sync.md`** - Current debugging focus for vine sync issue
-4. **`docs/troubleshooting.md`** - Common issues and solutions for Zero and ElectricSQL setups
-5. **`docs/engineering-principles.md`** - Code standards (fat arrow functions, named exports, CSS Modules, minimal changes)
-6. **`docs/theme.md`** - Design philosophy (80s terminal aesthetic, mobile-first, accessibility)
-7. **`docs/theme.json`** - All design tokens (colors, typography, spacing, effects)
+3. **`docs/zero-provider-fix.md`** - ⚠️ CRITICAL: How to properly use Zero's built-in provider (avoid "useZero must be used within ZeroProvider" error)
+4. **`docs/engineering-principles.md`** - Code standards (fat arrow functions, named exports, CSS Modules, minimal changes)
+5. **`docs/theme.md`** - Design philosophy (80s terminal aesthetic, mobile-first, accessibility)
+6. **`docs/theme.json`** - All design tokens (colors, typography, spacing, effects)
+7. **`docs/code-cleanup.md`** - Code cleanup plan and refactoring notes
 
 ## Quick Reference
 

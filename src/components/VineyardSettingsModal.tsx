@@ -64,7 +64,6 @@ export const VineyardSettingsModal = ({
               onClose();
               onSuccess('Vineyard settings updated successfully');
             } catch (error) {
-              console.error('Error updating vineyard:', error);
               setFormErrors({ submit: `Failed to update vineyard: ${error}` });
             } finally {
               setIsSubmitting(false);

@@ -21,6 +21,7 @@ export const VineyardView = ({
   initialBlockId?: string
 }) => {
   const [, setLocation] = useLocation();
+
   const [selectedVine, setSelectedVine] = useState<string | null>(initialVineId || null);
   const [showAddVineModal, setShowAddVineModal] = useState(false);
   const [showAddBlockModal, setShowAddBlockModal] = useState(false);

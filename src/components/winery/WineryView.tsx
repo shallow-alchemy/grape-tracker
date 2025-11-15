@@ -6,8 +6,7 @@ export const WineryView = () => {
 
   useEffect(() => {
     const fetchVintages = async () => {
-      const vintages = await zero.query.vintage.run();
-      console.log('Vintages:', vintages);
+      await zero.query.vintage.run();
     };
 
     fetchVintages();
@@ -22,7 +21,7 @@ export const WineryView = () => {
         WINERY
       </div>
       <div style={{ marginTop: 'var(--spacing-md)', fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>
-        Check console for vintage data
+        Winery features coming soon
       </div>
     </div>
   );
