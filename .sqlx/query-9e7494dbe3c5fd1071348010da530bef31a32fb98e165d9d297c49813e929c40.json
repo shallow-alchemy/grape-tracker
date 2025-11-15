@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT vineyard_id, alert_type, settings, updated_at\n        FROM alert_settings\n        WHERE vineyard_id = $1 AND alert_type = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "vineyard_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "alert_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "settings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 3,
+        "name": "updated_at",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "9e7494dbe3c5fd1071348010da530bef31a32fb98e165d9d297c49813e929c40"
+}

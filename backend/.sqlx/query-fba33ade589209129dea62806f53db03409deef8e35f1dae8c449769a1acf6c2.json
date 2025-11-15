@@ -1,0 +1,43 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO alert_settings (vineyard_id, alert_type, settings, updated_at)\n        VALUES ($1, $2, $3, $4)\n        ON CONFLICT (vineyard_id, alert_type)\n        DO UPDATE SET settings = $3, updated_at = $4\n        RETURNING vineyard_id, alert_type, settings, updated_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "vineyard_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "alert_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "settings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 3,
+        "name": "updated_at",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Jsonb",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "fba33ade589209129dea62806f53db03409deef8e35f1dae8c449769a1acf6c2"
+}

@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT settings\n        FROM alert_settings\n        WHERE vineyard_id = $1 AND alert_type = 'weather'\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "settings",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "19dd1d90f28eb7247cf8231c737ae361f355ad4e0fd3113e5f5b9794a572fddb"
+}
