@@ -32,6 +32,7 @@ export const Weather = () => {
               setWeatherData(data);
               setLoading(false);
             } catch (err) {
+              console.error(err)
               setError('Failed to load weather data');
               setLoading(false);
             }
@@ -43,6 +44,7 @@ export const Weather = () => {
               setWeatherData(data);
               setLoading(false);
             } catch (err) {
+              console.error('Weather fetch error (location denied):', err);
               setError('Failed to load weather data');
               setLoading(false);
             }
@@ -55,11 +57,13 @@ export const Weather = () => {
           setWeatherData(data);
           setLoading(false);
         } catch (err) {
+          console.error('Weather fetch error (no geolocation):', err);
           setError('Failed to load weather data');
           setLoading(false);
         }
       }
     } catch (err) {
+      console.error('Weather load error (outer):', err);
       setError('Failed to load weather data');
       setLoading(false);
     }

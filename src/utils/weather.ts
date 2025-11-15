@@ -1,5 +1,6 @@
 import { IconType } from 'react-icons';
 import { WiDaySunny, WiCloudy, WiRain, WiThunderstorm, WiSnow, WiFog } from 'react-icons/wi';
+import { getBackendUrl } from '../config';
 
 export type WeatherData = {
   current_temp_f: number;
@@ -33,7 +34,7 @@ export const getWeatherIcon = (code: number): IconType => {
 };
 
 export const fetchWeather = async (latitude: number, longitude: number, vineyardId = 'default'): Promise<WeatherData> => {
-  const backendUrl = process.env.PUBLIC_BACKEND_URL || 'http://localhost:3001';
+  const backendUrl = getBackendUrl();
   const response = await fetch(`${backendUrl}/weather?latitude=${latitude}&longitude=${longitude}&vineyard_id=${vineyardId}`);
 
   if (!response.ok) {
