@@ -10,8 +10,8 @@ export const WineryView = () => {
 
   useEffect(() => {
     const fetchVintages = async () => {
-      const vintages = await zero.query.vintage.run();
-      console.log('Vintages:', vintages);
+      await zero.query.vintage.run();
+      // console.log('Vintages:', vintages);
     };
 
     fetchVintages();

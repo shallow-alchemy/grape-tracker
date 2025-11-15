@@ -6,7 +6,7 @@ import { AddVineModal } from './AddVineModal';
 // Create mock functions at top level
 const mockVineInsert = rs.fn().mockResolvedValue(undefined);
 
-const mockVinesData = [];
+const mockVinesData: any[] = [];
 const mockBlocksData = [
   {
     id: 'block-1',

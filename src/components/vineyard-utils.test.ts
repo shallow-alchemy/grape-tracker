@@ -290,12 +290,12 @@ describe('vineyard-utils', () => {
         block: 'North Block',
         sequence_number: 1,
         variety: 'Cabernet Sauvignon',
-        planting_date: new Date('2020-01-01'),
+        planting_date: new Date('2020-01-01').getTime(),
         health: 'Good',
         notes: 'Test notes',
         qr_generated: 1,
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: Date.now(),
+        updated_at: Date.now(),
       };
 
       const result = transformVineData(rawVine);
@@ -316,12 +316,12 @@ describe('vineyard-utils', () => {
         block: 'North Block',
         sequence_number: 1,
         variety: 'Pinot Noir',
-        planting_date: new Date('2020-01-01'),
+        planting_date: new Date('2020-01-01').getTime(),
         health: 'Excellent',
         notes: null as any,
         qr_generated: 0,
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: Date.now(),
+        updated_at: Date.now(),
       };
 
       const result = transformVineData(rawVine);
@@ -335,12 +335,12 @@ describe('vineyard-utils', () => {
         block: 'North Block',
         sequence_number: 1,
         variety: 'Pinot Noir',
-        planting_date: new Date('2020-01-01'),
+        planting_date: new Date('2020-01-01').getTime(),
         health: 'Excellent',
         notes: '',
         qr_generated: 0,
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: Date.now(),
+        updated_at: Date.now(),
       };
 
       const result = transformVineData(rawVine);
@@ -354,12 +354,12 @@ describe('vineyard-utils', () => {
         block: 'North Block',
         sequence_number: 1,
         variety: 'Pinot Noir',
-        planting_date: new Date('2020-01-01'),
+        planting_date: new Date('2020-01-01').getTime(),
         health: 'Excellent',
         notes: '',
         qr_generated: 5,
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: Date.now(),
+        updated_at: Date.now(),
       };
 
       const result = transformVineData(rawVine);
@@ -372,14 +372,13 @@ describe('vineyard-utils', () => {
     test('transforms raw block data to BlockData format', () => {
       const rawBlock: BlockDataRaw = {
         id: 'block-1',
-        vineyard_id: 'vineyard-1',
         name: 'North Block',
         location: 'North hillside',
         size_acres: 5.5,
         soil_type: 'Clay loam',
         notes: 'Excellent drainage',
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: Date.now(),
+        updated_at: Date.now(),
       };
 
       const result = transformBlockData(rawBlock);
@@ -395,14 +394,13 @@ describe('vineyard-utils', () => {
     test('handles all block fields correctly', () => {
       const rawBlock: BlockDataRaw = {
         id: 'block-2',
-        vineyard_id: 'vineyard-1',
         name: 'South Block',
         location: 'South valley',
         size_acres: 3.2,
         soil_type: 'Sandy',
         notes: 'Needs irrigation',
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: Date.now(),
+        updated_at: Date.now(),
       };
 
       const result = transformBlockData(rawBlock);

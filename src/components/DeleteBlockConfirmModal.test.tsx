@@ -807,8 +807,6 @@ describe('DeleteBlockConfirmModal', () => {
     });
 
     test('guards against null deleteBlockId in delete handler', async () => {
-      const user = userEvent.setup();
-
       mockBlocksData = [{
         id: 'block-1',
         vineyard_id: 'v1',
