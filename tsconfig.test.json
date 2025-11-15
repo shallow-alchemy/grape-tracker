@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["@testing-library/jest-dom", "@rstest/core"]
+  },
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "rstest.setup.ts"],
+  "exclude": []
+}

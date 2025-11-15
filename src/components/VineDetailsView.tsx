@@ -48,6 +48,22 @@ export const VineDetailsView = ({
     }
   }, [showQRModal, vineUrl]);
 
+  if (!vine) {
+    return (
+      <div className={styles.vineDetails}>
+        <button className={styles.backButton} onClick={navigateBack} aria-label="back">
+          {'<'} BACK TO VINES
+        </button>
+        <div className={styles.vineDetailsHeader}>
+          <h1 className={styles.vineDetailsTitle}>VINE NOT FOUND</h1>
+        </div>
+        <p style={{ padding: 'var(--spacing-lg)', color: 'var(--color-text-secondary)' }}>
+          The requested vine could not be found.
+        </p>
+      </div>
+    );
+  }
+
   const handleDownloadSVG = () => {
     QRCode.toString(vineUrl, {
       type: 'svg',
@@ -116,6 +132,7 @@ export const VineDetailsView = ({
             className={styles.iconButton}
             onClick={() => setShowVineSettingsModal(true)}
             title="Vine Settings"
+            aria-label="settings"
           >
             <FiSettings size={20} />
           </button>
@@ -169,7 +186,7 @@ export const VineDetailsView = ({
         title={`VINE TAG - ${vine?.block}-${vine?.id}`}
       >
         <div className={styles.qrContainer}>
-              <canvas ref={canvasRef} className={styles.qrCanvas} />
+              <canvas ref={canvasRef} className={styles.qrCanvas} role="img" aria-label="qr code" />
               <div className={styles.qrInfo}>
                 <div className={styles.qrVineId}>{vine?.block}-{vine?.id}</div>
                 <div className={styles.qrVariety}>{vine?.variety}</div>

@@ -138,8 +138,6 @@ export const createMockUser = () => ({
 
 // Mock ClerkProvider for tests
 export const MockClerkProvider = ({ children }: { children: ReactNode }) => {
-  const mockUser = createMockUser();
-
   return (
     <div data-testid="mock-clerk-provider">
       {children}

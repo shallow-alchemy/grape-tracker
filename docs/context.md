@@ -8,6 +8,7 @@
 
 - **Frontend**: React 19 with TypeScript
 - **Build Tool**: Rsbuild
+- **Testing**: rstest (Rspack-based testing framework)
 - **Routing**: Wouter (minimal router, ~1.5kb)
 - **Authentication**: Clerk
 - **Data Sync**: Rocicorp Zero

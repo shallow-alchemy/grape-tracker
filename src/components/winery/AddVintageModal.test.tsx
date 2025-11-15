@@ -1,4 +1,4 @@
-import { test, describe, expect, rs, beforeEach, afterEach } from '@rstest/core';
+import { test, describe, expect, rs, afterEach } from '@rstest/core';
 import { render, screen, cleanup } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { AddVintageModal } from './AddVintageModal';
@@ -70,7 +70,7 @@ describe('AddVintageModal', () => {
       const onClose = rs.fn();
       const onSuccess = rs.fn();
 
-      const { container } = render(
+      render(
         <AddVintageModal
           isOpen={true}
           onClose={onClose}

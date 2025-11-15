@@ -97,6 +97,7 @@ export const QRScanner = ({ onClose }: QRScannerProps) => {
           <button
             className={styles.qrScannerClose}
             onClick={onClose}
+            aria-label="close"
           >
             ✕
           </button>

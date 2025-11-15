@@ -116,6 +116,7 @@ export const Weather = () => {
           <button
             className={styles.tempToggle}
             onClick={() => setShowHighTemps(!showHighTemps)}
+            aria-label="toggle"
           >
             {showHighTemps ? 'HIGHS ↑' : 'LOWS ↓'}
           </button>
@@ -125,7 +126,7 @@ export const Weather = () => {
             <div className={styles.todayTempMobile}>{weatherData.current_temp_f}°</div>
           </div>
           <div className={styles.forecastControls}>
-            <button className={styles.gearButton} onClick={() => setShowSettings(true)}>⚙</button>
+            <button className={styles.gearButton} onClick={() => setShowSettings(true)} aria-label="settings">⚙</button>
           </div>
         </div>
         <div className={styles.forecastContent}>
