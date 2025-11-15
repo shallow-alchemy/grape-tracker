@@ -1,19 +1,195 @@
-import { test, describe } from '@rstest/core';
+import { test, describe, expect, rs, afterEach, beforeEach } from '@rstest/core';
+import { render, screen, cleanup } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
+import { WineryView } from './WineryView';
+
+// Create mock function at top level
+const mockRun = rs.fn().mockResolvedValue([]);
+
+// Mock Zero context
+rs.mock('../../contexts/ZeroContext', () => ({
+  useZero: () => ({
+    query: {
+      vintage: {
+        run: mockRun,
+      },
+    },
+  }),
+}));
+
+// Mock AddVintageModal
+rs.mock('./AddVintageModal', () => ({
+  AddVintageModal: rs.fn(({ isOpen, onClose, onSuccess }: any) =>
+    isOpen ? (
+      <div role="dialog" data-testid="add-vintage-modal">
+        <div>Add Vintage Modal</div>
+        <button onClick={onClose}>Close</button>
+        <button onClick={() => onSuccess('Vintage added!')}>Submit</button>
+      </div>
+    ) : null
+  ),
+}));
 
 describe('WineryView', () => {
+  beforeEach(() => {
+    rs.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    rs.useRealTimers();
+  });
+
   describe('header', () => {
-    test.todo('displays winery label');
-    test.todo('displays add vintage button');
+    test('displays winery label', () => {
+      render(<WineryView />);
+      expect(screen.getByText('WINERY')).toBeInTheDocument();
+    });
+
+    test('displays add vintage button', () => {
+      render(<WineryView />);
+      expect(screen.getByText('ADD VINTAGE')).toBeInTheDocument();
+    });
+
     test.todo('displays add wine button');
     test.todo('displays manage inventory button');
     test.todo('displays settings gear icon');
   });
 
   describe('button actions', () => {
-    test.todo('opens add vintage modal when button clicked');
+    test('opens add vintage modal when button clicked', async () => {
+      const user = userEvent.setup();
+      render(<WineryView />);
+
+      // Modal should not be visible initially
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+      // Click ADD VINTAGE button
+      await user.click(screen.getByText('ADD VINTAGE'));
+
+      // Modal should now be visible
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    test('can close add vintage modal', async () => {
+      const user = userEvent.setup();
+      render(<WineryView />);
+
+      // Open the modal
+      await user.click(screen.getByText('ADD VINTAGE'));
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+      // Close the modal
+      await user.click(screen.getByText('Close'));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    test('shows success message after adding vintage', async () => {
+      const user = userEvent.setup();
+      render(<WineryView />);
+
+      // Open modal and submit
+      await user.click(screen.getByText('ADD VINTAGE'));
+      await user.click(screen.getByText('Submit'));
+
+      // Success message should appear
+      expect(screen.getByText('Vintage added!')).toBeInTheDocument();
+    });
+
+    test('success message disappears after timeout', async () => {
+      const user = userEvent.setup();
+      render(<WineryView />);
+
+      // Trigger success message
+      await user.click(screen.getByText('ADD VINTAGE'));
+      await user.click(screen.getByText('Submit'));
+
+      expect(screen.getByText('Vintage added!')).toBeInTheDocument();
+
+      // Wait for timeout to complete (3 seconds + buffer)
+      await new Promise(resolve => setTimeout(resolve, 3100));
+
+      // Message should be gone
+      expect(screen.queryByText('Vintage added!')).not.toBeInTheDocument();
+    });
+
     test.todo('opens add wine modal when button clicked');
     test.todo('opens inventory modal when button clicked');
     test.todo('opens settings modal when gear clicked');
+  });
+
+  describe('content display', () => {
+    test('displays placeholder text for vintage data', () => {
+      render(<WineryView />);
+      expect(screen.getByText('Check console for vintage data')).toBeInTheDocument();
+    });
+
+    test('fetches vintages on mount', () => {
+      render(<WineryView />);
+
+      // Should call run() on mount
+      expect(mockRun).toHaveBeenCalled();
+    });
+
+    test('success message does not appear initially', () => {
+      render(<WineryView />);
+      expect(screen.queryByText(/added/i)).not.toBeInTheDocument();
+    });
+
+    test('modal is closed initially', () => {
+      render(<WineryView />);
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    test('success message appears immediately after submit', async () => {
+      const user = userEvent.setup();
+      render(<WineryView />);
+
+      // Before submitting - no message
+      expect(screen.queryByText('Vintage added!')).not.toBeInTheDocument();
+
+      // Open and submit
+      await user.click(screen.getByText('ADD VINTAGE'));
+      await user.click(screen.getByText('Submit'));
+
+      // Message should appear immediately
+      expect(screen.getByText('Vintage added!')).toBeInTheDocument();
+    });
+
+    test('can reopen modal after closing', async () => {
+      const user = userEvent.setup();
+      render(<WineryView />);
+
+      // Open modal
+      await user.click(screen.getByText('ADD VINTAGE'));
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+      // Close modal
+      await user.click(screen.getByText('Close'));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+      // Reopen modal
+      await user.click(screen.getByText('ADD VINTAGE'));
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    test('multiple success messages work correctly', async () => {
+      const user = userEvent.setup();
+      render(<WineryView />);
+
+      // Trigger first success message
+      await user.click(screen.getByText('ADD VINTAGE'));
+      await user.click(screen.getByText('Submit'));
+      expect(screen.getByText('Vintage added!')).toBeInTheDocument();
+
+      // Close modal
+      await user.click(screen.getByText('Close'));
+
+      // Trigger second success message
+      await user.click(screen.getByText('ADD VINTAGE'));
+      await user.click(screen.getByText('Submit'));
+      expect(screen.getByText('Vintage added!')).toBeInTheDocument();
+    });
   });
 
   describe('wine sections', () => {
@@ -70,6 +246,43 @@ describe('WineryView', () => {
   });
 
   describe('data loading', () => {
+    test('polls for vintages every 2 seconds', () => {
+      rs.useFakeTimers();
+
+      render(<WineryView />);
+
+      // Initial fetch on mount
+      expect(mockRun).toHaveBeenCalledTimes(1);
+
+      // Fast-forward 2 seconds
+      rs.advanceTimersByTime(2000);
+      expect(mockRun).toHaveBeenCalledTimes(2);
+
+      // Fast-forward another 2 seconds
+      rs.advanceTimersByTime(2000);
+      expect(mockRun).toHaveBeenCalledTimes(3);
+
+      rs.useRealTimers();
+    });
+
+    test('cleans up interval on unmount', () => {
+      rs.useFakeTimers();
+
+      const { unmount } = render(<WineryView />);
+
+      // Initial fetch on mount
+      expect(mockRun).toHaveBeenCalledTimes(1);
+
+      // Unmount component
+      unmount();
+
+      // Fast-forward time - should not trigger more fetches
+      rs.advanceTimersByTime(10000);
+      expect(mockRun).toHaveBeenCalledTimes(1);
+
+      rs.useRealTimers();
+    });
+
     test.todo('shows loading state initially');
     test.todo('shows content when data loaded');
     test.todo('refreshes when new wine created');

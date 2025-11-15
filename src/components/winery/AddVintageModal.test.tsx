@@ -3,6 +3,10 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { AddVintageModal } from './AddVintageModal';
 
+// Create mock functions at top level so we can access them in tests
+const mockVintageInsert = rs.fn().mockResolvedValue(undefined);
+const mockStageHistoryInsert = rs.fn().mockResolvedValue(undefined);
+
 // Mock modules before importing
 rs.mock('../../contexts/ZeroContext', () => ({
   useZero: () => ({
@@ -14,10 +18,10 @@ rs.mock('../../contexts/ZeroContext', () => ({
     },
     mutate: {
       vintage: {
-        insert: rs.fn().mockResolvedValue(undefined),
+        insert: mockVintageInsert,
       },
       stage_history: {
-        insert: rs.fn().mockResolvedValue(undefined),
+        insert: mockStageHistoryInsert,
       },
     },
   }),
@@ -30,6 +34,10 @@ rs.mock('../vineyard-hooks', () => ({
 describe('AddVintageModal', () => {
   afterEach(() => {
     cleanup();
+    mockVintageInsert.mockClear();
+    mockStageHistoryInsert.mockClear();
+    mockVintageInsert.mockResolvedValue(undefined);
+    mockStageHistoryInsert.mockResolvedValue(undefined);
   });
 
   describe('visibility', () => {
@@ -102,9 +110,10 @@ describe('AddVintageModal', () => {
   describe('validation', () => {
     test.todo('shows error when vintage year not selected');
     test.todo('shows error when variety not selected');
+    test.todo('validates brix is not above 40');
+    test.todo('validates brix is not negative');
     test.todo('shows error when duplicate vintage exists');
     test.todo('allows submission when no blocks selected');
-    test.todo('validates brix is between 0 and 40');
   });
 
   describe('form interaction', () => {
@@ -115,12 +124,145 @@ describe('AddVintageModal', () => {
   });
 
   describe('data persistence', () => {
-    test.todo('creates vintage record with correct data');
-    test.todo('creates initial stage history entry');
+    test('creates vintage record and stage history on successful submission', async () => {
+      const user = userEvent.setup();
+      const onClose = rs.fn();
+      const onSuccess = rs.fn();
+
+      render(
+        <AddVintageModal
+          isOpen={true}
+          onClose={onClose}
+          onSuccess={onSuccess}
+        />
+      );
+
+      // Get selects by position
+      const selects = screen.getAllByRole('combobox');
+      const vintageYearSelect = selects[0];
+      const varietySelect = selects[1];
+
+      // Fill in required fields
+      await user.selectOptions(vintageYearSelect, '2024');
+      await user.selectOptions(varietySelect, 'Cabernet Sauvignon');
+
+      // Submit form
+      const submitButton = screen.getByRole('button', { name: /create vintage/i });
+      await user.click(submitButton);
+
+      // Wait for async operations
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Should create vintage record
+      expect(mockVintageInsert).toHaveBeenCalled();
+
+      // Should create stage history
+      expect(mockStageHistoryInsert).toHaveBeenCalled();
+
+      // Should call callbacks
+      expect(onClose).toHaveBeenCalled();
+      expect(onSuccess).toHaveBeenCalledWith(expect.stringContaining('2024'));
+      expect(onSuccess).toHaveBeenCalledWith(expect.stringContaining('Cabernet Sauvignon'));
+    });
+
+    test('creates vintage with all optional fields', async () => {
+      const user = userEvent.setup();
+      const onClose = rs.fn();
+      const onSuccess = rs.fn();
+
+      render(
+        <AddVintageModal
+          isOpen={true}
+          onClose={onClose}
+          onSuccess={onSuccess}
+        />
+      );
+
+      // Get selects by position
+      const selects = screen.getAllByRole('combobox');
+      const vintageYearSelect = selects[0];
+      const varietySelect = selects[1];
+
+      // Fill in required fields
+      await user.selectOptions(vintageYearSelect, '2024');
+      await user.selectOptions(varietySelect, 'Pinot Noir');
+
+      // Get input fields by role (spinbuttons for number inputs)
+      const spinbuttons = screen.getAllByRole('spinbutton');
+      const weightInput = spinbuttons[0]; // harvest weight
+      const volumeInput = spinbuttons[1]; // harvest volume
+      const brixInput = spinbuttons[2]; // brix
+
+      await user.type(weightInput, '500');
+      await user.type(volumeInput, '50');
+      await user.type(brixInput, '24.5');
+
+      // Get textarea by role
+      const notesInput = screen.getByRole('textbox');
+      await user.type(notesInput, 'Excellent harvest conditions');
+
+      // Submit form
+      const submitButton = screen.getByRole('button', { name: /create vintage/i });
+      await user.click(submitButton);
+
+      // Wait for async operations
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Should have called insert with all fields
+      expect(mockVintageInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          vintage_year: 2024,
+          variety: 'Pinot Noir',
+          harvest_weight_lbs: 500,
+          harvest_volume_gallons: 50,
+          brix_at_harvest: 24.5,
+          notes: 'Excellent harvest conditions',
+        })
+      );
+    });
   });
 
   describe('error handling', () => {
-    test.todo('shows error message when submission fails');
+    test('shows error message when submission fails', async () => {
+      const user = userEvent.setup();
+      const onClose = rs.fn();
+      const onSuccess = rs.fn();
+
+      // Configure the mock to reject for this test
+      mockVintageInsert.mockRejectedValue(new Error('Database error'));
+
+      render(
+        <AddVintageModal
+          isOpen={true}
+          onClose={onClose}
+          onSuccess={onSuccess}
+        />
+      );
+
+      // Get selects by position
+      const selects = screen.getAllByRole('combobox');
+      const vintageYearSelect = selects[0];
+      const varietySelect = selects[1];
+
+      // Fill in required fields
+      await user.selectOptions(vintageYearSelect, '2024');
+      await user.selectOptions(varietySelect, 'Merlot');
+
+      // Submit form
+      const submitButton = screen.getByRole('button', { name: /create vintage/i });
+      await user.click(submitButton);
+
+      // Wait for async operations
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Should show error
+      expect(screen.getByText(/failed to create vintage/i)).toBeInTheDocument();
+
+      // Should not call success callbacks
+      expect(onClose).not.toHaveBeenCalled();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
     test.todo('keeps form data when submission fails');
   });
 });
