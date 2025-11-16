@@ -28,6 +28,9 @@ const AppContent = () => {
       <Route path="/winery/vintage/:id">
         {(params) => <WineryView initialVintageId={params.id} />}
       </Route>
+      <Route path="/winery/wine/:id">
+        {(params) => <WineryView initialWineId={params.id} />}
+      </Route>
       <Route path="/winery">{() => <WineryView />}</Route>
     </div>
   );

@@ -70,6 +70,7 @@ const wineTable = table('wine')
     current_stage: string(),
     status: string(),
     last_tasting_notes: string(),
+    blend_components: json(),
     created_at: number(),
     updated_at: number(),
   })

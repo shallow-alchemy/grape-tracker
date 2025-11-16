@@ -68,6 +68,102 @@
 
 ---
 
+### 1.5 Vine Details - In-line Editing & Rich Media
+**Status:** 🔲 Not Started
+
+**Goal:** Make vine details page fully functional for field work with direct editing, photo management, and comprehensive tracking.
+
+**Core Requirements:**
+
+**A. Direct Editing (High Priority)**
+- [ ] **Editable Health Dropdown** - Click health status to change (GOOD → FAIR → POOR → DEAD) without opening settings modal
+- [ ] **Editable Notes Field** - Click to edit variety, planting date, and general notes directly on details page
+- [ ] **Save indicators** - Visual feedback when fields are being updated
+- [ ] **Validation** - Prevent invalid data entry with inline error messages
+
+**B. Photo Management (High Priority - Mobile Critical)**
+- [ ] **Photo Upload Interface**
+  - [ ] Mobile: Camera capture button (direct camera access)
+  - [ ] Mobile: Photo library picker
+  - [ ] Desktop: File upload with drag-and-drop
+  - [ ] Progress indicators for uploads
+- [ ] **Photo Storage & Display**
+  - [ ] Thumbnail grid view (3-4 photos per row on mobile)
+  - [ ] Tap thumbnail to enlarge (fullscreen modal)
+  - [ ] Swipe/arrows to navigate between photos in fullscreen
+  - [ ] Photo metadata (date taken, file size)
+  - [ ] Delete photos (with confirmation)
+- [ ] **Technical Considerations**
+  - [ ] Image compression before upload (mobile bandwidth)
+  - [ ] Storage solution (S3, Cloudinary, or similar)
+  - [ ] Database schema for photo references
+  - [ ] Loading states and error handling
+
+**C. Watering Tracking (Medium Priority)**
+- [ ] **Watering Log**
+  - [ ] Quick "Water Now" button (records timestamp)
+  - [ ] Manual entry for past watering (date + amount)
+  - [ ] View watering history (chronological list)
+  - [ ] Visual indicator of days since last watered
+  - [ ] Optional: Integration with weather (rainfall tracking)
+- [ ] **Schema**
+  - [ ] Create `watering_log` table (vine_id, date, amount_gallons, method, notes)
+
+**D. Disease & Disorder Management (Needs Planning)**
+- [ ] **Basic Implementation**
+  - [ ] Editable "Disease Notes" text area on details page
+  - [ ] Track disease status (active, monitoring, resolved)
+  - [ ] Date tracking for disease onset and resolution
+- [ ] **Advanced Features (Future - AI Integration)**
+  - [ ] Structured disease reporting (symptoms, affected areas, severity)
+  - [ ] Disease identification assistance (AI photo analysis)
+  - [ ] Treatment recommendations
+  - [ ] Disease spread tracking across vineyard
+  - [ ] Historical disease patterns for prevention
+- [ ] **Schema Needs**
+  - [ ] `disease_log` table design (TBD based on complexity decision)
+
+**E. Training & Pruning System (Large Feature - Needs Planning)**
+- [ ] **Basic Requirements**
+  - [ ] User sets preferred training method per vine (VSP, GDC, Cordon, etc.)
+  - [ ] Track pruning dates and cane/spur counts
+  - [ ] Visual diagrams/reference for training systems
+- [ ] **Advanced Features (Future - AI Integration)**
+  - [ ] AI-guided pruning recommendations based on training method
+  - [ ] Photo-based growth tracking and pruning point suggestions
+  - [ ] Integration with spur planning
+  - [ ] Seasonal pruning checklists
+- [ ] **Planning Required**
+  - [ ] Research common training methods and terminology
+  - [ ] Design data model for training configurations
+  - [ ] Determine AI capabilities (image recognition for canes/spurs)
+
+**F. Spur Planning (Needs Planning)**
+- [ ] **Requirements (TBD)**
+  - [ ] Visual spur layout planning
+  - [ ] Integration with training method
+  - [ ] Track spur productivity year-over-year
+  - [ ] Plan future spur positions
+- [ ] **Planning Required**
+  - [ ] Research viticulture best practices for spur planning
+  - [ ] Design UI for spur visualization
+  - [ ] Determine data model
+
+**Dependencies:**
+- Photo storage infrastructure (S3 or equivalent)
+- Image processing library (compression, thumbnails)
+- Mobile camera permissions handling
+- Potential AI integration planning (disease ID, pruning assistance)
+
+**Next Actions:**
+1. Plan photo storage architecture
+2. Design disease tracking data model (simple vs. complex)
+3. Research training systems and pruning terminology
+4. Create detailed specs for spur planning feature
+5. Prototype in-line editing UX (health dropdown, notes fields)
+
+---
+
 ## Phase 2: QR Code & 3D Printable Tags
 
 ### 2.1 QR Code Generation
