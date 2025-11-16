@@ -3,17 +3,37 @@ import { useQuery } from '@rocicorp/zero/react';
 import { FiSettings } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { EditVintageModal } from './EditVintageModal';
+import { AddWineModal } from './AddWineModal';
 import styles from '../../App.module.css';
 
 type VintageDetailsViewProps = {
   vintageId: string;
   onBack: () => void;
+  onWineClick: (wineId: string) => void;
 };
 
-export const VintageDetailsView = ({ vintageId, onBack }: VintageDetailsViewProps) => {
+export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDetailsViewProps) => {
   const zero = useZero();
   const [vintagesData] = useQuery(zero.query.vintage.where('id', vintageId));
   const vintage = vintagesData[0];
+
+  // Fetch all wines to check both primary vintage and blend components
+  const [allWinesData] = useQuery(zero.query.wine);
+
+  // Filter wines that use this vintage (either as primary or in blend)
+  const wines = allWinesData.filter(wine => {
+    // Check if this is the primary vintage
+    if (wine.vintage_id === vintageId) {
+      return true;
+    }
+
+    // Check if this vintage is in the blend components
+    if (wine.blend_components && Array.isArray(wine.blend_components)) {
+      return wine.blend_components.some((component: any) => component.vintage_id === vintageId);
+    }
+
+    return false;
+  }).sort((a, b) => a.name.localeCompare(b.name));
 
   // Fetch harvest measurements
   const [measurementsData] = useQuery(
@@ -25,6 +45,7 @@ export const VintageDetailsView = ({ vintageId, onBack }: VintageDetailsViewProp
   const harvestMeasurement = measurementsData[0];
 
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddWineModal, setShowAddWineModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const showSuccessMessage = (message: string) => {
@@ -69,9 +90,14 @@ export const VintageDetailsView = ({ vintageId, onBack }: VintageDetailsViewProp
         <div className={styles.vineyardTitle}>
           {vintage.vintage_year} {vintage.variety}
         </div>
-        <button className={styles.gearButton} onClick={() => setShowEditModal(true)}>
-          <FiSettings size={20} />
-        </button>
+        <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
+          <button className={styles.actionButton} onClick={() => setShowAddWineModal(true)}>
+            CREATE WINE
+          </button>
+          <button className={styles.gearButton} onClick={() => setShowEditModal(true)}>
+            <FiSettings size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Current Stage */}
@@ -166,6 +192,88 @@ export const VintageDetailsView = ({ vintageId, onBack }: VintageDetailsViewProp
         </div>
       )}
 
+      {/* Wines Made From This Vintage */}
+      {wines.length > 0 && (
+        <div className={styles.detailSection}>
+          <div className={styles.sectionHeader}>
+            WINES FROM THIS VINTAGE ({wines.length})
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+            {wines.map((wine) => {
+              const isBlend = wine.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
+              return (
+                <div
+                  key={wine.id}
+                  onClick={() => onWineClick(wine.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      onWineClick(wine.id);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: 'var(--spacing-sm)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-primary-500)';
+                    e.currentTarget.style.backgroundColor = 'rgba(58, 122, 58, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <div>
+                    <div style={{
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: 'var(--font-size-sm)',
+                      color: 'var(--color-text-primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--spacing-sm)'
+                    }}>
+                      {wine.name}
+                      <span style={{
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--color-text-accent)',
+                        border: '1px solid var(--color-primary-500)',
+                        padding: '2px var(--spacing-xs)',
+                        borderRadius: 'var(--radius-sm)',
+                      }}>
+                        {isBlend ? 'BLEND' : 'VARIETAL'}
+                      </span>
+                    </div>
+                    <div style={{
+                      fontSize: 'var(--font-size-xs)',
+                      color: 'var(--color-text-secondary)',
+                      fontFamily: 'var(--font-body)',
+                      marginTop: 'var(--spacing-xs)'
+                    }}>
+                      {wine.wine_type.toUpperCase()} • {wine.current_volume_gallons} GAL • {wine.status.toUpperCase()}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontFamily: 'var(--font-heading)',
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--color-text-secondary)'
+                  }}>
+                    →
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       {successMessage && (
         <div className={styles.successMessage}>
@@ -182,6 +290,13 @@ export const VintageDetailsView = ({ vintageId, onBack }: VintageDetailsViewProp
           vintage={vintage}
         />
       )}
+
+      <AddWineModal
+        isOpen={showAddWineModal}
+        onClose={() => setShowAddWineModal(false)}
+        onSuccess={showSuccessMessage}
+        initialVintageId={vintageId}
+      />
     </div>
   );
 };

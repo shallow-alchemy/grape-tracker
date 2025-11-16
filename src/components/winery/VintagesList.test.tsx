@@ -7,6 +7,7 @@ import { VintagesList } from './VintagesList';
 const mockVintagesData: any[] = [];
 const mockBlocksData: any[] = [];
 const mockMeasurementsData: any[] = [];
+const mockWinesData: any[] = [];
 
 const mockZero = {
   query: {
@@ -16,6 +17,7 @@ const mockZero = {
       data: mockMeasurementsData,
       where: rs.fn().mockReturnThis(),
     },
+    wine: { data: mockWinesData },
   },
 };
 
@@ -34,6 +36,9 @@ rs.mock('@rocicorp/zero/react', () => ({
     if (query === mockZero.query.measurement || query?.data === mockMeasurementsData) {
       return [mockMeasurementsData];
     }
+    if (query === mockZero.query.wine) {
+      return [query.data];
+    }
     return [[]];
   },
 }));
@@ -44,18 +49,19 @@ describe('VintagesList - Integration Tests', () => {
     mockVintagesData.length = 0;
     mockBlocksData.length = 0;
     mockMeasurementsData.length = 0;
+    mockWinesData.length = 0;
   });
 
   describe('Empty State', () => {
     test('displays empty state when no vintages exist', () => {
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/NO VINTAGES YET/i)).toBeInTheDocument();
       expect(screen.getByText(/ADD YOUR FIRST HARVEST TO GET STARTED/i)).toBeInTheDocument();
     });
 
     test('empty state shows helpful message about first harvest', () => {
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/ADD YOUR FIRST HARVEST/i)).toBeInTheDocument();
     });
@@ -78,7 +84,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/2024 CABERNET SAUVIGNON/i)).toBeInTheDocument();
     });
@@ -97,7 +103,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       // Check that HARVEST appears (could be in stage or in "HARVEST DATE" label)
       const harvestElements = screen.getAllByText(/HARVEST/i);
@@ -117,7 +123,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/PRE.?HARVEST/i)).toBeInTheDocument();
     });
@@ -136,7 +142,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       // Date format might vary by timezone, just check that Oct and 2024 appear
       expect(screen.getByText(/Oct \d+, 2024/i)).toBeInTheDocument();
@@ -156,7 +162,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/450 lbs/i)).toBeInTheDocument();
     });
@@ -192,7 +198,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/24\.5°/i)).toBeInTheDocument();
     });
@@ -211,7 +217,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/35 gal/i)).toBeInTheDocument();
     });
@@ -232,7 +238,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/2024 MERLOT/i)).toBeInTheDocument();
       expect(screen.queryByText(/lbs/i)).not.toBeInTheDocument();
@@ -277,7 +283,7 @@ describe('VintagesList - Integration Tests', () => {
         }
       );
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/2024 CABERNET SAUVIGNON/i)).toBeInTheDocument();
       expect(screen.getByText(/2024 PINOT NOIR/i)).toBeInTheDocument();
@@ -318,7 +324,7 @@ describe('VintagesList - Integration Tests', () => {
         }
       );
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       const cards = screen.getAllByText(/\d{4}/);
       expect(cards[0].textContent).toContain('2024');
@@ -343,7 +349,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={onVintageClick} />);
+      render(<VintagesList onVintageClick={onVintageClick} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       const card = screen.getByText(/2024 CABERNET SAUVIGNON/i).closest('div');
       if (card) {
@@ -368,7 +374,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={onVintageClick} />);
+      render(<VintagesList onVintageClick={onVintageClick} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       const card = screen.getByText(/2024 PINOT NOIR/i).closest('div');
       if (card) {
@@ -393,7 +399,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/BUD-BREAK/i)).toBeInTheDocument();
     });
@@ -410,7 +416,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/PRE.?HARVEST/i)).toBeInTheDocument();
     });
@@ -427,7 +433,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/FLOWERING/i)).toBeInTheDocument();
     });
@@ -471,7 +477,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/2 blocks/i)).toBeInTheDocument();
     });
@@ -500,7 +506,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       expect(screen.getByText(/1 block/i)).toBeInTheDocument();
     });
@@ -519,7 +525,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       const card = screen.getByText(/2024 CABERNET SAUVIGNON/i).closest('div[role="button"]');
       expect(card).toHaveAttribute('role', 'button');
@@ -540,7 +546,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={onVintageClick} />);
+      render(<VintagesList onVintageClick={onVintageClick} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       const card = screen.getByText(/2024 CABERNET SAUVIGNON/i).closest('div[role="button"]');
       if (card && card instanceof HTMLElement) {
@@ -565,7 +571,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       const heading = screen.getByText(/2024 CABERNET SAUVIGNON/i);
       expect(heading.tagName).toBe('H3');
@@ -601,7 +607,7 @@ describe('VintagesList - Integration Tests', () => {
         updated_at: Date.now(),
       });
 
-      render(<VintagesList onVintageClick={rs.fn()} />);
+      render(<VintagesList onVintageClick={rs.fn()} onWineClick={rs.fn()} onCreateWine={rs.fn()} />);
 
       // Both should be present
       expect(screen.getByText(/450 lbs/i)).toBeInTheDocument();

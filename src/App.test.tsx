@@ -91,7 +91,7 @@ describe('App', () => {
     render(<App />);
 
     const wineryLink = screen.getByText('WINERY').closest('a');
-    expect(wineryLink).toHaveAttribute('href', '/winery');
+    expect(wineryLink).toHaveAttribute('href', '/winery/vintages');
   });
 
   test('wraps content in ZeroProvider', () => {

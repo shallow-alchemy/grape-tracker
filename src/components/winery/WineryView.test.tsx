@@ -51,7 +51,7 @@ rs.mock('./VintagesList', () => ({
 
 // Mock VintageDetailsView
 rs.mock('./VintageDetailsView', () => ({
-  VintageDetailsView: rs.fn(({ vintageId, onBack }: any) => (
+  VintageDetailsView: rs.fn(({ vintageId, onBack, onWineClick: _onWineClick }: any) => (
     <div data-testid="vintage-details">
       <div>Vintage Details: {vintageId}</div>
       <button onClick={onBack}>Back</button>

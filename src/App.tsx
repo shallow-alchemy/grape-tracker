@@ -13,7 +13,7 @@ const AppContent = () => {
         <Link href="/" className={styles.appTitle}>GILBERT</Link>
         <nav className={styles.nav}>
           <Link href="/vineyard" className={styles.navLink}>VINEYARD</Link>
-          <Link href="/winery" className={styles.navLink}>WINERY</Link>
+          <Link href="/winery/vintages" className={styles.navLink}>WINERY</Link>
         </nav>
         <UserButton />
       </header>
@@ -25,12 +25,14 @@ const AppContent = () => {
         {(params) => <VineyardView initialBlockId={params.id} />}
       </Route>
       <Route path="/vineyard">{() => <VineyardView />}</Route>
-      <Route path="/winery/vintage/:id">
+      <Route path="/winery/vintages/:id">
         {(params) => <WineryView initialVintageId={params.id} />}
       </Route>
-      <Route path="/winery/wine/:id">
+      <Route path="/winery/vintages">{() => <WineryView />}</Route>
+      <Route path="/winery/wines/:id">
         {(params) => <WineryView initialWineId={params.id} />}
       </Route>
+      <Route path="/winery/wines">{() => <WineryView />}</Route>
       <Route path="/winery">{() => <WineryView />}</Route>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useZero } from '../../contexts/ZeroContext';
 import { Modal } from '../Modal';
@@ -8,9 +8,10 @@ type AddWineModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (message: string) => void;
+  initialVintageId?: string;
 };
 
-export const AddWineModal = ({ isOpen, onClose, onSuccess }: AddWineModalProps) => {
+export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: AddWineModalProps) => {
   const zero = useZero();
   const [vintagesData] = useQuery(zero.query.vintage);
 
@@ -18,7 +19,7 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess }: AddWineModalProps) 
   const vintages = [...vintagesData].sort((a, b) => b.vintage_year - a.vintage_year);
 
   const [formData, setFormData] = useState({
-    vintageId: '',
+    vintageId: initialVintageId || '',
     name: '',
     wineType: 'red',
     volumeGallons: '',
@@ -33,6 +34,13 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess }: AddWineModalProps) 
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Set initial vintage when modal opens
+  useEffect(() => {
+    if (isOpen && initialVintageId) {
+      setFormData(prev => ({ ...prev, vintageId: initialVintageId }));
+    }
+  }, [isOpen, initialVintageId]);
 
   const resetForm = () => {
     setFormData({

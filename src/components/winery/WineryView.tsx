@@ -16,11 +16,14 @@ type WineryViewProps = {
 type ActiveTab = 'vintages' | 'wines';
 
 export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps) => {
-  const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<ActiveTab>('vintages');
+  const [location, setLocation] = useLocation();
   const [showAddVintageModal, setShowAddVintageModal] = useState(false);
   const [showAddWineModal, setShowAddWineModal] = useState(false);
+  const [wineModalInitialVintageId, setWineModalInitialVintageId] = useState<string | undefined>(undefined);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Determine active tab from route
+  const activeTab: ActiveTab = location.includes('/winery/wines') ? 'wines' : 'vintages';
 
   const showSuccessMessage = (message: string) => {
     setSuccessMessage(message);
@@ -29,12 +32,17 @@ export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps)
 
   const handleVintageClick = (vintageId: string) => {
     sessionStorage.setItem('internalNav', 'true');
-    setLocation(`/winery/vintage/${vintageId}`);
+    setLocation(`/winery/vintages/${vintageId}`);
   };
 
   const handleWineClick = (wineId: string) => {
     sessionStorage.setItem('internalNav', 'true');
-    setLocation(`/winery/wine/${wineId}`);
+    setLocation(`/winery/wines/${wineId}`);
+  };
+
+  const handleCreateWine = (vintageId: string) => {
+    setWineModalInitialVintageId(vintageId);
+    setShowAddWineModal(true);
   };
 
   const navigateBack = () => {
@@ -42,12 +50,19 @@ export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps)
     if (hasInternalNav) {
       window.history.back();
     } else {
-      setLocation('/winery');
+      // Navigate back to the appropriate list view
+      if (initialVintageId) {
+        setLocation('/winery/vintages');
+      } else if (initialWineId) {
+        setLocation('/winery/wines');
+      } else {
+        setLocation('/winery/vintages');
+      }
     }
   };
 
   if (initialVintageId) {
-    return <VintageDetailsView vintageId={initialVintageId} onBack={navigateBack} />;
+    return <VintageDetailsView vintageId={initialVintageId} onBack={navigateBack} onWineClick={handleWineClick} />;
   }
 
   if (initialWineId) {
@@ -64,6 +79,7 @@ export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps)
             if (activeTab === 'vintages') {
               setShowAddVintageModal(true);
             } else {
+              setWineModalInitialVintageId(undefined);
               setShowAddWineModal(true);
             }
           }}
@@ -81,7 +97,7 @@ export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps)
         paddingBottom: 'var(--spacing-sm)',
       }}>
         <button
-          onClick={() => setActiveTab('vintages')}
+          onClick={() => setLocation('/winery/vintages')}
           style={{
             background: 'none',
             border: 'none',
@@ -97,7 +113,7 @@ export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps)
           VINTAGES
         </button>
         <button
-          onClick={() => setActiveTab('wines')}
+          onClick={() => setLocation('/winery/wines')}
           style={{
             background: 'none',
             border: 'none',
@@ -121,7 +137,7 @@ export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps)
       )}
 
       {activeTab === 'vintages' ? (
-        <VintagesList onVintageClick={handleVintageClick} />
+        <VintagesList onVintageClick={handleVintageClick} onWineClick={handleWineClick} onCreateWine={handleCreateWine} />
       ) : (
         <WinesList onWineClick={handleWineClick} />
       )}
@@ -134,8 +150,12 @@ export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps)
 
       <AddWineModal
         isOpen={showAddWineModal}
-        onClose={() => setShowAddWineModal(false)}
+        onClose={() => {
+          setShowAddWineModal(false);
+          setWineModalInitialVintageId(undefined);
+        }}
         onSuccess={showSuccessMessage}
+        initialVintageId={wineModalInitialVintageId}
       />
     </div>
   );
