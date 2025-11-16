@@ -1,41 +1,46 @@
-import { useEffect, useState } from 'react';
-import { useZero } from '../../contexts/ZeroContext';
+import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { AddVintageModal } from './AddVintageModal';
+import { VintagesList } from './VintagesList';
+import { VintageDetailsView } from './VintageDetailsView';
 import styles from '../../App.module.css';
 
-export const WineryView = () => {
-  const zero = useZero();
+type WineryViewProps = {
+  initialVintageId?: string;
+};
+
+export const WineryView = ({ initialVintageId }: WineryViewProps) => {
+  const [, setLocation] = useLocation();
   const [showAddVintageModal, setShowAddVintageModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchVintages = async () => {
-      await zero.query.vintage.run();
-      // console.log('Vintages:', vintages);
-    };
-
-    fetchVintages();
-
-    const interval = setInterval(fetchVintages, 2000);
-    return () => clearInterval(interval);
-  }, [zero]);
 
   const showSuccessMessage = (message: string) => {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
+  const handleVintageClick = (vintageId: string) => {
+    sessionStorage.setItem('internalNav', 'true');
+    setLocation(`/winery/vintage/${vintageId}`);
+  };
+
+  const navigateBack = () => {
+    const hasInternalNav = sessionStorage.getItem('internalNav') === 'true';
+    if (hasInternalNav) {
+      window.history.back();
+    } else {
+      setLocation('/winery');
+    }
+  };
+
+  if (initialVintageId) {
+    return <VintageDetailsView vintageId={initialVintageId} onBack={navigateBack} />;
+  }
+
   return (
-    <div style={{ padding: 'var(--spacing-lg)' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 'var(--spacing-md)'
-      }}>
-        <div style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--font-size-lg)', color: 'var(--color-text-accent)' }}>
-          WINERY
-        </div>
+    <div className={styles.vineyardContainer}>
+      <div className={styles.vineyardHeader}>
+        <div className={styles.vineyardTitle}>WINERY</div>
         <button
           className={styles.actionButton}
           onClick={() => setShowAddVintageModal(true)}
@@ -50,9 +55,7 @@ export const WineryView = () => {
         </div>
       )}
 
-      <div style={{ marginTop: 'var(--spacing-md)', fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>
-        Check console for vintage data
-      </div>
+      <VintagesList onVintageClick={handleVintageClick} />
 
       <AddVintageModal
         isOpen={showAddVintageModal}

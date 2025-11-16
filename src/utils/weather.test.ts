@@ -2,6 +2,12 @@ import { test, describe, expect, rs, beforeEach, afterEach } from '@rstest/core'
 import { getWeatherIcon, fetchWeather } from './weather';
 import { WiDaySunny, WiCloudy, WiRain, WiThunderstorm, WiSnow, WiFog } from 'react-icons/wi';
 
+// Mock config module
+rs.mock('../config', () => ({
+  getBackendUrl: rs.fn(() => 'http://localhost:3001'),
+  getZeroServerUrl: rs.fn(() => 'http://localhost:4848'),
+}));
+
 describe('weather utils', () => {
   describe('getWeatherIcon', () => {
     test('returns WiDaySunny for clear sky (code 0)', () => {
@@ -141,9 +147,12 @@ describe('weather utils', () => {
       );
     });
 
-    test('uses custom backend URL from environment', async () => {
-      const originalEnv = process.env.PUBLIC_BACKEND_URL;
-      process.env.PUBLIC_BACKEND_URL = 'https://api.example.com';
+    test('uses custom backend URL from config', async () => {
+      // Import the mocked config
+      const { getBackendUrl } = await import('../config');
+
+      // Override the mock for this test
+      (getBackendUrl as any).mockReturnValueOnce('https://api.example.com');
 
       const mockWeatherData = {
         current_temp_f: 70,
@@ -163,8 +172,6 @@ describe('weather utils', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         'https://api.example.com/weather?latitude=40&longitude=-120&vineyard_id=default'
       );
-
-      process.env.PUBLIC_BACKEND_URL = originalEnv;
     });
 
     test('throws error when fetch fails', async () => {

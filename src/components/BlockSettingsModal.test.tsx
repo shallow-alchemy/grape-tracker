@@ -270,20 +270,20 @@ describe('BlockSettingsModal', () => {
       const soilInput = screen.getByDisplayValue('Sandy loam');
       const notesTextarea = screen.getByDisplayValue('Good drainage');
 
-      await user.clear(nameInput);
-      await user.type(nameInput, 'EAST BLOCK');
+      await user.tripleClick(nameInput);
+      await user.keyboard('EAST BLOCK');
 
-      await user.clear(locationInput);
-      await user.type(locationInput, 'East hillside');
+      await user.tripleClick(locationInput);
+      await user.keyboard('East hillside');
 
-      await user.clear(sizeInput);
-      await user.type(sizeInput, '3.2');
+      await user.tripleClick(sizeInput);
+      await user.keyboard('3.2');
 
-      await user.clear(soilInput);
-      await user.type(soilInput, 'Clay');
+      await user.tripleClick(soilInput);
+      await user.keyboard('Clay');
 
-      await user.clear(notesTextarea);
-      await user.type(notesTextarea, 'Needs irrigation');
+      await user.tripleClick(notesTextarea);
+      await user.keyboard('Needs irrigation');
 
       const submitButton = screen.getByRole('button', { name: /SAVE SETTINGS/i });
       await user.click(submitButton);

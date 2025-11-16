@@ -289,14 +289,14 @@ CREATE TABLE alert_settings (
 ---
 
 ### 3.3 Winery Management
-**Status:** 🔄 In Progress (as of Nov 13, 2025)
+**Status:** 🔄 In Progress (as of Nov 15, 2025)
 
 **Goal:** Track wine production from growing season through bottling with measurements, stage tracking, task management, and tasting notes.
 
 **Planning Documents:**
-- `/docs/winery-planning.md` - Original planning (vintage = wine)
-- `/docs/winery-backend-plan.md` - Backend implementation and data flow
-- `/docs/winery-frontend-plan.md` - Frontend component architecture (to be created)
+- `/docs/04-product/winery-backend-plan.md` - Backend implementation and data flow
+- `/docs/04-product/winery-frontend-plan.md` - **Frontend component architecture and implementation plan**
+- `/docs/04-product/vintages_ui_planning.md` - Vintage management UI (list, detail, edit, delete)
 
 **Revised Data Model:**
 - **Vintage** = Harvest from a variety in a year (source grapes)
@@ -327,22 +327,38 @@ CREATE TABLE alert_settings (
 5. **Measurement Validation**: Frontend queries measurement_range table for real-time warnings
 6. **Zero-Only**: All CRUD operations through Zero sync, no backend API needed
 
-**Frontend Components (NEXT - Planning Phase):**
-1. 🔲 **Vintage Creation Form** - Add harvest with weight, volume, brix
-2. 🔲 **Wine Creation Form** - Create wine from vintage with required name
-3. 🔲 **Stage Transition UI** - Modal to select tasks when changing stages
-4. 🔲 **Task List Component** - Show/complete/skip tasks
-5. 🔲 **Measurement Form** - Enter pH/TA/Brix with real-time validation
-6. 🔲 **Winery Tab** - Main interface for managing vintages and wines
+**Frontend Components Progress:**
+
+**Phase 1 - Foundation (Vintage Management):**
+1. ✅ **AddVintageModal** - Add harvest with weight, volume, brix
+2. ✅ **VintagesList** - Display vintages with featured card layout
+3. ✅ **VintageDetailsView** - View vintage information
+4. ✅ **EditVintageModal** - Edit harvest details
+5. ✅ **DeleteVintageConfirmModal** - Delete vintages with warnings
+
+**Phase 1 - Foundation (Wine Production - NEXT):**
+See `/docs/04-product/winery-frontend-plan.md` for detailed component specs.
+
+6. 🔲 **AddWineModal (Component #1)** - Create wine from vintage with required name
+7. 🔲 **WineProductionView (Component #5)** - Main interface for managing wines (Active/Aging/Bottled sections)
+
+**Phase 2 - Stage & Task Management:**
+8. 🔲 **StageTransitionModal (Component #2)** - Modal to select tasks when changing stages
+9. 🔲 **TaskListView (Component #3)** - Show/complete/skip tasks
+
+**Phase 3 - Measurements:**
+10. 🔲 **MeasurementModal (Component #4)** - Enter pH/TA/Brix with real-time validation
+
+**Phase 4 - Polish:**
+11. 🔲 Inventory management, graphs, settings UI
 
 **Next Steps:**
-- [ ] Create comprehensive frontend component plan (winery-frontend-plan.md)
-- [ ] Test migrations locally (verify tables and seed data)
-- [ ] Build vintage creation form (first component)
-- [ ] Build wine creation form (second component)
-- [ ] Implement stage transition logic with task selection
-- [ ] Build task management UI
-- [ ] Create measurement entry form with validation
+- [ ] Build AddWineModal (Component #1) - Create wines from vintages
+- [ ] Build WineProductionView skeleton (Component #5) - Display wine lists by status
+- [ ] Test creating vintages → creating wines end-to-end
+- [ ] Implement StageTransitionModal with task selection
+- [ ] Build TaskListView component
+- [ ] Create MeasurementModal with validation
 
 ---
 
@@ -357,6 +373,59 @@ Add photos to vine records (disease tracking, growth progress)
 
 ### 3.7 Analytics Dashboard
 Visualize vineyard data (health trends, variety distribution, etc.)
+
+---
+
+## Phase 4: AI-Powered Planning & Optimization
+
+### 4.1 Terroir Optimizer
+**Status:** 📋 Planned
+
+**Goal:** AI-powered context-aware planning tool to help users make informed decisions about grape varietal selection based on location, existing vineyard, and winemaking goals.
+
+**Planning Document:**
+- `/docs/04-product/terroir-optimization.md` - Complete product specification
+
+**Core Value:**
+- **New growers:** Find suitable grapes for your climate before investing
+- **Existing growers:** Expand strategically with compatible varietals
+- **Winemakers:** Plant the right grapes for desired wine styles
+
+**Three Planning Modes:**
+1. **Mode 1: New Vineyard Planning** - Entry from dashboard for users with no vines
+2. **Mode 2: Vineyard Expansion** - Entry from My Vineyard for existing growers
+3. **Mode 3: Wine-Style Planning** - Entry from My Wine to plant for specific wine goals
+
+**Key Features:**
+- Progressive disclosure pattern (immediate value → refinement prompts → enhanced recommendations)
+- Structured inputs (forms/toggles, not freeform chat)
+- Saved plans with versioning
+- Context-aware recommendations using existing vineyard/wine data
+- Integration with dashboard, vineyard, and winery sections
+
+**AI Knowledge Requirements:**
+- Climate & geography data (GDD, frost dates, regional patterns)
+- Varietal characteristics (climate ranges, ripening, disease susceptibility)
+- Soil science (pH, drainage, amendments)
+- Viticulture practices (spacing, trellis systems, labor needs)
+- Wine production (blending ratios, production volumes, style feasibility)
+
+**Integration Points:**
+- Hamburger menu (☰) with Planning section
+- Contextual CTAs in empty states (My Vineyard, My Wine)
+- Dashboard alerts reference planned varietals
+- "Create vines from plan" pre-populates data
+
+**Implementation Phases:**
+- **MVP:** Mode 1 (New Vineyard Planning) with basic recommendations
+- **Phase 2:** Modes 2 & 3, saved plans, refinement cards
+- **Phase 3:** Photo-based site assessment, calendar integration, cost estimation
+- **Phase 4:** Community plans, success tracking, climate change projections
+
+**Dependencies:**
+- Complete winery management features (provides wine production context)
+- User authentication and data persistence (for saved plans)
+- AI/LLM integration for recommendation engine
 
 ---
 
@@ -382,8 +451,9 @@ Visualize vineyard data (health trends, variety distribution, etc.)
 
 ---
 
-**Last Updated:** Nov 12, 2025
+**Last Updated:** Nov 15, 2025
 **Current Phase:** Phase 3 (Additional Features)
-**Completed:** Phase 1 (Core Vine Management) + Phase 2 (QR Code & 3D Tags) + Phase 3.1 (Weather API) + Phase 3.2 (Weather Alerts)
-**In Progress:** Phase 3.3 (Winery Management - vintage tracking UI)
-**Next Up:** Complete winery vintage creation, then Task Management, Harvest Tracking, or Photo Uploads
+**Completed:** Phase 1 (Core Vine Management) + Phase 2 (QR Code & 3D Tags) + Phase 3.1 (Weather API) + Phase 3.2 (Weather Alerts) + Phase 3.3 Vintage Management (5 components)
+**In Progress:** Phase 3.3 (Winery Management - Wine Production UI)
+**Next Up:** Complete wine production features (AddWineModal, WineProductionView, StageTransitionModal, TaskListView, MeasurementModal)
+**Future:** Phase 4 - AI-Powered Terroir Optimizer

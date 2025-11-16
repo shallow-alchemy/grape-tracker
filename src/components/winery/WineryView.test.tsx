@@ -3,18 +3,28 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { WineryView } from './WineryView';
 
-// Create mock function at top level
-const mockRun = rs.fn().mockResolvedValue([]);
+// Create mock data
+const mockVintagesData: any[] = [];
+
+const mockZero = {
+  query: {
+    vintage: { data: mockVintagesData },
+  },
+};
 
 // Mock Zero context
 rs.mock('../../contexts/ZeroContext', () => ({
-  useZero: () => ({
-    query: {
-      vintage: {
-        run: mockRun,
-      },
-    },
-  }),
+  useZero: () => mockZero,
+}));
+
+// Mock useQuery from Zero
+rs.mock('@rocicorp/zero/react', () => ({
+  useQuery: (query: any) => {
+    if (query === mockZero.query.vintage) {
+      return [query.data];
+    }
+    return [[]];
+  },
 }));
 
 // Mock AddVintageModal
@@ -30,6 +40,25 @@ rs.mock('./AddVintageModal', () => ({
   ),
 }));
 
+// Mock VintagesList
+rs.mock('./VintagesList', () => ({
+  VintagesList: rs.fn(() => (
+    <div data-testid="vintages-list">
+      <div>Vintages List</div>
+    </div>
+  )),
+}));
+
+// Mock VintageDetailsView
+rs.mock('./VintageDetailsView', () => ({
+  VintageDetailsView: rs.fn(({ vintageId, onBack }: any) => (
+    <div data-testid="vintage-details">
+      <div>Vintage Details: {vintageId}</div>
+      <button onClick={onBack}>Back</button>
+    </div>
+  )),
+}));
+
 describe('WineryView', () => {
   beforeEach(() => {
     rs.clearAllMocks();
@@ -38,6 +67,7 @@ describe('WineryView', () => {
   afterEach(() => {
     cleanup();
     rs.useRealTimers();
+    mockVintagesData.length = 0;
   });
 
   describe('header', () => {
@@ -119,16 +149,9 @@ describe('WineryView', () => {
   });
 
   describe('content display', () => {
-    test('displays placeholder text for vintage data', () => {
+    test('displays vintages list', () => {
       render(<WineryView />);
-      expect(screen.getByText('Check console for vintage data')).toBeInTheDocument();
-    });
-
-    test('fetches vintages on mount', () => {
-      render(<WineryView />);
-
-      // Should call run() on mount
-      expect(mockRun).toHaveBeenCalled();
+      expect(screen.getByTestId('vintages-list')).toBeInTheDocument();
     });
 
     test('success message does not appear initially', () => {
@@ -246,43 +269,6 @@ describe('WineryView', () => {
   });
 
   describe('data loading', () => {
-    test('polls for vintages every 2 seconds', () => {
-      rs.useFakeTimers();
-
-      render(<WineryView />);
-
-      // Initial fetch on mount
-      expect(mockRun).toHaveBeenCalledTimes(1);
-
-      // Fast-forward 2 seconds
-      rs.advanceTimersByTime(2000);
-      expect(mockRun).toHaveBeenCalledTimes(2);
-
-      // Fast-forward another 2 seconds
-      rs.advanceTimersByTime(2000);
-      expect(mockRun).toHaveBeenCalledTimes(3);
-
-      rs.useRealTimers();
-    });
-
-    test('cleans up interval on unmount', () => {
-      rs.useFakeTimers();
-
-      const { unmount } = render(<WineryView />);
-
-      // Initial fetch on mount
-      expect(mockRun).toHaveBeenCalledTimes(1);
-
-      // Unmount component
-      unmount();
-
-      // Fast-forward time - should not trigger more fetches
-      rs.advanceTimersByTime(10000);
-      expect(mockRun).toHaveBeenCalledTimes(1);
-
-      rs.useRealTimers();
-    });
-
     test.todo('shows loading state initially');
     test.todo('shows content when data loaded');
     test.todo('refreshes when new wine created');

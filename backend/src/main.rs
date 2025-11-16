@@ -49,7 +49,6 @@ struct NominatimAddress {
     town: Option<String>,
     village: Option<String>,
     state: Option<String>,
-    country: Option<String>,
 }
 
 #[derive(Serialize)]

@@ -314,7 +314,7 @@ export const VineDetailsView = ({
                 type="date"
                 name="plantingDate"
                 className={styles.formInput}
-                defaultValue={vine.planting_date.toISOString().split('T')[0]}
+                defaultValue={vine.planting_date ? new Date(vine.planting_date).toISOString().split('T')[0] : ''}
                 required
               />
             </div>
