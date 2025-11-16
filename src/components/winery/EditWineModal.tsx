@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useZero } from '../../contexts/ZeroContext';
 import { Modal } from '../Modal';
+import { DeleteWineConfirmModal } from './DeleteWineConfirmModal';
 import styles from '../../App.module.css';
 
 type EditWineModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (message: string) => void;
+  onDelete?: () => void;
   wineId: string;
 };
 
-export const EditWineModal = ({ isOpen, onClose, onSuccess, wineId }: EditWineModalProps) => {
+export const EditWineModal = ({ isOpen, onClose, onSuccess, onDelete, wineId }: EditWineModalProps) => {
   const zero = useZero();
   const [winesData] = useQuery(zero.query.wine.where('id', wineId));
   const wine = winesData[0];
@@ -26,6 +28,7 @@ export const EditWineModal = ({ isOpen, onClose, onSuccess, wineId }: EditWineMo
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Update form when wine data loads
   if (wine && formData.name === '' && wine.name !== '') {
@@ -211,7 +214,29 @@ export const EditWineModal = ({ isOpen, onClose, onSuccess, wineId }: EditWineMo
             {isSubmitting ? 'SAVING...' : 'SAVE CHANGES'}
           </button>
         </div>
+
+        <div style={{ marginTop: 'var(--spacing-lg)', paddingTop: 'var(--spacing-lg)', borderTop: '1px solid var(--color-border)' }}>
+          <button
+            type="button"
+            className={styles.deleteButton}
+            onClick={() => setIsDeleteModalOpen(true)}
+            disabled={isSubmitting}
+          >
+            DELETE WINE
+          </button>
+        </div>
       </form>
+
+      <DeleteWineConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onSuccess={(message) => {
+          onSuccess(message);
+          handleClose();
+          onDelete?.();
+        }}
+        wineId={wineId}
+      />
     </Modal>
   );
 };

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { FiSettings } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { EditWineModal } from './EditWineModal';
 import styles from '../../App.module.css';
@@ -50,42 +51,6 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    if (!wine) return;
-
-    const wineName = vintage ? `${vintage.vintage_year} ${wine.name}` : wine.name;
-    const confirmed = window.confirm(
-      `Are you sure you want to permanently delete "${wineName}"?\n\nThis will also delete all associated measurements and stage history. This action cannot be undone.`
-    );
-
-    if (!confirmed) return;
-
-    setIsDeleting(true);
-
-    try {
-      // Delete related stage history
-      for (const stage of stageHistoryData) {
-        await zero.mutate.stage_history.delete({ id: stage.id });
-      }
-
-      // Delete related measurements
-      for (const measurement of measurementsData) {
-        await zero.mutate.measurement.delete({ id: measurement.id });
-      }
-
-      // Delete the wine itself
-      await zero.mutate.wine.delete({ id: wineId });
-
-      // Navigate back to list
-      onBack();
-    } catch (err) {
-      console.error('Failed to delete wine:', err);
-      alert('Failed to delete wine. Please try again.');
-      setIsDeleting(false);
-    }
-  };
 
   if (!wine) {
     return (
@@ -133,7 +98,17 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         <div className={styles.vineyardTitle}>
           {vintage ? `${vintage.vintage_year} ${wine.name}` : wine.name}
         </div>
-        <div style={{ width: '80px' }} />
+        <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
+          <button className={styles.actionButton} onClick={() => alert('Add Measurement (TODO)')}>
+            ADD MEASUREMENT
+          </button>
+          <button className={styles.actionButton} onClick={() => alert('Advance Stage (TODO)')}>
+            ADVANCE STAGE
+          </button>
+          <button className={styles.gearButton} onClick={() => setIsEditModalOpen(true)}>
+            <FiSettings size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Current Stage */}
@@ -394,27 +369,6 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         </div>
       )}
 
-      <div className={styles.detailSection} style={{ marginTop: 'var(--spacing-xl)' }}>
-        <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button className={styles.actionButton} onClick={() => alert('Add Measurement (TODO)')}>
-            ADD MEASUREMENT
-          </button>
-          <button className={styles.actionButton} onClick={() => alert('Advance Stage (TODO)')}>
-            ADVANCE STAGE
-          </button>
-          <button className={styles.actionButton} onClick={() => setIsEditModalOpen(true)}>
-            EDIT
-          </button>
-          <button
-            className={styles.deleteButton}
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'DELETING...' : 'DELETE'}
-          </button>
-        </div>
-      </div>
-
       <EditWineModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -422,6 +376,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
           setSuccessMessage(message);
           setTimeout(() => setSuccessMessage(null), 3000);
         }}
+        onDelete={onBack}
         wineId={wineId}
       />
     </div>

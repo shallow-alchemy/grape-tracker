@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { FiSettings } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { EditVintageModal } from './EditVintageModal';
-import { DeleteVintageConfirmModal } from './DeleteVintageConfirmModal';
 import styles from '../../App.module.css';
 
 type VintageDetailsViewProps = {
@@ -25,17 +25,11 @@ export const VintageDetailsView = ({ vintageId, onBack }: VintageDetailsViewProp
   const harvestMeasurement = measurementsData[0];
 
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const showSuccessMessage = (message: string) => {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(null), 3000);
-  };
-
-  const handleDeleteSuccess = (message: string) => {
-    showSuccessMessage(message);
-    setTimeout(() => onBack(), 500);
   };
 
   if (!vintage) {
@@ -75,7 +69,9 @@ export const VintageDetailsView = ({ vintageId, onBack }: VintageDetailsViewProp
         <div className={styles.vineyardTitle}>
           {vintage.vintage_year} {vintage.variety}
         </div>
-        <div style={{ width: '80px' }} />
+        <button className={styles.gearButton} onClick={() => setShowEditModal(true)}>
+          <FiSettings size={20} />
+        </button>
       </div>
 
       {/* Current Stage */}
@@ -177,33 +173,14 @@ export const VintageDetailsView = ({ vintageId, onBack }: VintageDetailsViewProp
         </div>
       )}
 
-      <div className={styles.detailSection} style={{ marginTop: 'var(--spacing-xl)' }}>
-        <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'center' }}>
-          <button className={styles.actionButton} onClick={() => setShowEditModal(true)}>
-            EDIT
-          </button>
-          <button className={styles.deleteButton} onClick={() => setShowDeleteModal(true)}>
-            DELETE
-          </button>
-        </div>
-      </div>
-
       {vintage && (
-        <>
-          <EditVintageModal
-            isOpen={showEditModal}
-            onClose={() => setShowEditModal(false)}
-            onSuccess={showSuccessMessage}
-            vintage={vintage}
-          />
-
-          <DeleteVintageConfirmModal
-            isOpen={showDeleteModal}
-            onClose={() => setShowDeleteModal(false)}
-            onSuccess={handleDeleteSuccess}
-            vintage={vintage}
-          />
-        </>
+        <EditVintageModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={showSuccessMessage}
+          onDelete={onBack}
+          vintage={vintage}
+        />
       )}
     </div>
   );

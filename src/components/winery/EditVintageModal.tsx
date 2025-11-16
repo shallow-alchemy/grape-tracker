@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { Modal } from '../Modal';
 import { useZero } from '../../contexts/ZeroContext';
+import { DeleteVintageConfirmModal } from './DeleteVintageConfirmModal';
 import styles from '../../App.module.css';
 
 type EditVintageModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (message: string) => void;
+  onDelete?: () => void;
   vintage: {
     id: string;
     vintage_year: number;
@@ -23,10 +25,12 @@ export const EditVintageModal = ({
   isOpen,
   onClose,
   onSuccess,
+  onDelete,
   vintage,
 }: EditVintageModalProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const zero = useZero();
 
@@ -294,7 +298,29 @@ export const EditVintageModal = ({
             {isSubmitting ? 'SAVING...' : 'SAVE CHANGES'}
           </button>
         </div>
+
+        <div style={{ marginTop: 'var(--spacing-lg)', paddingTop: 'var(--spacing-lg)', borderTop: '1px solid var(--color-border)' }}>
+          <button
+            type="button"
+            className={styles.deleteButton}
+            onClick={() => setIsDeleteModalOpen(true)}
+            disabled={isSubmitting}
+          >
+            DELETE VINTAGE
+          </button>
+        </div>
       </form>
+
+      <DeleteVintageConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onSuccess={(message) => {
+          onSuccess(message);
+          onClose();
+          onDelete?.();
+        }}
+        vintage={vintage}
+      />
     </Modal>
   );
 };
