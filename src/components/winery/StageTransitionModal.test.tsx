@@ -8,6 +8,15 @@ const mockStageHistoryUpdate = rs.fn().mockResolvedValue(undefined);
 const mockStageHistoryInsert = rs.fn().mockResolvedValue(undefined);
 const mockWineUpdate = rs.fn().mockResolvedValue(undefined);
 const mockVintageUpdate = rs.fn().mockResolvedValue(undefined);
+const mockAdvanceStage = rs.fn().mockResolvedValue({ success: true, tasksCreated: 0 });
+
+rs.mock('./useStageTransition', () => ({
+  useStageTransition: () => ({
+    advanceStage: mockAdvanceStage,
+    isLoading: false,
+    error: null,
+  }),
+}));
 
 rs.mock('../../contexts/ZeroContext', () => ({
   useZero: () => ({
@@ -67,6 +76,7 @@ describe('StageTransitionModal', () => {
     mockStageHistoryInsert.mockClear();
     mockWineUpdate.mockClear();
     mockVintageUpdate.mockClear();
+    mockAdvanceStage.mockClear();
   });
 
   describe('rendering', () => {
@@ -326,25 +336,13 @@ describe('StageTransitionModal', () => {
       // Wait for async operations
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Should update previous stage history
-      expect(mockStageHistoryUpdate).toHaveBeenCalled();
-
-      // Should insert new stage history
-      expect(mockStageHistoryInsert).toHaveBeenCalledWith(
+      // Should call advanceStage with correct parameters
+      expect(mockAdvanceStage).toHaveBeenCalledWith(
+        'crush',
         expect.objectContaining({
-          entity_type: 'wine',
-          entity_id: 'wine-1',
-          stage: 'primary_fermentation',
-          completed_at: null,
-          skipped: false,
-        })
-      );
-
-      // Should update wine's current stage
-      expect(mockWineUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: 'wine-1',
-          current_stage: 'primary_fermentation',
+          toStage: 'primary_fermentation',
+          notes: '',
+          skipCurrentStage: false,
         })
       );
 
@@ -373,11 +371,13 @@ describe('StageTransitionModal', () => {
       // Wait for async operations
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Should update vintage's current stage
-      expect(mockVintageUpdate).toHaveBeenCalledWith(
+      // Should call advanceStage with correct parameters
+      expect(mockAdvanceStage).toHaveBeenCalledWith(
+        'harvested',
         expect.objectContaining({
-          id: 'vintage-1',
-          current_stage: 'allocated',
+          toStage: 'allocated',
+          notes: '',
+          skipCurrentStage: false,
         })
       );
 
@@ -406,7 +406,8 @@ describe('StageTransitionModal', () => {
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      expect(mockStageHistoryInsert).toHaveBeenCalledWith(
+      expect(mockAdvanceStage).toHaveBeenCalledWith(
+        'crush',
         expect.objectContaining({
           notes: 'Important notes',
         })
@@ -435,9 +436,10 @@ describe('StageTransitionModal', () => {
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      expect(mockStageHistoryUpdate).toHaveBeenCalledWith(
+      expect(mockAdvanceStage).toHaveBeenCalledWith(
+        'crush',
         expect.objectContaining({
-          skipped: true,
+          skipCurrentStage: true,
         })
       );
     });

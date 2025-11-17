@@ -8,6 +8,24 @@ rs.mock('../utils/weather', () => ({
   getWeatherIcon: rs.fn(() => () => null),
 }));
 
+rs.mock('../contexts/ZeroContext', () => ({
+  useZero: () => ({
+    query: {
+      task: {
+        run: rs.fn().mockResolvedValue([]),
+      },
+    },
+  }),
+}));
+
+rs.mock('@rocicorp/zero/react', () => ({
+  useQuery: () => [[]],
+}));
+
+rs.mock('./winery/taskHelpers', () => ({
+  formatDueDate: (timestamp: number) => new Date(timestamp).toLocaleDateString(),
+}));
+
 const mockWeatherData = {
   current_temp_f: 72,
   current_condition: 'PARTLY CLOUDY',

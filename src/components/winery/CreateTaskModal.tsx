@@ -89,8 +89,9 @@ export const CreateTaskModal = ({
     >
       <form className={styles.vineForm} onSubmit={handleSubmit}>
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>TASK NAME *</label>
+          <label htmlFor="task-name" className={styles.formLabel}>TASK NAME *</label>
           <input
+            id="task-name"
             type="text"
             name="name"
             className={styles.formInput}
@@ -104,8 +105,9 @@ export const CreateTaskModal = ({
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>DESCRIPTION (OPTIONAL)</label>
+          <label htmlFor="task-description" className={styles.formLabel}>DESCRIPTION (OPTIONAL)</label>
           <textarea
+            id="task-description"
             name="description"
             className={styles.formTextarea}
             placeholder="Task description..."
@@ -115,8 +117,9 @@ export const CreateTaskModal = ({
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>DUE DATE (OPTIONAL)</label>
+          <label htmlFor="task-due-date" className={styles.formLabel}>DUE DATE (OPTIONAL)</label>
           <input
+            id="task-due-date"
             type="date"
             name="dueDate"
             className={styles.formInput}
@@ -125,8 +128,9 @@ export const CreateTaskModal = ({
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>NOTES (OPTIONAL)</label>
+          <label htmlFor="task-notes" className={styles.formLabel}>NOTES (OPTIONAL)</label>
           <textarea
+            id="task-notes"
             name="notes"
             className={styles.formTextarea}
             placeholder="Additional notes..."

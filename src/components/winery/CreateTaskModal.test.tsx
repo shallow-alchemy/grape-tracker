@@ -290,6 +290,13 @@ describe('CreateTaskModal', () => {
     test('shows loading state while submitting', async () => {
       const user = userEvent.setup();
 
+      // Create a promise that won't resolve immediately
+      let resolveInsert: () => void;
+      const insertPromise = new Promise<void>((resolve) => {
+        resolveInsert = resolve;
+      });
+      mockTaskInsert.mockReturnValue(insertPromise);
+
       render(
         <CreateTaskModal
           isOpen={true}
@@ -308,8 +315,13 @@ describe('CreateTaskModal', () => {
       await user.click(submitButton);
 
       // Check for loading state (button text changes to "CREATING...")
-      // This is a quick check before the promise resolves
-      expect(screen.queryByRole('button', { name: 'CREATING...' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'CREATING...' })).toBeInTheDocument();
+
+      // Clean up by resolving the promise
+      resolveInsert!();
+
+      // Reset the mock back to normal
+      mockTaskInsert.mockResolvedValue(undefined);
     });
   });
 });
