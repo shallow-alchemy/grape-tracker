@@ -42,6 +42,12 @@ export const DeleteWineConfirmModal = ({
       .where('entity_id', wineId)
   );
 
+  const [tasksData] = useQuery(
+    zero.query.task
+      .where('entity_type', 'wine')
+      .where('entity_id', wineId)
+  );
+
   const handleDelete = async () => {
     if (!wine) return;
 
@@ -57,6 +63,11 @@ export const DeleteWineConfirmModal = ({
       // Delete related measurements
       for (const measurement of measurementsData) {
         await zero.mutate.measurement.delete({ id: measurement.id });
+      }
+
+      // Delete related tasks
+      for (const task of tasksData) {
+        await zero.mutate.task.delete({ id: task.id });
       }
 
       // Delete the wine itself
@@ -94,6 +105,7 @@ export const DeleteWineConfirmModal = ({
           <ul className={styles.deleteWarningList}>
             <li>{stageHistoryData.length} stage history {stageHistoryData.length === 1 ? 'record' : 'records'}</li>
             <li>{measurementsData.length} {measurementsData.length === 1 ? 'measurement' : 'measurements'}</li>
+            <li>{tasksData.length} {tasksData.length === 1 ? 'task' : 'tasks'}</li>
           </ul>
         </div>
 

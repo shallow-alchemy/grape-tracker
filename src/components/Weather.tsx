@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@rocicorp/zero/react';
+import { useZero } from '../contexts/ZeroContext';
 import { fetchWeather, getWeatherIcon, WeatherData } from '../utils/weather';
 import { Alerts } from './Alerts';
 import { WeatherAlertSettingsModal } from './weather/WeatherAlertSettingsModal';
+import { formatDueDate } from './winery/taskHelpers';
 import styles from '../App.module.css';
 
 export const Weather = () => {
+  const zero = useZero();
   const [showHighTemps, setShowHighTemps] = useState(() => {
     const saved = localStorage.getItem('showHighTemps');
     return saved !== null ? JSON.parse(saved) : true;
@@ -13,6 +17,15 @@ export const Weather = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Query all tasks
+  const [tasksData] = useQuery(zero.query.task);
+
+  // Get upcoming tasks (incomplete, not skipped, due date in the future or past)
+  const upcomingTasks = tasksData
+    .filter(t => !t.completed_at && !t.skipped)
+    .sort((a, b) => a.due_date - b.due_date)
+    .slice(0, 5); // Show top 5 upcoming tasks
 
   useEffect(() => {
     localStorage.setItem('showHighTemps', JSON.stringify(showHighTemps));
@@ -104,9 +117,19 @@ export const Weather = () => {
       <div className={styles.seasonalActivities}>
         <div className={styles.activityHeader}>WHAT'S NEXT</div>
         <div className={styles.seasonalActivitiesContent}>
-          <div className={styles.activityItem}>
-            <span className={styles.activityText}>{'>'} CHECK VINEYARD CONDITIONS</span>
-          </div>
+          {upcomingTasks.length > 0 ? (
+            upcomingTasks.map((task) => (
+              <div key={task.id} className={styles.activityItem}>
+                <span className={styles.activityText}>
+                  {'>'} {task.name} — {formatDueDate(task.due_date)}
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className={styles.activityItem}>
+              <span className={styles.activityText}>{'>'} NO UPCOMING TASKS</span>
+            </div>
+          )}
         </div>
       </div>
 

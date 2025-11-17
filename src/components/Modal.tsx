@@ -5,12 +5,13 @@ type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   title: string;
+  titleRight?: React.ReactNode;
   children: React.ReactNode;
   closeDisabled?: boolean;
   size?: 'small' | 'medium' | 'large';
 };
 
-export const Modal = ({ isOpen, onClose, title, children, closeDisabled = false, size = 'medium' }: ModalProps) => {
+export const Modal = ({ isOpen, onClose, title, titleRight, children, closeDisabled = false, size = 'medium' }: ModalProps) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !closeDisabled) {
@@ -38,7 +39,10 @@ export const Modal = ({ isOpen, onClose, title, children, closeDisabled = false,
         className={`${styles.modalContent} ${styles[size]}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className={styles.modalTitle}>{title}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: titleRight ? 0 : undefined }}>
+          <h2 className={styles.modalTitle} style={{ marginBottom: titleRight ? 0 : undefined }}>{title}</h2>
+          {titleRight && <div>{titleRight}</div>}
+        </div>
         {children}
       </div>
     </div>

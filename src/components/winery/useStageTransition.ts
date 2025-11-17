@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useZero } from '../../contexts/ZeroContext';
 import type { EntityType } from './stages';
+import { calculateDueDate } from './taskHelpers';
 
 export type StageTransitionData = {
   toStage: string;
@@ -11,13 +12,14 @@ export type StageTransitionData = {
 export type StageTransitionResult = {
   success: boolean;
   error?: string;
+  tasksCreated?: number;
 };
 
 /**
  * Custom hook for handling stage transitions
  * Encapsulates the business logic for completing current stage and starting new stage
  */
-export const useStageTransition = (entityType: EntityType, entityId: string) => {
+export const useStageTransition = (entityType: EntityType, entityId: string, wineType?: string) => {
   const zero = useZero();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,8 +80,44 @@ export const useStageTransition = (entityType: EntityType, entityId: string) => 
         });
       }
 
+      // Step 4: Create tasks from templates
+      const allTemplates = await zero.query.task_template.run();
+
+      const relevantTemplates = allTemplates.filter(template => {
+        const stageMatch = template.stage === data.toStage;
+        const entityMatch = template.entity_type === entityType;
+        const wineTypeMatch = !wineType || !template.wine_type || template.wine_type === wineType;
+        const enabled = template.default_enabled === true;
+
+        return stageMatch && entityMatch && wineTypeMatch && enabled;
+      });
+
+      let tasksCreated = 0;
+      for (const template of relevantTemplates) {
+        const dueDate = calculateDueDate(now, template.frequency, template.frequency_count);
+
+        await zero.mutate.task.insert({
+          id: crypto.randomUUID(),
+          task_template_id: template.id,
+          entity_type: entityType,
+          entity_id: entityId,
+          stage: data.toStage,
+          name: template.name,
+          description: template.description,
+          due_date: dueDate,
+          completed_at: null as any,
+          completed_by: '',
+          notes: '',
+          skipped: false,
+          created_at: now,
+          updated_at: now,
+        });
+
+        tasksCreated++;
+      }
+
       setIsLoading(false);
-      return { success: true };
+      return { success: true, tasksCreated };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to transition stage';
       setError(errorMessage);

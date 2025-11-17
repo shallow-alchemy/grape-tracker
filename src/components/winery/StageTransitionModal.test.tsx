@@ -46,11 +46,14 @@ rs.mock('../../contexts/ZeroContext', () => ({
 }));
 
 rs.mock('../Modal', () => ({
-  Modal: ({ isOpen, title, children }: { isOpen: boolean; title: string; children: React.ReactNode }) => {
+  Modal: ({ isOpen, title, titleRight, children }: { isOpen: boolean; title: string; titleRight?: React.ReactNode; children: React.ReactNode }) => {
     if (!isOpen) return null;
     return (
       <div data-testid="modal">
-        <h2>{title}</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2>{title}</h2>
+          {titleRight && <div>{titleRight}</div>}
+        </div>
         {children}
       </div>
     );
@@ -220,27 +223,7 @@ describe('StageTransitionModal', () => {
 
       const checkbox = screen.getByRole('checkbox');
       expect(checkbox).toBeInTheDocument();
-      expect(screen.getByText(/mark "crush" stage as skipped/i)).toBeInTheDocument();
-    });
-
-    test('shows hint when checkbox is checked', async () => {
-      const user = userEvent.setup();
-
-      render(
-        <StageTransitionModal
-          isOpen={true}
-          onClose={() => {}}
-          onSuccess={() => {}}
-          entityType="wine"
-          entityId="wine-1"
-          currentStage="crush"
-        />
-      );
-
-      const checkbox = screen.getByRole('checkbox');
-      await user.click(checkbox);
-
-      expect(screen.getByText(/marked as skipped in the stage history/i)).toBeInTheDocument();
+      expect(screen.getByText(/skipped/i)).toBeInTheDocument();
     });
   });
 

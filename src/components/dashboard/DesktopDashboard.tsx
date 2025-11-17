@@ -1,3 +1,6 @@
+import { useQuery } from '@rocicorp/zero/react';
+import { useZero } from '../../contexts/ZeroContext';
+import { formatDueDate } from '../winery/taskHelpers';
 import styles from '../../App.module.css';
 
 export const RecentActivity = () => {
@@ -86,30 +89,31 @@ export const SuppliesNeeded = () => {
 };
 
 export const TaskManagement = () => {
+  const zero = useZero();
+  const [tasksData] = useQuery(zero.query.task);
+
+  // Get upcoming tasks (incomplete, not skipped)
+  const upcomingTasks = tasksData
+    .filter(t => !t.completed_at && !t.skipped)
+    .sort((a, b) => a.due_date - b.due_date)
+    .slice(0, 10); // Show up to 10 tasks
+
   return (
     <div className={styles.desktopPanel}>
       <h2 className={styles.panelTitle}>TASK MANAGEMENT</h2>
       <div className={styles.taskList}>
-        <div className={styles.taskItem}>
-          <input type="checkbox" className={styles.taskCheckbox} />
-          <span className={styles.taskText}>WINTER PRUNING DUE: DEC 1-15</span>
-          <span className={styles.taskDate}>DEC 1</span>
-        </div>
-        <div className={styles.taskItem}>
-          <input type="checkbox" className={styles.taskCheckbox} />
-          <span className={styles.taskText}>FROST PROTECTION RECOMMENDED</span>
-          <span className={styles.taskDate}>NOV 15</span>
-        </div>
-        <div className={styles.taskItem}>
-          <input type="checkbox" className={styles.taskCheckbox} />
-          <span className={styles.taskText}>HARVEST GRAPES BEFORE NOV 20</span>
-          <span className={styles.taskDate}>NOV 20</span>
-        </div>
-        <div className={styles.taskItem}>
-          <input type="checkbox" className={styles.taskCheckbox} />
-          <span className={styles.taskText}>EQUIPMENT MAINTENANCE CHECK</span>
-          <span className={styles.taskDate}>DEC 10</span>
-        </div>
+        {upcomingTasks.length > 0 ? (
+          upcomingTasks.map((task) => (
+            <div key={task.id} className={styles.taskItem}>
+              <span className={styles.taskText}>{task.name.toUpperCase()}</span>
+              <span className={styles.taskDate}>{formatDueDate(task.due_date)}</span>
+            </div>
+          ))
+        ) : (
+          <div className={styles.taskItem}>
+            <span className={styles.taskText}>NO UPCOMING TASKS</span>
+          </div>
+        )}
       </div>
     </div>
   );

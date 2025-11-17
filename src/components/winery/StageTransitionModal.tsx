@@ -17,6 +17,7 @@ type StageTransitionModalProps = {
   entityType: EntityType;
   entityId: string;
   currentStage: string;
+  wineType?: string;
 };
 
 export const StageTransitionModal = ({
@@ -26,8 +27,9 @@ export const StageTransitionModal = ({
   entityType,
   entityId,
   currentStage,
+  wineType,
 }: StageTransitionModalProps) => {
-  const { advanceStage, isLoading, error: hookError } = useStageTransition(entityType, entityId);
+  const { advanceStage, isLoading, error: hookError } = useStageTransition(entityType, entityId, wineType);
 
   const nextStage = getNextStage(currentStage, entityType);
   const skippableStages = getSkippableStages(currentStage, entityType);
@@ -65,6 +67,9 @@ export const StageTransitionModal = ({
       let message = `Advanced to ${selectedMeta?.label || selectedStage}`;
       if (skippedCount > 0) {
         message += ` (skipped ${skippedCount} stage${skippedCount > 1 ? 's' : ''})`;
+      }
+      if (result.tasksCreated !== undefined && result.tasksCreated > 0) {
+        message += ` • Created ${result.tasksCreated} task${result.tasksCreated > 1 ? 's' : ''}`;
       }
 
       onSuccess(message);
@@ -115,7 +120,33 @@ export const StageTransitionModal = ({
   const skippedCount = getSkippedStageCount(currentStage, selectedStage, entityType);
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="ADVANCE STAGE" closeDisabled={isLoading}>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="ADVANCE STAGE"
+      titleRight={
+        <label style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--spacing-xs)',
+          fontFamily: 'var(--font-body)',
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-text-secondary)',
+          cursor: 'pointer',
+          margin: 0,
+        }}>
+          <input
+            type="checkbox"
+            checked={skipCurrentStage}
+            onChange={(e) => setSkipCurrentStage(e.target.checked)}
+            disabled={isLoading}
+            style={{ cursor: 'pointer' }}
+          />
+          Skipped
+        </label>
+      }
+      closeDisabled={isLoading}
+    >
       <form className={styles.vineForm} onSubmit={handleSubmit}>
         {/* Current → Next Stage Display */}
         <div className={styles.formGroup}>
@@ -197,33 +228,6 @@ export const StageTransitionModal = ({
             )}
           </div>
         )}
-
-        {/* Skip Current Stage Checkbox */}
-        <div className={styles.formGroup}>
-          <label style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--spacing-sm)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-text-secondary)',
-            cursor: 'pointer',
-          }}>
-            <input
-              type="checkbox"
-              checked={skipCurrentStage}
-              onChange={(e) => setSkipCurrentStage(e.target.checked)}
-              disabled={isLoading}
-              style={{ cursor: 'pointer' }}
-            />
-            Mark "{currentMeta?.label}" stage as skipped
-          </label>
-          {skipCurrentStage && (
-            <div className={styles.formHint}>
-              This stage will be marked as skipped in the stage history
-            </div>
-          )}
-        </div>
 
         {/* Notes */}
         <div className={styles.formGroup}>

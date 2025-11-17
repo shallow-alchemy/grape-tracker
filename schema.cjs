@@ -73,7 +73,7 @@ var wineTable = (0, zero_1.table)('wine')
     updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
-var stageHistoryTable = (0, zero_1.table)('stageHistory')
+var stageHistoryTable = (0, zero_1.table)('stage_history')
     .columns({
     id: (0, zero_1.string)(),
     entityType: (0, zero_1.string)(),
@@ -87,7 +87,7 @@ var stageHistoryTable = (0, zero_1.table)('stageHistory')
     updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
-var taskTemplateTable = (0, zero_1.table)('taskTemplate')
+var taskTemplateTable = (0, zero_1.table)('task_template')
     .columns({
     id: (0, zero_1.string)(),
     vineyardId: (0, zero_1.string)(),
@@ -140,7 +140,7 @@ var measurementTable = (0, zero_1.table)('measurement')
     updatedAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
-var measurementRangeTable = (0, zero_1.table)('measurementRange')
+var measurementRangeTable = (0, zero_1.table)('measurement_range')
     .columns({
     id: (0, zero_1.string)(),
     wineType: (0, zero_1.string)(),
@@ -154,7 +154,7 @@ var measurementRangeTable = (0, zero_1.table)('measurementRange')
     createdAt: (0, zero_1.number)(),
 })
     .primaryKey('id');
-exports.schema = (0, zero_1.createSchema)({
+var schema = (0, zero_1.createSchema)({
     tables: [
         vineyardTable,
         blockTable,
@@ -168,7 +168,7 @@ exports.schema = (0, zero_1.createSchema)({
         measurementRangeTable,
     ],
 });
-exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () { return ({
+var permissions = (0, zero_1.definePermissions)(schema, function () { return ({
     vineyard: {
         row: {
             select: zero_1.ANYONE_CAN,
@@ -224,7 +224,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
             delete: zero_1.ANYONE_CAN,
         },
     },
-    stageHistory: {
+    stage_history: {
         row: {
             select: zero_1.ANYONE_CAN,
             insert: zero_1.ANYONE_CAN,
@@ -235,7 +235,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
             delete: zero_1.ANYONE_CAN,
         },
     },
-    taskTemplate: {
+    task_template: {
         row: {
             select: zero_1.ANYONE_CAN,
             insert: zero_1.ANYONE_CAN,
@@ -268,7 +268,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
             delete: zero_1.ANYONE_CAN,
         },
     },
-    measurementRange: {
+    measurement_range: {
         row: {
             select: zero_1.ANYONE_CAN,
             insert: zero_1.ANYONE_CAN,
@@ -280,3 +280,10 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         },
     },
 }); });
+
+// Default export for zero-cache-dev and zero-deploy-permissions
+module.exports = { schema, permissions };
+
+// Named exports for backwards compatibility
+exports.schema = schema;
+exports.permissions = permissions;

@@ -4,6 +4,8 @@ import { FiSettings } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { EditWineModal } from './EditWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
+import { AddMeasurementModal } from './AddMeasurementModal';
+import { TaskListView } from './TaskListView';
 import styles from '../../App.module.css';
 
 type WineDetailsViewProps = {
@@ -53,6 +55,8 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showStageModal, setShowStageModal] = useState(false);
+  const [showMeasurementModal, setShowMeasurementModal] = useState(false);
+  const [showTaskList, setShowTaskList] = useState(false);
 
   if (!wine) {
     return (
@@ -91,6 +95,19 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
 
   const daysInStage = getDaysInStage();
 
+  // Show task list view if requested
+  if (showTaskList) {
+    return (
+      <TaskListView
+        entityType="wine"
+        entityId={wineId}
+        entityName={vintage ? `${vintage.vintage_year} ${wine.name}` : wine.name}
+        currentStage={wine.current_stage}
+        onBack={() => setShowTaskList(false)}
+      />
+    );
+  }
+
   return (
     <div className={styles.vineyardContainer}>
       <div className={styles.vineyardHeader}>
@@ -101,7 +118,10 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
           {vintage ? `${vintage.vintage_year} ${wine.name}` : wine.name}
         </div>
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
-          <button className={styles.actionButton} onClick={() => alert('Add Measurement (TODO)')}>
+          <button className={styles.actionButton} onClick={() => setShowTaskList(true)}>
+            TASKS
+          </button>
+          <button className={styles.actionButton} onClick={() => setShowMeasurementModal(true)}>
             ADD MEASUREMENT
           </button>
           <button className={styles.actionButton} onClick={() => setShowStageModal(true)}>
@@ -386,6 +406,21 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         <StageTransitionModal
           isOpen={showStageModal}
           onClose={() => setShowStageModal(false)}
+          onSuccess={(message) => {
+            setSuccessMessage(message);
+            setTimeout(() => setSuccessMessage(null), 3000);
+          }}
+          entityType="wine"
+          entityId={wineId}
+          currentStage={wine.current_stage}
+          wineType={wine.wine_type}
+        />
+      )}
+
+      {wine && (
+        <AddMeasurementModal
+          isOpen={showMeasurementModal}
+          onClose={() => setShowMeasurementModal(false)}
           onSuccess={(message) => {
             setSuccessMessage(message);
             setTimeout(() => setSuccessMessage(null), 3000);

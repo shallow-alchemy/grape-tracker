@@ -5,6 +5,7 @@ import { useZero } from '../../contexts/ZeroContext';
 import { EditVintageModal } from './EditVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
+import { TaskListView } from './TaskListView';
 import { formatStage } from './stages';
 import styles from '../../App.module.css';
 
@@ -49,6 +50,7 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddWineModal, setShowAddWineModal] = useState(false);
   const [showStageModal, setShowStageModal] = useState(false);
+  const [showTaskList, setShowTaskList] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const showSuccessMessage = (message: string) => {
@@ -77,6 +79,19 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
     });
   };
 
+  // Show task list view if requested
+  if (showTaskList) {
+    return (
+      <TaskListView
+        entityType="vintage"
+        entityId={vintageId}
+        entityName={`${vintage.vintage_year} ${vintage.variety}`}
+        currentStage={vintage.current_stage}
+        onBack={() => setShowTaskList(false)}
+      />
+    );
+  }
+
   return (
     <div className={styles.vineyardContainer}>
       <div className={styles.vineyardHeader}>
@@ -87,6 +102,9 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
           {vintage.vintage_year} {vintage.variety}
         </div>
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
+          <button className={styles.actionButton} onClick={() => setShowTaskList(true)}>
+            TASKS
+          </button>
           <button className={styles.actionButton} onClick={() => setShowAddWineModal(true)}>
             CREATE WINE
           </button>
