@@ -1,0 +1,96 @@
+import { useState } from 'react';
+import { useZero } from '../../contexts/ZeroContext';
+import type { EntityType } from './stages';
+
+export type StageTransitionData = {
+  toStage: string;
+  notes: string;
+  skipCurrentStage: boolean;
+};
+
+export type StageTransitionResult = {
+  success: boolean;
+  error?: string;
+};
+
+/**
+ * Custom hook for handling stage transitions
+ * Encapsulates the business logic for completing current stage and starting new stage
+ */
+export const useStageTransition = (entityType: EntityType, entityId: string) => {
+  const zero = useZero();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const advanceStage = async (
+    currentStage: string,
+    data: StageTransitionData
+  ): Promise<StageTransitionResult> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const now = Date.now();
+
+      // Step 1: Find and complete the current stage_history entry
+      const allStageHistory = await zero.query.stage_history
+        .where('entity_type', entityType)
+        .where('entity_id', entityId)
+        .where('stage', currentStage)
+        .run();
+
+      const currentEntry = allStageHistory.find(s => !s.completed_at);
+      if (currentEntry) {
+        await zero.mutate.stage_history.update({
+          id: currentEntry.id,
+          completed_at: now,
+          skipped: data.skipCurrentStage,
+          updated_at: now,
+        });
+      }
+
+      // Step 2: Create new stage_history entry for the new stage
+      await zero.mutate.stage_history.insert({
+        id: crypto.randomUUID(),
+        entity_type: entityType,
+        entity_id: entityId,
+        stage: data.toStage,
+        started_at: now,
+        completed_at: null,
+        skipped: false,
+        notes: data.notes,
+        created_at: now,
+        updated_at: now,
+      });
+
+      // Step 3: Update the entity's current_stage field
+      if (entityType === 'wine') {
+        await zero.mutate.wine.update({
+          id: entityId,
+          current_stage: data.toStage,
+          updated_at: now,
+        });
+      } else if (entityType === 'vintage') {
+        await zero.mutate.vintage.update({
+          id: entityId,
+          current_stage: data.toStage,
+          updated_at: now,
+        });
+      }
+
+      setIsLoading(false);
+      return { success: true };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to transition stage';
+      setError(errorMessage);
+      setIsLoading(false);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  return {
+    advanceStage,
+    isLoading,
+    error,
+  };
+};

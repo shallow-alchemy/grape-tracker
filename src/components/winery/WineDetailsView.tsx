@@ -3,6 +3,7 @@ import { useQuery } from '@rocicorp/zero/react';
 import { FiSettings } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { EditWineModal } from './EditWineModal';
+import { StageTransitionModal } from './StageTransitionModal';
 import styles from '../../App.module.css';
 
 type WineDetailsViewProps = {
@@ -51,6 +52,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showStageModal, setShowStageModal] = useState(false);
 
   if (!wine) {
     return (
@@ -102,7 +104,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
           <button className={styles.actionButton} onClick={() => alert('Add Measurement (TODO)')}>
             ADD MEASUREMENT
           </button>
-          <button className={styles.actionButton} onClick={() => alert('Advance Stage (TODO)')}>
+          <button className={styles.actionButton} onClick={() => setShowStageModal(true)}>
             ADVANCE STAGE
           </button>
           <button className={styles.gearButton} onClick={() => setIsEditModalOpen(true)}>
@@ -379,6 +381,20 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         onDelete={onBack}
         wineId={wineId}
       />
+
+      {wine && (
+        <StageTransitionModal
+          isOpen={showStageModal}
+          onClose={() => setShowStageModal(false)}
+          onSuccess={(message) => {
+            setSuccessMessage(message);
+            setTimeout(() => setSuccessMessage(null), 3000);
+          }}
+          entityType="wine"
+          entityId={wineId}
+          currentStage={wine.current_stage}
+        />
+      )}
     </div>
   );
 };

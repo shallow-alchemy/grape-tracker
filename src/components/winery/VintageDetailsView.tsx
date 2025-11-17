@@ -4,6 +4,8 @@ import { FiSettings } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { EditVintageModal } from './EditVintageModal';
 import { AddWineModal } from './AddWineModal';
+import { StageTransitionModal } from './StageTransitionModal';
+import { formatStage } from './stages';
 import styles from '../../App.module.css';
 
 type VintageDetailsViewProps = {
@@ -46,6 +48,7 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddWineModal, setShowAddWineModal] = useState(false);
+  const [showStageModal, setShowStageModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const showSuccessMessage = (message: string) => {
@@ -74,13 +77,6 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
     });
   };
 
-  const formatStage = (stage: string): string => {
-    return stage
-      .split('_')
-      .map(word => word.toUpperCase())
-      .join(' ');
-  };
-
   return (
     <div className={styles.vineyardContainer}>
       <div className={styles.vineyardHeader}>
@@ -104,12 +100,29 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
       <div className={styles.detailSection}>
         <div className={styles.sectionHeader}>CURRENT STAGE</div>
         <div style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: 'var(--font-size-md)',
-          color: 'var(--color-primary-500)',
-          textTransform: 'uppercase'
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--spacing-md)',
+          flexWrap: 'wrap'
         }}>
-          {formatStage(vintage.current_stage)}
+          <div style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--font-size-md)',
+            color: 'var(--color-primary-500)',
+            textTransform: 'uppercase'
+          }}>
+            {formatStage(vintage.current_stage)}
+          </div>
+          <button
+            className={styles.actionButton}
+            onClick={() => setShowStageModal(true)}
+            style={{
+              fontSize: 'var(--font-size-xs)',
+              padding: 'var(--spacing-xs) var(--spacing-sm)',
+            }}
+          >
+            ADVANCE STAGE
+          </button>
         </div>
       </div>
 
@@ -297,6 +310,17 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
         onSuccess={showSuccessMessage}
         initialVintageId={vintageId}
       />
+
+      {vintage && (
+        <StageTransitionModal
+          isOpen={showStageModal}
+          onClose={() => setShowStageModal(false)}
+          onSuccess={showSuccessMessage}
+          entityType="vintage"
+          entityId={vintageId}
+          currentStage={vintage.current_stage}
+        />
+      )}
     </div>
   );
 };

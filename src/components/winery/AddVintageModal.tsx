@@ -93,7 +93,7 @@ export const AddVintageModal = ({
               vintage_year: vintageYear,
               variety: variety,
               block_ids: [],
-              current_stage: 'harvest',
+              current_stage: 'harvested',
               harvest_date: harvestDate ? new Date(harvestDate).getTime() : now,
               harvest_weight_lbs: harvestWeight ? parseFloat(harvestWeight) : null,
               harvest_volume_gallons: harvestVolume ? parseFloat(harvestVolume) : null,
@@ -106,10 +106,10 @@ export const AddVintageModal = ({
 
             // Create initial stage history entry
             await zero.mutate.stage_history.insert({
-              id: `${vintageId}-harvest-${now}`,
+              id: `${vintageId}-harvested-${now}`,
               entity_type: 'vintage',
               entity_id: vintageId,
-              stage: 'harvest',
+              stage: 'harvested',
               started_at: now,
               completed_at: null,
               skipped: false,
