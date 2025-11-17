@@ -24,7 +24,13 @@ rs.mock('./components/VineyardView', () => ({
 }));
 
 rs.mock('./components/winery/WineryView', () => ({
-  WineryView: () => <div data-testid="winery-view">Winery View</div>,
+  WineryView: ({ initialVintageId, initialWineId }: { initialVintageId?: string; initialWineId?: string }) => (
+    <div data-testid="winery-view">
+      Winery View
+      {initialVintageId && <span data-testid="vintage-id">{initialVintageId}</span>}
+      {initialWineId && <span data-testid="wine-id">{initialWineId}</span>}
+    </div>
+  ),
 }));
 
 rs.mock('./components/DashboardView', () => ({

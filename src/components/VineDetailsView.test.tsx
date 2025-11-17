@@ -158,7 +158,7 @@ describe('VineDetailsView', () => {
         />
       );
 
-      const backButton = screen.getByRole('button', { name: /back/i });
+      const backButton = screen.getByText('< BACK TO VINES');
       await user.click(backButton);
 
       expect(navigateBack).toHaveBeenCalled();

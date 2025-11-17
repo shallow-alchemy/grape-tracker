@@ -1,63 +1,414 @@
-import { test, describe } from '@rstest/core';
+import { test, describe, expect, rs, afterEach } from '@rstest/core';
+import { render, screen, cleanup } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { TaskListView } from './TaskListView';
+
+const now = Date.now();
+const mockTasksData = [
+  {
+    id: 'task-1',
+    name: 'Check Temperature',
+    description: 'Monitor fermentation temp',
+    entity_type: 'wine',
+    entity_id: 'wine-1',
+    due_date: now - 86400000, // 1 day ago (overdue)
+    completed_at: null,
+    skipped: false,
+  },
+  {
+    id: 'task-2',
+    name: 'Take Gravity Reading',
+    description: 'Measure specific gravity',
+    entity_type: 'wine',
+    entity_id: 'wine-1',
+    due_date: now + 86400000, // 1 day from now (upcoming)
+    completed_at: null,
+    skipped: false,
+  },
+  {
+    id: 'task-3',
+    name: 'Rack Wine',
+    description: '',
+    entity_type: 'wine',
+    entity_id: 'wine-1',
+    due_date: now - 172800000, // 2 days ago
+    completed_at: now - 86400000, // completed 1 day ago
+    skipped: false,
+  },
+  {
+    id: 'task-4',
+    name: 'Add Oak Chips',
+    description: '',
+    entity_type: 'wine',
+    entity_id: 'wine-1',
+    due_date: now,
+    completed_at: null,
+    skipped: true,
+  },
+];
+
+rs.mock('../../contexts/ZeroContext', () => ({
+  useZero: () => ({
+    query: {
+      task: {
+        where: rs.fn().mockReturnThis(),
+      },
+    },
+  }),
+}));
+
+let mockQueryData = mockTasksData;
+rs.mock('@rocicorp/zero/react', () => ({
+  useQuery: () => [mockQueryData],
+}));
+
+rs.mock('./TaskCompletionModal', () => ({
+  TaskCompletionModal: ({ isOpen, taskName }: { isOpen: boolean; taskName: string }) => {
+    if (!isOpen) return null;
+    return <div data-testid="task-completion-modal">Completing: {taskName}</div>;
+  },
+}));
+
+rs.mock('./CreateTaskModal', () => ({
+  CreateTaskModal: ({ isOpen }: { isOpen: boolean }) => {
+    if (!isOpen) return null;
+    return <div data-testid="create-task-modal">Create Task Modal</div>;
+  },
+}));
+
+rs.mock('./taskHelpers', () => ({
+  formatDueDate: (timestamp: number) => {
+    if (timestamp < Date.now()) return 'OVERDUE';
+    return new Date(timestamp).toLocaleDateString();
+  },
+  isOverdue: (dueDate: number, completedAt: number | null, skipped: number) => {
+    return dueDate < Date.now() && !completedAt && skipped === 0;
+  },
+}));
 
 describe('TaskListView', () => {
-  describe('task display', () => {
-    test.todo('shows header with stage name');
-    test.todo('lists all tasks for entity');
-    test.todo('shows task due dates');
-    test.todo('shows completed tasks with checkmark');
-    test.todo('shows pending tasks with empty checkbox');
-    test.todo('shows skipped tasks with skip icon');
-    test.todo('shows overdue warning for late tasks');
-    test.todo('groups tasks by stage');
-    test.todo('orders tasks by due date ascending');
+  afterEach(() => {
+    cleanup();
+    mockQueryData = mockTasksData;
   });
 
-  describe('relative time display', () => {
-    test.todo('shows "due today" for tasks due today');
-    test.todo('shows "due tomorrow" for tasks due tomorrow');
-    test.todo('shows "2 days overdue" for overdue tasks');
-    test.todo('shows "completed" for finished tasks');
+  describe('header', () => {
+    test('displays entity name in title', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="2024 Cabernet"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText('TASKS: 2024 Cabernet')).toBeInTheDocument();
+    });
+
+    test('renders back button', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText('← BACK')).toBeInTheDocument();
+    });
+
+    test('calls onBack when back button clicked', async () => {
+      const user = userEvent.setup();
+      const mockOnBack = rs.fn();
+
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={mockOnBack}
+        />
+      );
+
+      const backButton = screen.getByRole('button', { name: '← BACK' });
+      await user.click(backButton);
+
+      expect(mockOnBack).toHaveBeenCalled();
+    });
+
+    test('renders create task button', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText('CREATE TASK')).toBeInTheDocument();
+    });
   });
 
-  describe('task completion', () => {
-    test.todo('shows completion modal when task clicked');
-    test.todo('completion modal has notes field');
-    test.todo('marks task as complete when confirmed');
-    test.todo('records completion timestamp');
-    test.todo('records user who completed task');
-    test.todo('allows uncompleting a task');
+  describe('task categorization', () => {
+    test('displays overdue tasks section with count', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText(/OVERDUE \(1\)/)).toBeInTheDocument();
+    });
+
+    test('displays upcoming tasks section with count', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText(/UPCOMING \(1\)/)).toBeInTheDocument();
+    });
+
+    test('displays completed tasks section with count', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText(/COMPLETED \(1\)/)).toBeInTheDocument();
+    });
+
+    test('displays skipped tasks section with count', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText(/SKIPPED \(1\)/)).toBeInTheDocument();
+    });
+
+    test('shows appropriate tasks in each section', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      // Overdue section should have the overdue task
+      const overdueSection = screen.getByText(/OVERDUE \(1\)/).parentElement;
+      expect(overdueSection).toHaveTextContent('Check Temperature');
+
+      // Upcoming section should have the upcoming task
+      const upcomingSection = screen.getByText(/UPCOMING \(1\)/).parentElement;
+      expect(upcomingSection).toHaveTextContent('Take Gravity Reading');
+
+      // Completed section should have the completed task
+      const completedSection = screen.getByText(/COMPLETED \(1\)/).parentElement;
+      expect(completedSection).toHaveTextContent('Rack Wine');
+
+      // Skipped section should have the skipped task
+      const skippedSection = screen.getByText(/SKIPPED \(1\)/).parentElement;
+      expect(skippedSection).toHaveTextContent('Add Oak Chips');
+    });
   });
 
-  describe('task skipping', () => {
-    test.todo('shows skip option for pending tasks');
-    test.todo('requires reason when skipping');
-    test.todo('marks task as skipped with reason');
+  describe('empty state', () => {
+    test('shows empty state message when no tasks exist', () => {
+      mockQueryData = [];
+
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText(/No tasks yet/)).toBeInTheDocument();
+      expect(screen.getByText(/Create one or advance the stage/)).toBeInTheDocument();
+    });
+
+    test('does not show sections when no tasks exist', () => {
+      mockQueryData = [];
+
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.queryByText(/OVERDUE/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/UPCOMING/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/COMPLETED/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/SKIPPED/)).not.toBeInTheDocument();
+    });
   });
 
-  describe('add custom task', () => {
-    test.todo('shows add task button');
-    test.todo('shows inline form when add clicked');
-    test.todo('creates ad-hoc task');
-    test.todo('ad-hoc task has no template id');
+  describe('task card display', () => {
+    test('displays task name', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText('Check Temperature')).toBeInTheDocument();
+      expect(screen.getByText('Take Gravity Reading')).toBeInTheDocument();
+    });
+
+    test('displays task description when present', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText('Monitor fermentation temp')).toBeInTheDocument();
+      expect(screen.getByText('Measure specific gravity')).toBeInTheDocument();
+    });
+
+    test('shows OVERDUE badge for overdue tasks', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      const overdueBadges = screen.getAllByText('OVERDUE');
+      expect(overdueBadges.length).toBeGreaterThan(0);
+    });
+
+    test('shows COMPLETED badge for completed tasks', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText('COMPLETED')).toBeInTheDocument();
+    });
+
+    test('shows SKIPPED badge for skipped tasks', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText('SKIPPED')).toBeInTheDocument();
+    });
   });
 
-  describe('empty states', () => {
-    test.todo('shows message when no tasks exist');
-    test.todo('shows helpful message to create tasks');
+  describe('task interaction', () => {
+    test('opens task completion modal when task card clicked', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      const taskCard = screen.getByText('Check Temperature');
+      await user.click(taskCard);
+
+      expect(screen.getByTestId('task-completion-modal')).toBeInTheDocument();
+      expect(screen.getByText('Completing: Check Temperature')).toBeInTheDocument();
+    });
+
+    test('opens create task modal when create button clicked', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
+
+      const createButton = screen.getByText('CREATE TASK');
+      await user.click(createButton);
+
+      expect(screen.getByTestId('create-task-modal')).toBeInTheDocument();
+    });
   });
 
-  describe('collapsible sections', () => {
-    test.todo('collapses stage section when header clicked');
-    test.todo('expands section when clicked again');
-    test.todo('current stage expanded by default');
-    test.todo('completed stages collapsed by default');
-  });
+  describe('success message', () => {
+    test('does not show success message initially', () => {
+      render(
+        <TaskListView
+          entityType="wine"
+          entityId="wine-1"
+          entityName="Test Wine"
+          currentStage="primary_fermentation"
+          onBack={() => {}}
+        />
+      );
 
-  describe('task count display', () => {
-    test.todo('shows completed count in header');
-    test.todo('updates count when task completed');
+      expect(screen.queryByText(/Task completed/)).not.toBeInTheDocument();
+    });
   });
-
 });
-

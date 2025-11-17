@@ -157,7 +157,7 @@ describe('Weather', () => {
         expect(screen.getByText(/72°F/)).toBeInTheDocument();
       });
 
-      const toggleButton = screen.getByRole('button', { name: /toggle/i });
+      const toggleButton = screen.getByText('HIGHS ↑');
       await user.click(toggleButton);
 
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
