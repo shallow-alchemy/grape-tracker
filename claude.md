@@ -24,7 +24,7 @@ This is **Gilbert**, a mobile-first grape tracking app with an 80s hacker termin
 9. **[Deployment Guide](docs/deployment.md)** - Railway + Netlify production deployment
 10. **[Roadmap](docs/roadmap.md)** - Product development priorities
 11. **[Theme](docs/theme.md)** - 80s terminal aesthetic, mobile-first design
-12. **[Theme Tokens](docs/theme.json)** - Colors, typography, spacing values
+12. **[Theme Tokens](src/index.css)** - CSS custom properties (single source of truth)
 
 **See [`docs/README.md`](docs/README.md) for complete documentation index**
 

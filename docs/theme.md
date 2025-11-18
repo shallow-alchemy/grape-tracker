@@ -1,5 +1,9 @@
 # 80s Hacker Terminal Theme Design Document
 
+## Theme Implementation
+
+**Source of Truth**: All theme tokens are defined as CSS custom properties in **`src/index.css`**. This file is the single source of truth for all colors, typography, spacing, and effects used throughout the application.
+
 ## Theme Overview
 
 The 80s Hacker Terminal Theme is a sophisticated, muted design system that captures the aesthetic of classic terminal interfaces from the 1980s computing era. It balances nostalgic authenticity with modern usability, creating an interface that feels both retro and professional.
@@ -23,6 +27,13 @@ The background uses a **faded black** (#1a1c1a) rather than pure black, simulati
 
 ### Green Selection
 The green palette is intentionally muted to avoid the harsh, neon appearance common in modern "hacker" themes. The primary green (#3a7a3a) provides sufficient contrast while maintaining the subdued, professional appearance of actual vintage terminals.
+
+### Interaction/Progression Colors
+A **muted purple palette** (`--color-interaction-*`) provides semantic distinction for workflow progression and special interactive elements:
+- **Usage**: Stage completion actions, workflow advancement, skipped stage indicators
+- **Primary shade**: `--color-interaction-400` (#8855b8) for interactive elements
+- **Hover state**: `--color-interaction-300` (#a87dce) for lighter hover feedback
+- **Philosophy**: Purple creates visual distinction from general green actions, clearly indicating workflow state changes and progression-specific interactions
 
 ### Layered Surfaces
 Three distinct surface levels create depth:
@@ -88,11 +99,18 @@ All animations are subtle and purposeful:
 ## Technical Implementation
 
 ### CSS Custom Properties
-All design tokens are implemented as CSS custom properties for:
-- **Maintainability**: Easy theme-wide updates
-- **Consistency**: Guaranteed visual cohesion
+All design tokens are implemented as CSS custom properties in **`src/index.css`** for:
+- **Maintainability**: Easy theme-wide updates via a single file
+- **Consistency**: Guaranteed visual cohesion across all components
 - **Flexibility**: Support for theme variations
 - **Performance**: Efficient cascade utilization
+- **Single Source of Truth**: All theme values centralized in one location
+
+**Key Color Scales**:
+- `--color-primary-*`: Muted greens for general actions and primary elements
+- `--color-interaction-*`: Muted purples for workflow progression and special interactions
+- `--color-secondary-*`: Grays for secondary UI elements
+- `--color-accent-*`: Accent greens for highlights and focus states
 
 ### Mobile-First Responsive Design
 The theme prioritizes mobile experience with desktop as an enhancement:
@@ -153,16 +171,18 @@ This theme works best for:
 ## Implementation Notes
 
 ### File Structure
-- **Theme tokens**: Centralized in CSS custom properties
-- **Component styles**: Reference theme tokens consistently
-- **No hardcoded values**: All colors, spacing, and effects use variables
+- **Theme tokens**: Centralized in **`src/index.css`** as CSS custom properties
+- **Component styles**: Reference theme tokens consistently via `var(--token-name)`
+- **No hardcoded values**: All colors, spacing, and effects use CSS variables
+- **Documentation**: This file (`docs/theme.md`) describes the design philosophy and usage
 
 ### Customization Points
-The theme can be adapted by modifying:
-- **Primary green hue**: Adjust the base green color
-- **Background darkness**: Modify the faded black intensity
-- **Effect intensity**: Increase/decrease glow and grain effects
-- **Typography**: Swap monospace font families
+The theme can be adapted by modifying **`src/index.css`**:
+- **Primary green hue**: Adjust the base green color scale (`--color-primary-*`)
+- **Interaction colors**: Adjust the purple scale (`--color-interaction-*`) for workflow actions
+- **Background darkness**: Modify the faded black intensity (`--color-background`)
+- **Effect intensity**: Increase/decrease glow and grain effects (`--shadow-glow-*`)
+- **Typography**: Swap monospace font families (`--font-heading`, `--font-body`)
 
 ## Visual Hierarchy
 

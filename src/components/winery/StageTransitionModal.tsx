@@ -123,7 +123,7 @@ export const StageTransitionModal = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="ADVANCE STAGE"
+      title="COMPLETE STAGE"
       titleRight={
         <label style={{
           display: 'flex',
@@ -236,7 +236,7 @@ export const StageTransitionModal = ({
             className={styles.formTextarea}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder={`Notes about advancing to ${selectedMeta?.label}...`}
+            placeholder={`Notes about ${currentMeta?.label.toLowerCase() || currentStage} stage...`}
             rows={3}
             disabled={isLoading}
           />
@@ -264,7 +264,7 @@ export const StageTransitionModal = ({
             className={styles.formButton}
             disabled={isLoading}
           >
-            {isLoading ? 'ADVANCING...' : 'ADVANCE STAGE'}
+            {isLoading ? 'COMPLETING...' : 'COMPLETE STAGE'}
           </button>
         </div>
       </form>

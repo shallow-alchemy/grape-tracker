@@ -6,8 +6,13 @@ import { EditVintageModal } from './EditVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
 import { TaskListView } from './TaskListView';
-import { formatStage } from './stages';
+import { formatStage, getStagesForEntity } from './stages';
 import styles from '../../App.module.css';
+
+const formatWineStatus = (status: string): string => {
+  if (status === 'active') return 'FERMENTING';
+  return status.toUpperCase();
+};
 
 type VintageDetailsViewProps = {
   vintageId: string;
@@ -46,6 +51,71 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
       .where('stage', 'harvest')
   );
   const harvestMeasurement = measurementsData[0];
+
+  // Fetch stage history
+  const [stageHistoryData] = useQuery(
+    zero.query.stage_history
+      .where('entity_type', 'vintage')
+      .where('entity_id', vintageId)
+  );
+
+  // Sort stage history by started_at descending (most recent first)
+  const stageHistory = [...stageHistoryData].sort((a, b) => b.started_at - a.started_at);
+
+  // Expand stage history to include skipped stages
+  type ExpandedStageHistoryEntry = {
+    id: string;
+    stage: string;
+    started_at: number;
+    completed_at: number | null | undefined;
+    skipped: boolean;
+    notes: string;
+    isSkippedPlaceholder: boolean;
+  };
+
+  const expandedStageHistory = (() => {
+    const expanded: ExpandedStageHistoryEntry[] = [];
+    const vintageStages = getStagesForEntity('vintage');
+
+    for (let i = 0; i < stageHistory.length; i++) {
+      const current = stageHistory[i];
+
+      // Add the actual stage history entry
+      expanded.push({
+        id: current.id,
+        stage: current.stage,
+        started_at: current.started_at,
+        completed_at: current.completed_at,
+        skipped: !!current.skipped,
+        notes: current.notes || '',
+        isSkippedPlaceholder: false,
+      });
+
+      // Check if there's a next stage and if we skipped any stages in between
+      if (i < stageHistory.length - 1) {
+        const next = stageHistory[i + 1];
+        const currentStageIndex = vintageStages.findIndex(s => s.value === next.stage);
+        const nextStageIndex = vintageStages.findIndex(s => s.value === current.stage);
+
+        if (currentStageIndex !== -1 && nextStageIndex !== -1) {
+          // Add placeholder entries for skipped stages
+          for (let j = currentStageIndex + 1; j < nextStageIndex; j++) {
+            expanded.push({
+              id: `skipped-${vintageStages[j].value}-${i}`,
+              stage: vintageStages[j].value,
+              started_at: next.completed_at || next.started_at,
+              completed_at: next.completed_at || next.started_at,
+              skipped: true,
+              notes: '',
+              isSkippedPlaceholder: true,
+            });
+          }
+        }
+      }
+    }
+
+    return expanded;
+  })();
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddWineModal, setShowAddWineModal] = useState(false);
@@ -94,10 +164,10 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
 
   return (
     <div className={styles.vineyardContainer}>
+      <button className={styles.backButton} onClick={onBack}>
+        ← BACK TO VINTAGES
+      </button>
       <div className={styles.vineyardHeader}>
-        <button className={styles.backButton} onClick={onBack}>
-          ← BACK
-        </button>
         <div className={styles.vineyardTitle}>
           {vintage.variety}, {vintage.vintage_year} Vintage{vintage.grape_source === 'purchased' && vintage.supplier_name ? ` from ${vintage.supplier_name}` : ''}
         </div>
@@ -116,31 +186,35 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
 
       {/* Current Stage */}
       <div className={styles.detailSection}>
-        <div className={styles.sectionHeader}>CURRENT STAGE</div>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--spacing-md)',
-          flexWrap: 'wrap'
-        }}>
-          <div style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--font-size-md)',
-            color: 'var(--color-primary-500)',
-            textTransform: 'uppercase'
-          }}>
-            {formatStage(vintage.current_stage)}
-          </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-sm)' }}>
+          <div className={styles.sectionHeader} style={{ marginBottom: 0 }}>CURRENT STAGE</div>
           <button
-            className={styles.actionButton}
             onClick={() => setShowStageModal(true)}
             style={{
-              fontSize: 'var(--font-size-xs)',
-              padding: 'var(--spacing-xs) var(--spacing-sm)',
+              background: 'none',
+              border: 'none',
+              color: 'var(--color-interaction-400)',
+              fontFamily: 'var(--font-heading)',
+              fontSize: '0.7rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              cursor: 'pointer',
+              transition: 'color var(--transition-fast)',
+              padding: 0,
             }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-interaction-300)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-interaction-400)'}
           >
-            ADVANCE STAGE
+            Mark Complete →
           </button>
+        </div>
+        <div style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 'var(--font-size-md)',
+          color: 'var(--color-primary-500)',
+          textTransform: 'uppercase'
+        }}>
+          {formatStage(vintage.current_stage)}
         </div>
       </div>
 
@@ -274,10 +348,8 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
                       {wine.name}
                       <span style={{
                         fontSize: 'var(--font-size-xs)',
-                        color: 'var(--color-text-accent)',
-                        border: '1px solid var(--color-primary-500)',
-                        padding: '2px var(--spacing-xs)',
-                        borderRadius: 'var(--radius-sm)',
+                        color: 'var(--color-text-muted)',
+                        marginLeft: 'var(--spacing-xs)'
                       }}>
                         {isBlend ? 'BLEND' : 'VARIETAL'}
                       </span>
@@ -288,7 +360,7 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
                       fontFamily: 'var(--font-body)',
                       marginTop: 'var(--spacing-xs)'
                     }}>
-                      {wine.wine_type.toUpperCase()} • {wine.current_volume_gallons} GAL • {wine.status.toUpperCase()}
+                      {wine.wine_type.toUpperCase()} • {wine.current_volume_gallons} GAL • {formatWineStatus(wine.status)}
                     </div>
                   </div>
                   <div style={{
@@ -298,6 +370,91 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
                   }}>
                     →
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Stage History */}
+      {expandedStageHistory.length > 0 && (
+        <div className={styles.detailSection}>
+          <div className={styles.sectionHeader}>STAGE HISTORY</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+            {expandedStageHistory.map((stage) => {
+              const isCurrentStage = !stage.completed_at;
+              return (
+                <div
+                  key={stage.id}
+                  style={{
+                    padding: 'var(--spacing-sm)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: isCurrentStage
+                      ? 'rgba(58, 122, 58, 0.1)'
+                      : 'rgba(138, 150, 138, 0.05)',
+                    opacity: stage.isSkippedPlaceholder ? 0.5 : 1,
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: 'var(--spacing-xs)'
+                  }}>
+                    <div style={{
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: 'var(--font-size-sm)',
+                      color: isCurrentStage ? 'var(--color-primary-500)' : 'var(--color-text-muted)',
+                      textDecoration: stage.isSkippedPlaceholder ? 'line-through' : 'none',
+                    }}>
+                      {formatStage(stage.stage)}
+                    </div>
+                    <div style={{
+                      fontSize: 'var(--font-size-xs)',
+                      fontFamily: 'var(--font-body)'
+                    }}>
+                      {isCurrentStage ? (
+                        <div style={{ color: 'var(--color-success)' }}>IN PROGRESS</div>
+                      ) : stage.skipped ? (
+                        <div style={{ color: 'var(--color-text-muted)' }}>SKIPPED</div>
+                      ) : (
+                        <div style={{ color: 'var(--color-primary-500)' }}>COMPLETE ✓</div>
+                      )}
+                    </div>
+                  </div>
+                  {!stage.isSkippedPlaceholder && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: 'var(--spacing-md)',
+                      fontSize: 'var(--font-size-xs)',
+                      fontFamily: 'var(--font-body)',
+                      color: 'var(--color-text-secondary)',
+                    }}>
+                      <div style={{
+                        flex: 1,
+                        whiteSpace: 'pre-wrap'
+                      }}>
+                        {stage.notes || ''}
+                      </div>
+                      <div style={{
+                        minWidth: '120px',
+                        textAlign: 'right',
+                        flexShrink: 0
+                      }}>
+                        {isCurrentStage ? (
+                          <>{formatDate(stage.started_at)}</>
+                        ) : stage.skipped ? (
+                          <>{stage.completed_at ? formatDate(stage.completed_at) : 'N/A'}</>
+                        ) : (
+                          <>{stage.completed_at ? formatDate(stage.completed_at) : 'N/A'}</>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

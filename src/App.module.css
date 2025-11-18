@@ -596,6 +596,30 @@
   background: var(--color-primary-500);
 }
 
+.progressionButton {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-interaction-400);
+  background: transparent;
+  border: var(--spacing-px) solid var(--color-interaction-500);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.progressionButton:hover {
+  background: rgba(109, 59, 163, 0.15);
+  border-color: var(--color-interaction-400);
+  color: var(--color-interaction-300);
+}
+
 .iconButton {
   background: transparent;
   border: none;
@@ -694,19 +718,29 @@
   font-family: var(--font-heading);
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
-  background: transparent;
+  background: none;
   border: none;
+  outline: none;
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  padding: var(--spacing-sm) 0;
-  margin-bottom: var(--spacing-md);
+  padding: 0;
+  margin: 0 0 var(--spacing-lg) 0;
   transition: color var(--transition-fast);
   text-align: left;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  width: fit-content;
 }
 
 .backButton:hover {
-  color: var(--color-text-accent);
+  color: var(--color-primary-400);
+}
+
+.backButton:focus {
+  outline: none;
+  color: var(--color-primary-400);
 }
 
 .vineDetailsHeader {
@@ -2005,7 +2039,7 @@
 
 .featuredVintageContent {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 1fr;
   gap: var(--spacing-xl);
 }
 

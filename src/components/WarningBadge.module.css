@@ -1,0 +1,26 @@
+.warningBadge {
+  font-family: var(--badge-font-family);
+  font-weight: var(--badge-font-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--badge-letter-spacing);
+  color: var(--color-text-inverse);
+  background-color: var(--color-warning);
+  border: var(--badge-border-width) solid var(--badge-border-color);
+  border-radius: var(--badge-border-radius);
+  display: inline-block;
+}
+
+.small {
+  font-size: 0.5rem;
+  padding: 1px var(--spacing-xs);
+}
+
+.medium {
+  font-size: var(--badge-font-size);
+  padding: var(--badge-padding-y) var(--badge-padding-x);
+}
+
+.large {
+  font-size: 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-md);
+}

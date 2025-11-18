@@ -547,7 +547,43 @@ Visualize vineyard data (health trends, variety distribution, etc.)
 
 ---
 
-**Last Updated:** Nov 15, 2025
+## Technical Debt & Deprecations
+
+### Wine Status Field - Planned Deprecation
+**Status:** 📋 Documented - Not Yet Implemented
+
+**Issue:**
+The `wine.status` field (values: `active`, `aging`, `bottled`) is redundant with the more granular `wine.current_stage` field (values: `crush`, `primary_fermentation`, `secondary_fermentation`, `racking`, `oaking`, `aging`, `bottling`).
+
+**Problems:**
+- Overlapping terminology: "aging" exists as both a stage and a status
+- Unclear boundaries: when does "active" become "aging"?
+- Data redundancy: status is derivable from stage
+- Maintenance burden: two fields to keep in sync
+
+**Proposed Solution:**
+- **Deprecate** the `wine.status` database field
+- **Derive** display status from `current_stage` in frontend code
+- Example logic:
+  - Stages `crush` through `racking` → Display as "FERMENTING"
+  - Stages `oaking` and `aging` → Display as "AGING"
+  - Stage `bottling` → Display as "BOTTLED"
+
+**Rationale:**
+Status is a display concern, not a data concern. The `current_stage` field is the source of truth for where wine is in production. Any high-level summary status should be computed at display time, not stored redundantly.
+
+**Migration Path:**
+1. ✅ Add `formatWineStatus()` helper in frontend (already implemented as interim solution)
+2. [ ] Update all UI to use stage-derived status
+3. [ ] Add migration to remove `status` column from schema
+4. [ ] Update API to ignore/remove status field
+5. [ ] Remove status field from TypeScript types
+
+**Timeline:** TBD - Low priority, no user-facing impact
+
+---
+
+**Last Updated:** Nov 17, 2025
 **Current Phase:** Phase 3 (Additional Features)
 **Completed:** Phase 1 (Core Vine Management) + Phase 2 (QR Code & 3D Tags) + Phase 3.1 (Weather API) + Phase 3.2 (Weather Alerts) + Phase 3.3 Vintage Management (5 components)
 **In Progress:** Phase 3.3 (Winery Management - Wine Production UI)

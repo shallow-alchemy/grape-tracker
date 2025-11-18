@@ -32,6 +32,17 @@
   --color-accent-800: #244d24;
   --color-accent-900: #1d3e1d;
 
+  --color-interaction-50: #f3ecf8;
+  --color-interaction-100: #e3d4f0;
+  --color-interaction-200: #c7a9e1;
+  --color-interaction-300: #a87dce;
+  --color-interaction-400: #8855b8;
+  --color-interaction-500: #6d3ba3;
+  --color-interaction-600: #5a2d8a;
+  --color-interaction-700: #46226d;
+  --color-interaction-800: #351a52;
+  --color-interaction-900: #26133d;
+
   --color-background: #1a1c1a;
   --color-surface: #212421;
   --color-surface-elevated: #282b28;
@@ -91,6 +102,8 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
   --shadow-glow: 0 0 15px rgba(58, 122, 58, 0.2);
   --shadow-glow-strong: 0 0 25px rgba(58, 122, 58, 0.3);
+  --shadow-glow-interaction: 0 0 15px rgba(125, 99, 163, 0.25);
+  --shadow-glow-interaction-strong: 0 0 25px rgba(125, 99, 163, 0.35);
 
   --radius-none: 0;
   --radius-sm: 0.25rem;
@@ -103,6 +116,21 @@
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
+
+  /* Badge Styles */
+  --badge-font-family: var(--font-heading);
+  --badge-font-size: 0.625rem;
+  --badge-font-weight: var(--font-weight-normal);
+  --badge-text-transform: uppercase;
+  --badge-letter-spacing: 0.05em;
+  --badge-color: var(--color-text-primary);
+  --badge-bg: var(--color-interaction-600);
+  --badge-border-color: var(--color-interaction-600);
+  --badge-border-width: 0;
+  --badge-border-radius: var(--radius-sm);
+  --badge-padding-x: var(--spacing-sm);
+  --badge-padding-y: var(--spacing-xs);
+  --badge-vertical-align: super;
 }
 
 * {

@@ -1,6 +1,14 @@
+import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useZero } from '../../contexts/ZeroContext';
+import { CreateTaskModal } from './CreateTaskModal';
+import { WarningBadge } from '../WarningBadge';
 import styles from '../../App.module.css';
+
+const formatWineStatus = (status: string): string => {
+  if (status === 'active') return 'FERMENTING';
+  return status.toUpperCase();
+};
 
 type VintagesListProps = {
   onVintageClick: (vintageId: string) => void;
@@ -25,6 +33,11 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
 
   // Fetch all tasks
   const [tasksData] = useQuery(zero.query.task);
+
+  // Modal state
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  const [taskModalVintageId, setTaskModalVintageId] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Create a map of vintage ID to harvest measurements
   const harvestMeasurements = new Map(
@@ -104,16 +117,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
             <h3 className={styles.featuredVintageHeading}>
               {featuredVintage.vintage_year} {featuredVintage.variety}
               {featuredVintage.grape_source === 'purchased' && (
-                <span style={{
-                  marginLeft: 'var(--spacing-sm)',
-                  fontSize: 'var(--font-size-xs)',
-                  color: 'var(--color-text-accent)',
-                  border: '1px solid var(--color-primary-500)',
-                  padding: '2px var(--spacing-xs)',
-                  borderRadius: 'var(--radius-sm)',
-                }}>
-                  PURCHASED
-                </span>
+                <WarningBadge text="SOURCED" style={{ marginLeft: 'var(--spacing-sm)', verticalAlign: 'middle' }} />
               )}
             </h3>
             <div className={styles.featuredVintageStage}>
@@ -184,7 +188,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
             )}
 
             <div style={{ marginTop: 'var(--spacing-sm)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-xs)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-xs)' }}>
                 <div className={styles.featuredBlockLabel}>
                   WINES ({(() => {
                     const count = winesData.filter(wine => {
@@ -206,15 +210,17 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: 'var(--color-primary-500)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--font-size-xs)',
+                    color: 'var(--color-interaction-400)',
+                    fontFamily: 'var(--font-heading)',
+                    fontSize: '0.7rem',
                     cursor: 'pointer',
-                    textDecoration: 'underline',
+                    transition: 'color var(--transition-fast)',
                     padding: 0
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-interaction-300)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-interaction-400)'}
                 >
-                  Create new
+                  Create new →
                 </button>
               </div>
 
@@ -286,10 +292,8 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                               <span>{wine.name}</span>
                               <span style={{
                                 fontSize: 'var(--font-size-xs)',
-                                color: 'var(--color-text-accent)',
-                                border: '1px solid var(--color-primary-500)',
-                                padding: '1px var(--spacing-xs)',
-                                borderRadius: 'var(--radius-sm)',
+                                color: 'var(--color-text-muted)',
+                                marginLeft: 'var(--spacing-xs)'
                               }}>
                                 {isBlend ? 'BLEND' : 'VARIETAL'}
                               </span>
@@ -300,7 +304,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                               fontFamily: 'var(--font-body)',
                               marginTop: '2px'
                             }}>
-                              {wine.wine_type.toUpperCase()} • {wine.current_volume_gallons} GAL • {wine.status.toUpperCase()}
+                              {wine.wine_type.toUpperCase()} • {wine.current_volume_gallons} GAL • {formatWineStatus(wine.status)}
                             </div>
                           </div>
                           <div style={{
@@ -342,14 +346,44 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
               return vintageTasks.length > 0 ? (
                 <div style={{
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: 'var(--spacing-sm)',
-                  minWidth: '250px',
-                  maxWidth: '300px',
+                  justifyContent: 'center',
+                  width: '100%',
                 }}>
-                  <div className={styles.featuredMetricLabel} style={{ marginBottom: 'var(--spacing-xs)' }}>
-                    TASKS ({vintageTasks.filter(t => !t.completed_at).length})
-                  </div>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 'var(--spacing-sm)',
+                    minWidth: '250px',
+                    maxWidth: '300px',
+                    width: '100%',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-xs)' }}>
+                      <div className={styles.featuredMetricLabel}>
+                        TASKS ({vintageTasks.filter(t => !t.completed_at).length})
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTaskModalVintageId(featuredVintage.id);
+                          setShowCreateTaskModal(true);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--color-interaction-400)',
+                          fontFamily: 'var(--font-heading)',
+                          fontSize: '0.7rem',
+                          cursor: 'pointer',
+                          transition: 'color var(--transition-fast)',
+                          padding: 0,
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-interaction-300)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-interaction-400)'}
+                      >
+                        Add task →
+                      </button>
+                    </div>
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -409,6 +443,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                       );
                     })}
                   </div>
+                  </div>
                 </div>
               ) : null;
             })()}
@@ -432,16 +467,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                 <h3 className={styles.vintageHeading} style={{ margin: 0 }}>
                   {vintage.vintage_year} {vintage.variety}
                   {vintage.grape_source === 'purchased' && (
-                    <span style={{
-                      marginLeft: 'var(--spacing-sm)',
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--color-text-accent)',
-                      border: '1px solid var(--color-primary-500)',
-                      padding: '2px var(--spacing-xs)',
-                      borderRadius: 'var(--radius-sm)',
-                    }}>
-                      PURCHASED
-                    </span>
+                    <WarningBadge text="SOURCED" style={{ marginLeft: 'var(--spacing-sm)', verticalAlign: 'middle' }} />
                   )}
                 </h3>
                 <div className={styles.vintageStage} style={{ marginTop: 0 }}>
@@ -521,6 +547,31 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
             </div>
           ))}
         </>
+      )}
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className={styles.successMessage}>
+          {successMessage}
+        </div>
+      )}
+
+      {/* Create Task Modal */}
+      {taskModalVintageId && (
+        <CreateTaskModal
+          isOpen={showCreateTaskModal}
+          onClose={() => {
+            setShowCreateTaskModal(false);
+            setTaskModalVintageId('');
+          }}
+          onSuccess={(message) => {
+            setSuccessMessage(message);
+            setTimeout(() => setSuccessMessage(null), 3000);
+          }}
+          entityType="vintage"
+          entityId={taskModalVintageId}
+          currentStage={vintages.find(v => v.id === taskModalVintageId)?.current_stage || ''}
+        />
       )}
     </div>
   );

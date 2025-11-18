@@ -47,6 +47,7 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
           id: currentEntry.id,
           completed_at: now,
           skipped: data.skipCurrentStage,
+          notes: data.notes,
           updated_at: now,
         });
       }
@@ -60,7 +61,7 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
         started_at: now,
         completed_at: null,
         skipped: false,
-        notes: data.notes,
+        notes: '',
         created_at: now,
         updated_at: now,
       });
