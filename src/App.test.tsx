@@ -11,6 +11,9 @@ rs.mock('./contexts/ZeroContext', () => ({
   ZeroProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="zero-provider">{children}</div>
   ),
+  useZero: () => ({
+    query: {},
+  }),
 }));
 
 rs.mock('./components/VineyardView', () => ({
@@ -35,6 +38,14 @@ rs.mock('./components/winery/WineryView', () => ({
 
 rs.mock('./components/DashboardView', () => ({
   DashboardView: () => <div data-testid="dashboard-view">Dashboard View</div>,
+}));
+
+rs.mock('./components/SyncStatusIndicator', () => ({
+  SyncStatusIndicator: () => <div data-testid="sync-status">Synced</div>,
+}));
+
+rs.mock('./components/winery/AllTasksView', () => ({
+  AllTasksView: () => <div data-testid="all-tasks-view">All Tasks View</div>,
 }));
 
 describe('App', () => {

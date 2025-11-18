@@ -14,6 +14,21 @@ export const SyncStatusIndicator = () => {
     // Monitor Zero connection status
     let statusCheckInterval: number;
 
+    // Intercept console errors to detect Zero connection failures
+    const originalConsoleError = console.error;
+    console.error = (...args: any[]) => {
+      // Check if this is a Zero connection error
+      const message = args.join(' ');
+      if (message.includes('Failed to connect') ||
+          message.includes('WebSocket') ||
+          message.includes('Connect timed out')) {
+        setStatus('error');
+        setErrorMessage('Zero sync server not responding. Changes may not be saved.');
+      }
+      // Call original console.error
+      originalConsoleError.apply(console, args);
+    };
+
     const checkConnectionStatus = () => {
       // Zero doesn't expose connection status directly, so we monitor activity
       // This is a workaround until Zero adds official connection status API
@@ -21,9 +36,8 @@ export const SyncStatusIndicator = () => {
       try {
         // If we can access zero object, we're likely connected
         if (zero) {
-          // Default to connected if we can access Zero
-          if (status === 'offline' || status === 'error') {
-            // Only update if we were previously offline/error
+          // Only set connected if we're not already in error state
+          if (status !== 'error') {
             setStatus('connected');
           }
         } else {
@@ -62,6 +76,7 @@ export const SyncStatusIndicator = () => {
 
     return () => {
       if (statusCheckInterval) clearInterval(statusCheckInterval);
+      console.error = originalConsoleError;
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
