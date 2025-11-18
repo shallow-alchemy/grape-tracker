@@ -23,6 +23,9 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
       .where('stage', 'harvest')
   );
 
+  // Fetch all tasks
+  const [tasksData] = useQuery(zero.query.task);
+
   // Create a map of vintage ID to harvest measurements
   const harvestMeasurements = new Map(
     measurementsData.map(m => [m.entity_id, m])
@@ -119,6 +122,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
           </div>
 
           <div className={styles.featuredVintageContent}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
             <div className={styles.featuredMetricsGrid}>
               {featuredVintage.harvest_date && (
                 <div className={styles.featuredMetricItem}>
@@ -147,7 +151,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
               harvestMeasurements.get(featuredVintage.id)?.ta !== null && harvestMeasurements.get(featuredVintage.id)?.ta !== undefined) && (
               <div style={{ marginTop: 'var(--spacing-sm)' }}>
                 <div className={styles.featuredMetricLabel} style={{ marginBottom: 'var(--spacing-xs)' }}>MEASUREMENTS</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--spacing-sm)' }}>
+                <div style={{ display: 'flex', gap: 'var(--spacing-lg)', flexWrap: 'wrap' }}>
                   {harvestMeasurements.get(featuredVintage.id)?.brix !== null && harvestMeasurements.get(featuredVintage.id)?.brix !== undefined && (
                     <div className={styles.featuredMetricItem}>
                       <div className={styles.featuredMetricLabel}>BRIX</div>
@@ -238,9 +242,13 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                       return (
                         <div
                           key={wine.id}
-                          onClick={() => onWineClick(wine.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onWineClick(wine.id);
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
+                              e.stopPropagation();
                               onWineClick(wine.id);
                             }
                           }}
@@ -317,6 +325,93 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                 <div className={styles.featuredNotesText}>{featuredVintage.notes}</div>
               </div>
             )}
+            </div>
+
+            {/* Tasks Section */}
+            {(() => {
+              const vintageTasks = tasksData
+                .filter(task => task.entity_type === 'vintage' && task.entity_id === featuredVintage.id)
+                .sort((a, b) => {
+                  const aCompleted = a.completed_at !== null && a.completed_at !== undefined;
+                  const bCompleted = b.completed_at !== null && b.completed_at !== undefined;
+                  if (aCompleted && !bCompleted) return 1;
+                  if (!aCompleted && bCompleted) return -1;
+                  return (a.due_date || 0) - (b.due_date || 0);
+                });
+
+              return vintageTasks.length > 0 ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--spacing-sm)',
+                  minWidth: '250px',
+                  maxWidth: '300px',
+                }}>
+                  <div className={styles.featuredMetricLabel} style={{ marginBottom: 'var(--spacing-xs)' }}>
+                    TASKS ({vintageTasks.filter(t => !t.completed_at).length})
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 'var(--spacing-xs)',
+                    maxHeight: '250px',
+                    overflowY: 'auto',
+                  }}>
+                    {vintageTasks.map(task => {
+                      const isCompleted = task.completed_at !== null && task.completed_at !== undefined;
+                      return (
+                        <div
+                          key={task.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 'var(--spacing-xs)',
+                            padding: 'var(--spacing-xs)',
+                            background: isCompleted ? 'var(--color-background)' : 'var(--color-surface-elevated)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-sm)',
+                            opacity: isCompleted ? 0.5 : 1,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isCompleted}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={() => {
+                              zero.mutate.task.update({
+                                id: task.id,
+                                completed_at: isCompleted ? undefined : Date.now()
+                              });
+                            }}
+                            style={{
+                              marginTop: '2px',
+                              flexShrink: 0,
+                            }}
+                          />
+                          <div style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                            <div style={{
+                              textDecoration: isCompleted ? 'line-through' : 'none',
+                              marginBottom: (task.due_date && task.due_date > 946684800000) ? '2px' : 0,
+                            }}>
+                              {task.name || task.description}
+                            </div>
+                            {task.due_date && task.due_date > 946684800000 && (
+                              <div style={{
+                                fontSize: 'var(--font-size-xs)',
+                                color: 'var(--color-text-muted)',
+                                fontFamily: 'var(--font-mono)',
+                              }}>
+                                {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null;
+            })()}
           </div>
         </div>
       )}

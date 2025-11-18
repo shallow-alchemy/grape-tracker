@@ -2004,27 +2004,30 @@
 }
 
 .featuredVintageContent {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.featuredMetricsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-lg);
+  grid-template-columns: 1fr auto;
+  gap: var(--spacing-xl);
 }
 
 @media (max-width: 768px) {
-  .featuredMetricsGrid {
-    grid-template-columns: repeat(2, 1fr);
+  .featuredVintageContent {
+    grid-template-columns: 1fr;
   }
+}
+
+.featuredMetricsGrid {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
 
 .featuredMetricItem {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  align-items: flex-start;
+  min-width: 160px;
 }
 
 .featuredMetricLabel {
@@ -2144,8 +2147,9 @@
 
 .metricItem {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
   font-family: var(--font-body);
   font-size: var(--font-size-xs);
 }

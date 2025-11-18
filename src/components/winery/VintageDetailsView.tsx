@@ -85,7 +85,7 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
       <TaskListView
         entityType="vintage"
         entityId={vintageId}
-        entityName={`${vintage.vintage_year} ${vintage.variety}`}
+        entityName={`${vintage.variety}, ${vintage.vintage_year} Vintage${vintage.grape_source === 'purchased' && vintage.supplier_name ? ` from ${vintage.supplier_name}` : ''}`}
         currentStage={vintage.current_stage}
         onBack={() => setShowTaskList(false)}
       />
@@ -99,7 +99,7 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
           ← BACK
         </button>
         <div className={styles.vineyardTitle}>
-          {vintage.vintage_year} {vintage.variety}
+          {vintage.variety}, {vintage.vintage_year} Vintage{vintage.grape_source === 'purchased' && vintage.supplier_name ? ` from ${vintage.supplier_name}` : ''}
         </div>
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
           <button className={styles.actionButton} onClick={() => setShowTaskList(true)}>
