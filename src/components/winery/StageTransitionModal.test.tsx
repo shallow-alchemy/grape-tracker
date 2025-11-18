@@ -108,7 +108,7 @@ describe('StageTransitionModal', () => {
       );
 
       expect(screen.getByTestId('modal')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: 'ADVANCE STAGE' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'COMPLETE STAGE' })).toBeInTheDocument();
     });
 
     test('shows current and next stage for wines', () => {
@@ -289,7 +289,7 @@ describe('StageTransitionModal', () => {
       );
 
       expect(screen.getByRole('button', { name: 'CANCEL' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'ADVANCE STAGE' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'COMPLETE STAGE' })).toBeInTheDocument();
     });
 
     test('closes modal when cancel clicked', async () => {
@@ -330,7 +330,7 @@ describe('StageTransitionModal', () => {
         />
       );
 
-      const advanceButton = screen.getByRole('button', { name: 'ADVANCE STAGE' });
+      const advanceButton = screen.getByRole('button', { name: 'COMPLETE STAGE' });
       await user.click(advanceButton);
 
       // Wait for async operations
@@ -365,7 +365,7 @@ describe('StageTransitionModal', () => {
         />
       );
 
-      const advanceButton = screen.getByRole('button', { name: 'ADVANCE STAGE' });
+      const advanceButton = screen.getByRole('button', { name: 'COMPLETE STAGE' });
       await user.click(advanceButton);
 
       // Wait for async operations
@@ -401,7 +401,7 @@ describe('StageTransitionModal', () => {
       const textarea = screen.getByRole('textbox');
       await user.type(textarea, 'Important notes');
 
-      const advanceButton = screen.getByRole('button', { name: 'ADVANCE STAGE' });
+      const advanceButton = screen.getByRole('button', { name: 'COMPLETE STAGE' });
       await user.click(advanceButton);
 
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -431,7 +431,7 @@ describe('StageTransitionModal', () => {
       const checkbox = screen.getByRole('checkbox');
       await user.click(checkbox);
 
-      const advanceButton = screen.getByRole('button', { name: 'ADVANCE STAGE' });
+      const advanceButton = screen.getByRole('button', { name: 'COMPLETE STAGE' });
       await user.click(advanceButton);
 
       await new Promise(resolve => setTimeout(resolve, 100));

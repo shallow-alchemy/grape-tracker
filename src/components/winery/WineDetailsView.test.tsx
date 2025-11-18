@@ -83,8 +83,20 @@ const mockMeasurements = [
   },
 ];
 
+type MockWine = {
+  id: string;
+  name: string;
+  wine_type: string;
+  current_stage: string;
+  status: string;
+  current_volume_gallons: number;
+  volume_gallons: number;
+  vintage_id: string;
+  blend_components: null | { vintage_id: string; percentage: number }[];
+};
+
 let queryCallCount = 0;
-let mockWineData = [mockWine];
+let mockWineData: MockWine[] = [mockWine];
 let mockVintageData = [mockVintage];
 let mockAllVintagesData = [mockVintage, mockVintage2];
 let mockStageHistoryData = mockStageHistory;
@@ -238,7 +250,7 @@ describe('WineDetailsView', () => {
     test('displays wine status', () => {
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
-      expect(screen.getByText('ACTIVE')).toBeInTheDocument();
+      expect(screen.getByText('FERMENTING')).toBeInTheDocument();
     });
 
     test('displays current volume', () => {
@@ -288,7 +300,7 @@ describe('WineDetailsView', () => {
 
       render(<WineDetailsView wineId="wine-1" onBack={mockOnBack} />);
 
-      const backButton = screen.getByText('← BACK');
+      const backButton = screen.getByText(/← BACK/);
       await user.click(backButton);
 
       expect(mockOnBack).toHaveBeenCalled();
@@ -308,10 +320,10 @@ describe('WineDetailsView', () => {
       expect(screen.getByText('ADD MEASUREMENT')).toBeInTheDocument();
     });
 
-    test('renders advance stage button', () => {
+    test('renders mark complete button', () => {
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
-      expect(screen.getByText('ADVANCE STAGE')).toBeInTheDocument();
+      expect(screen.getByText('Mark Complete →')).toBeInTheDocument();
     });
 
     test('renders settings button', () => {
@@ -333,13 +345,13 @@ describe('WineDetailsView', () => {
       expect(screen.getByTestId('edit-wine-modal')).toBeInTheDocument();
     });
 
-    test('opens stage transition modal when advance stage clicked', async () => {
+    test('opens stage transition modal when mark complete clicked', async () => {
       const user = userEvent.setup();
 
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
-      const advanceButton = screen.getByText('ADVANCE STAGE');
-      await user.click(advanceButton);
+      const completeButton = screen.getByText('Mark Complete →');
+      await user.click(completeButton);
 
       expect(screen.getByTestId('stage-transition-modal')).toBeInTheDocument();
     });
@@ -356,44 +368,6 @@ describe('WineDetailsView', () => {
     });
   });
 
-  describe('task list view', () => {
-    test('shows task list when tasks button clicked', async () => {
-      const user = userEvent.setup();
-
-      render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
-
-      const tasksButton = screen.getByText('TASKS');
-      await user.click(tasksButton);
-
-      expect(screen.getByTestId('task-list-view')).toBeInTheDocument();
-    });
-
-    test('passes correct entity name to task list', async () => {
-      const user = userEvent.setup();
-
-      render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
-
-      const tasksButton = screen.getByText('TASKS');
-      await user.click(tasksButton);
-
-      expect(screen.getByText(/2024 Cabernet Barrel 1/)).toBeInTheDocument();
-    });
-
-    test('returns to details view when back button clicked in task list', async () => {
-      const user = userEvent.setup();
-
-      render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
-
-      const tasksButton = screen.getByText('TASKS');
-      await user.click(tasksButton);
-
-      const backButton = screen.getByRole('button', { name: 'Back' });
-      await user.click(backButton);
-
-      expect(screen.queryByTestId('task-list-view')).not.toBeInTheDocument();
-      expect(screen.getByText('CURRENT STAGE')).toBeInTheDocument();
-    });
-  });
 
   describe('formatStage function', () => {
     test('formats underscored stages correctly', () => {

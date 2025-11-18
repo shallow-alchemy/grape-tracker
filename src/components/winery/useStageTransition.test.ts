@@ -96,6 +96,7 @@ describe('useStageTransition', () => {
           id: 'history-1',
           completed_at: expect.any(Number),
           skipped: false,
+          notes: 'Test notes',
         })
       );
       expect(mockStageHistoryInsert).toHaveBeenCalledWith(
@@ -103,7 +104,7 @@ describe('useStageTransition', () => {
           entity_type: 'wine',
           entity_id: 'wine-1',
           stage: 'primary_fermentation',
-          notes: 'Test notes',
+          notes: '',
         })
       );
       expect(mockWineUpdate).toHaveBeenCalledWith(
