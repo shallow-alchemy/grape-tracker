@@ -100,13 +100,39 @@ export const TaskListView = ({
             </div>
           )}
           {completed && (
-            <div style={{
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-success)',
-              fontFamily: 'var(--font-body)',
-              textTransform: 'uppercase',
-            }}>
-              COMPLETED
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+              <div style={{
+                fontSize: 'var(--font-size-xs)',
+                color: 'var(--color-success)',
+                fontFamily: 'var(--font-body)',
+                textTransform: 'uppercase',
+              }}>
+                COMPLETED
+              </div>
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await zero.mutate.task.update({
+                    id: task.id,
+                    completed_at: null as any,
+                  });
+                  showSuccessMessage('Task marked as incomplete');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-interaction-400)',
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.7rem',
+                  cursor: 'pointer',
+                  padding: 0,
+                  transition: 'color var(--transition-fast)',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-interaction-300)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-interaction-400)'}
+              >
+                Undo →
+              </button>
             </div>
           )}
           {skipped && (

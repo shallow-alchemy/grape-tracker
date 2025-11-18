@@ -1,4 +1,5 @@
 import { useQuery } from '@rocicorp/zero/react';
+import { useLocation, Link } from 'wouter';
 import { useZero } from '../../contexts/ZeroContext';
 import { formatDueDate } from '../winery/taskHelpers';
 import styles from '../../App.module.css';
@@ -90,21 +91,35 @@ export const SuppliesNeeded = () => {
 
 export const TaskManagement = () => {
   const zero = useZero();
+  const [, setLocation] = useLocation();
   const [tasksData] = useQuery(zero.query.task);
 
   // Get upcoming tasks (incomplete, not skipped)
   const upcomingTasks = tasksData
     .filter(t => !t.completed_at && !t.skipped)
     .sort((a, b) => a.due_date - b.due_date)
-    .slice(0, 10); // Show up to 10 tasks
+    .slice(0, 5); // Show next 5 tasks
 
   return (
     <div className={styles.desktopPanel}>
-      <h2 className={styles.panelTitle}>TASK MANAGEMENT</h2>
+      <div className={styles.panelTitleRow}>
+        <h2 className={styles.panelTitle}>TASK MANAGEMENT</h2>
+        <Link href="/tasks" className={styles.panelLink}>VIEW ALL TASKS</Link>
+      </div>
       <div className={styles.taskList}>
         {upcomingTasks.length > 0 ? (
           upcomingTasks.map((task) => (
-            <div key={task.id} className={styles.taskItem}>
+            <div
+              key={task.id}
+              className={styles.taskItem}
+              onClick={() => {
+                const route = task.entity_type === 'vintage'
+                  ? `/winery/vintages/${task.entity_id}/tasks`
+                  : `/winery/wines/${task.entity_id}/tasks`;
+                setLocation(route);
+              }}
+              style={{ cursor: 'pointer' }}
+            >
               <span className={styles.taskText}>{task.name.toUpperCase()}</span>
               <span className={styles.taskDate}>{formatDueDate(task.due_date)}</span>
             </div>

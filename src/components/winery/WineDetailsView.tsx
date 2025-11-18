@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { EditWineModal } from './EditWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
 import { AddMeasurementModal } from './AddMeasurementModal';
-import { TaskListView } from './TaskListView';
 import { getStagesForEntity } from './stages';
 import styles from '../../App.module.css';
 
@@ -21,6 +21,7 @@ type WineDetailsViewProps = {
 
 export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const zero = useZero();
+  const [, setLocation] = useLocation();
   const [winesData] = useQuery(zero.query.wine.where('id', wineId));
   const wine = winesData[0];
 
@@ -62,7 +63,6 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showStageModal, setShowStageModal] = useState(false);
   const [showMeasurementModal, setShowMeasurementModal] = useState(false);
-  const [showTaskList, setShowTaskList] = useState(false);
 
   if (!wine) {
     return (
@@ -156,19 +156,6 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
     return expanded;
   })();
 
-  // Show task list view if requested
-  if (showTaskList) {
-    return (
-      <TaskListView
-        entityType="wine"
-        entityId={wineId}
-        entityName={vintage ? `${vintage.vintage_year} ${wine.name}` : wine.name}
-        currentStage={wine.current_stage}
-        onBack={() => setShowTaskList(false)}
-      />
-    );
-  }
-
   return (
     <div className={styles.vineyardContainer}>
       <button className={styles.backButton} onClick={onBack}>
@@ -179,7 +166,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
           {vintage ? `${vintage.vintage_year} ${wine.name}` : wine.name}
         </div>
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
-          <button className={styles.actionButton} onClick={() => setShowTaskList(true)}>
+          <button className={styles.actionButton} onClick={() => setLocation(`/winery/wines/${wineId}/tasks`)}>
             TASKS
           </button>
           <button className={styles.actionButton} onClick={() => setShowMeasurementModal(true)}>

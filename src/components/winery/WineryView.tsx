@@ -1,21 +1,27 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
+import { useQuery } from '@rocicorp/zero/react';
+import { useZero } from '../../contexts/ZeroContext';
 import { AddVintageModal } from './AddVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { VintagesList } from './VintagesList';
 import { WinesList } from './WinesList';
 import { VintageDetailsView } from './VintageDetailsView';
 import { WineDetailsView } from './WineDetailsView';
+import { TaskListView } from './TaskListView';
 import styles from '../../App.module.css';
 
 type WineryViewProps = {
   initialVintageId?: string;
   initialWineId?: string;
+  initialVintageTasksId?: string;
+  initialWineTasksId?: string;
 };
 
 type ActiveTab = 'vintages' | 'wines';
 
-export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps) => {
+export const WineryView = ({ initialVintageId, initialWineId, initialVintageTasksId, initialWineTasksId }: WineryViewProps) => {
+  const zero = useZero();
   const [location, setLocation] = useLocation();
   const [showAddVintageModal, setShowAddVintageModal] = useState(false);
   const [showAddWineModal, setShowAddWineModal] = useState(false);
@@ -51,15 +57,69 @@ export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps)
       window.history.back();
     } else {
       // Navigate back to the appropriate list view
-      if (initialVintageId) {
+      if (initialVintageId || initialVintageTasksId) {
         setLocation('/winery/vintages');
-      } else if (initialWineId) {
+      } else if (initialWineId || initialWineTasksId) {
         setLocation('/winery/wines');
       } else {
         setLocation('/winery/vintages');
       }
     }
   };
+
+  // Show vintage tasks
+  if (initialVintageTasksId) {
+    const [vintagesData] = useQuery(zero.query.vintage.where('id', initialVintageTasksId));
+    const vintage = vintagesData[0];
+
+    if (!vintage) {
+      return (
+        <div className={styles.vineyardContainer}>
+          <div className={styles.errorMessage}>VINTAGE NOT FOUND</div>
+          <button className={styles.actionButton} onClick={navigateBack}>
+            BACK
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <TaskListView
+        entityType="vintage"
+        entityId={initialVintageTasksId}
+        entityName={`${vintage.variety}, ${vintage.vintage_year} Vintage${vintage.grape_source === 'purchased' && vintage.supplier_name ? ` from ${vintage.supplier_name}` : ''}`}
+        currentStage={vintage.current_stage}
+        onBack={navigateBack}
+      />
+    );
+  }
+
+  // Show wine tasks
+  if (initialWineTasksId) {
+    const [winesData] = useQuery(zero.query.wine.where('id', initialWineTasksId));
+    const wine = winesData[0];
+
+    if (!wine) {
+      return (
+        <div className={styles.vineyardContainer}>
+          <div className={styles.errorMessage}>WINE NOT FOUND</div>
+          <button className={styles.actionButton} onClick={navigateBack}>
+            BACK
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <TaskListView
+        entityType="wine"
+        entityId={initialWineTasksId}
+        entityName={wine.name}
+        currentStage={wine.current_stage}
+        onBack={navigateBack}
+      />
+    );
+  }
 
   if (initialVintageId) {
     return <VintageDetailsView vintageId={initialVintageId} onBack={navigateBack} onWineClick={handleWineClick} />;

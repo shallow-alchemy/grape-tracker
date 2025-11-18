@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { useLocation } from 'wouter';
 import { useZero } from '../contexts/ZeroContext';
 import { fetchWeather, getWeatherIcon, WeatherData } from '../utils/weather';
 import { Alerts } from './Alerts';
@@ -9,6 +10,7 @@ import styles from '../App.module.css';
 
 export const Weather = () => {
   const zero = useZero();
+  const [, setLocation] = useLocation();
   const [showHighTemps, setShowHighTemps] = useState(() => {
     const saved = localStorage.getItem('showHighTemps');
     return saved !== null ? JSON.parse(saved) : true;
@@ -21,11 +23,11 @@ export const Weather = () => {
   // Query all tasks
   const [tasksData] = useQuery(zero.query.task);
 
-  // Get upcoming tasks (incomplete, not skipped, due date in the future or past)
-  const upcomingTasks = tasksData
+  // Get next priority task (incomplete, not skipped, soonest due date)
+  const nextTask = tasksData
     .filter(t => !t.completed_at && !t.skipped)
     .sort((a, b) => a.due_date - b.due_date)
-    .slice(0, 5); // Show top 5 upcoming tasks
+    .slice(0, 1); // Show only the highest priority task
 
   useEffect(() => {
     localStorage.setItem('showHighTemps', JSON.stringify(showHighTemps));
@@ -117,14 +119,45 @@ export const Weather = () => {
       <div className={styles.seasonalActivities}>
         <div className={styles.activityHeader}>WHAT'S NEXT</div>
         <div className={styles.seasonalActivitiesContent}>
-          {upcomingTasks.length > 0 ? (
-            upcomingTasks.map((task) => (
-              <div key={task.id} className={styles.activityItem}>
-                <span className={styles.activityText}>
-                  {'>'} {task.name} — {formatDueDate(task.due_date)}
-                </span>
-              </div>
-            ))
+          {nextTask.length > 0 ? (
+            <div className={styles.activityItem}>
+              <span
+                className={styles.activityText}
+                onClick={() => {
+                  const task = nextTask[0];
+                  const route = task.entity_type === 'vintage'
+                    ? `/winery/vintages/${task.entity_id}/tasks`
+                    : `/winery/wines/${task.entity_id}/tasks`;
+                  setLocation(route);
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                {'>'} {nextTask[0].name} — {formatDueDate(nextTask[0].due_date)}
+              </span>
+              <button
+                onClick={async () => {
+                  await zero.mutate.task.update({
+                    id: nextTask[0].id,
+                    completed_at: Date.now(),
+                  });
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-interaction-400)',
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.7rem',
+                  cursor: 'pointer',
+                  padding: 0,
+                  marginLeft: 'var(--spacing-md)',
+                  transition: 'color var(--transition-fast)',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-interaction-300)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-interaction-400)'}
+              >
+                Mark complete →
+              </button>
+            </div>
           ) : (
             <div className={styles.activityItem}>
               <span className={styles.activityText}>{'>'} NO UPCOMING TASKS</span>

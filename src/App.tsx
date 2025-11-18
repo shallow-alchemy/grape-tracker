@@ -3,6 +3,7 @@ import { Router, Route, Link } from 'wouter';
 import { ZeroProvider } from './contexts/ZeroContext';
 import { VineyardView } from './components/VineyardView';
 import { WineryView } from './components/winery/WineryView';
+import { AllTasksView } from './components/winery/AllTasksView';
 import { DashboardView } from './components/DashboardView';
 import styles from './App.module.css';
 
@@ -18,6 +19,7 @@ const AppContent = () => {
         <UserButton />
       </header>
       <Route path="/" component={DashboardView} />
+      <Route path="/tasks" component={AllTasksView} />
       <Route path="/vineyard/vine/:id">
         {(params) => <VineyardView initialVineId={params.id} />}
       </Route>
@@ -25,10 +27,16 @@ const AppContent = () => {
         {(params) => <VineyardView initialBlockId={params.id} />}
       </Route>
       <Route path="/vineyard">{() => <VineyardView />}</Route>
+      <Route path="/winery/vintages/:id/tasks">
+        {(params) => <WineryView initialVintageTasksId={params.id} />}
+      </Route>
       <Route path="/winery/vintages/:id">
         {(params) => <WineryView initialVintageId={params.id} />}
       </Route>
       <Route path="/winery/vintages">{() => <WineryView />}</Route>
+      <Route path="/winery/wines/:id/tasks">
+        {(params) => <WineryView initialWineTasksId={params.id} />}
+      </Route>
       <Route path="/winery/wines/:id">
         {(params) => <WineryView initialWineId={params.id} />}
       </Route>

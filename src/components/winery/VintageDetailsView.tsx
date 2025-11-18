@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { EditVintageModal } from './EditVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
-import { TaskListView } from './TaskListView';
 import { formatStage, getStagesForEntity } from './stages';
 import styles from '../../App.module.css';
 
@@ -22,6 +22,7 @@ type VintageDetailsViewProps = {
 
 export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDetailsViewProps) => {
   const zero = useZero();
+  const [, setLocation] = useLocation();
   const [vintagesData] = useQuery(zero.query.vintage.where('id', vintageId));
   const vintage = vintagesData[0];
 
@@ -120,7 +121,6 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddWineModal, setShowAddWineModal] = useState(false);
   const [showStageModal, setShowStageModal] = useState(false);
-  const [showTaskList, setShowTaskList] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const showSuccessMessage = (message: string) => {
@@ -149,19 +149,6 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
     });
   };
 
-  // Show task list view if requested
-  if (showTaskList) {
-    return (
-      <TaskListView
-        entityType="vintage"
-        entityId={vintageId}
-        entityName={`${vintage.variety}, ${vintage.vintage_year} Vintage${vintage.grape_source === 'purchased' && vintage.supplier_name ? ` from ${vintage.supplier_name}` : ''}`}
-        currentStage={vintage.current_stage}
-        onBack={() => setShowTaskList(false)}
-      />
-    );
-  }
-
   return (
     <div className={styles.vineyardContainer}>
       <button className={styles.backButton} onClick={onBack}>
@@ -172,7 +159,7 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
           {vintage.variety}, {vintage.vintage_year} Vintage{vintage.grape_source === 'purchased' && vintage.supplier_name ? ` from ${vintage.supplier_name}` : ''}
         </div>
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
-          <button className={styles.actionButton} onClick={() => setShowTaskList(true)}>
+          <button className={styles.actionButton} onClick={() => setLocation(`/winery/vintages/${vintageId}/tasks`)}>
             TASKS
           </button>
           <button className={styles.actionButton} onClick={() => setShowAddWineModal(true)}>
