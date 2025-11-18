@@ -5,6 +5,7 @@ import { VineyardView } from './components/VineyardView';
 import { WineryView } from './components/winery/WineryView';
 import { AllTasksView } from './components/winery/AllTasksView';
 import { DashboardView } from './components/DashboardView';
+import { SyncStatusIndicator } from './components/SyncStatusIndicator';
 import styles from './App.module.css';
 
 const AppContent = () => {
@@ -16,7 +17,10 @@ const AppContent = () => {
           <Link href="/vineyard" className={styles.navLink}>VINEYARD</Link>
           <Link href="/winery/vintages" className={styles.navLink}>WINERY</Link>
         </nav>
-        <UserButton />
+        <div className={styles.headerActions}>
+          <SyncStatusIndicator />
+          <UserButton />
+        </div>
       </header>
       <Route path="/" component={DashboardView} />
       <Route path="/tasks" component={AllTasksView} />
