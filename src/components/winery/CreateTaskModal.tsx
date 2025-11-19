@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { Modal } from '../Modal';
 import { useZero } from '../../contexts/ZeroContext';
 import type { EntityType } from './stages';
@@ -21,6 +22,7 @@ export const CreateTaskModal = ({
   entityId,
   currentStage,
 }: CreateTaskModalProps) => {
+  const { user } = useUser();
   const zero = useZero();
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,6 +50,7 @@ export const CreateTaskModal = ({
 
       await zero.mutate.task.insert({
         id: crypto.randomUUID(),
+        user_id: user!.id,
         task_template_id: null as any,
         entity_type: entityType,
         entity_id: entityId,

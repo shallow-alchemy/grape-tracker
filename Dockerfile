@@ -10,5 +10,5 @@ WORKDIR /app
 # Zero runs on port 4848
 EXPOSE 4848
 
-# Start zero-cache - it will auto-detect env vars
-CMD ["zero-cache", "--schema-path", "/app/schema.cjs"]
+# Deploy permissions and start zero-cache
+CMD ["sh", "-c", "zero-deploy-permissions --schema-path /app/schema.cjs --upstream-db \"$ZERO_UPSTREAM_DB\" && zero-cache --schema-path /app/schema.cjs"]

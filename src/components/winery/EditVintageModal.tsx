@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { useQuery } from '@rocicorp/zero/react';
 import { Modal } from '../Modal';
 import { useZero } from '../../contexts/ZeroContext';
@@ -32,6 +33,7 @@ export const EditVintageModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+  const { user } = useUser();
   const zero = useZero();
 
   // Fetch existing harvest measurement
@@ -133,6 +135,7 @@ export const EditVintageModal = ({
                 // Create new measurement
                 await zero.mutate.measurement.insert({
                   id: `${vintage.id}-harvest-measurement-${now}`,
+                  user_id: user!.id,
                   entity_type: 'vintage',
                   entity_id: vintage.id,
                   date: measurementDate,

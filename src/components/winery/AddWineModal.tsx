@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useZero } from '../../contexts/ZeroContext';
 import { Modal } from '../Modal';
@@ -12,6 +13,7 @@ type AddWineModalProps = {
 };
 
 export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: AddWineModalProps) => {
+  const { user } = useUser();
   const zero = useZero();
   const [vintagesData] = useQuery(zero.query.vintage);
 
@@ -165,6 +167,7 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
       // Create wine record
       await zero.mutate.wine.insert({
         id: wineId,
+        user_id: user!.id,
         vintage_id: formData.vintageId,
         vineyard_id: selectedVintage.vineyard_id,
         name: formData.name.trim().toUpperCase(),
@@ -182,6 +185,7 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
       // Create initial stage history
       await zero.mutate.stage_history.insert({
         id: crypto.randomUUID(),
+        user_id: user!.id,
         entity_type: 'wine',
         entity_id: wineId,
         stage: formData.currentStage,

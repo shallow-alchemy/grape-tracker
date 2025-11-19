@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { Modal } from '../Modal';
 import { useZero } from '../../contexts/ZeroContext';
 import { useVineyard } from '../vineyard-hooks';
@@ -19,6 +20,7 @@ export const AddVintageModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [grapeSource, setGrapeSource] = useState<'own_vineyard' | 'purchased'>('own_vineyard');
 
+  const { user } = useUser();
   const zero = useZero();
   const vineyardData = useVineyard();
 
@@ -89,6 +91,7 @@ export const AddVintageModal = ({
 
             await zero.mutate.vintage.insert({
               id: vintageId,
+              user_id: user!.id,
               vineyard_id: vineyardData?.id || 'default',
               vintage_year: vintageYear,
               variety: variety,
@@ -107,6 +110,7 @@ export const AddVintageModal = ({
             // Create initial stage history entry
             await zero.mutate.stage_history.insert({
               id: `${vintageId}-harvested-${now}`,
+              user_id: user!.id,
               entity_type: 'vintage',
               entity_id: vintageId,
               stage: 'harvested',
@@ -124,6 +128,7 @@ export const AddVintageModal = ({
               const measurementDate = harvestDate ? new Date(harvestDate).getTime() : now;
               await zero.mutate.measurement.insert({
                 id: `${vintageId}-harvest-measurement-${now}`,
+                user_id: user!.id,
                 entity_type: 'vintage',
                 entity_id: vintageId,
                 date: measurementDate,

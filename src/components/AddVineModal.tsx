@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { Modal } from './Modal';
 import { type VineFormData } from './vineyard-types';
 import { useZero } from '../contexts/ZeroContext';
@@ -20,6 +21,7 @@ export const AddVineModal = ({
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { user } = useUser();
   const zero = useZero();
   const vinesData = useVines();
   const blocksData = useBlocks();
@@ -64,6 +66,7 @@ export const AddVineModal = ({
             for (const { id: newVineId, sequenceNumber } of vineIds) {
               await zero.mutate.vine.insert({
                 id: newVineId,
+                user_id: user!.id,
                 block: vineData.block,
                 sequence_number: sequenceNumber,
                 variety: vineData.variety.toUpperCase(),

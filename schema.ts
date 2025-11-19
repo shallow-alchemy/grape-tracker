@@ -1,8 +1,9 @@
-import { createSchema, table, string, number, json, boolean, ANYONE_CAN, definePermissions } from '@rocicorp/zero';
+import { createSchema, table, string, number, json, boolean, ANYONE_CAN, definePermissions, type ExpressionBuilder } from '@rocicorp/zero';
 
 const vineyardTable = table('vineyard')
   .columns({
     id: string(),
+    user_id: string(),
     name: string(),
     location: string(),
     varieties: json(),
@@ -14,6 +15,7 @@ const vineyardTable = table('vineyard')
 const blockTable = table('block')
   .columns({
     id: string(),
+    user_id: string(),
     name: string(),
     location: string(),
     size_acres: number(),
@@ -27,6 +29,7 @@ const blockTable = table('block')
 const vineTable = table('vine')
   .columns({
     id: string(),
+    user_id: string(),
     block: string(),
     sequence_number: number(),
     variety: string(),
@@ -42,6 +45,7 @@ const vineTable = table('vine')
 const vintageTable = table('vintage')
   .columns({
     id: string(),
+    user_id: string(),
     vineyard_id: string(),
     vintage_year: number(),
     variety: string(),
@@ -61,6 +65,7 @@ const vintageTable = table('vintage')
 const wineTable = table('wine')
   .columns({
     id: string(),
+    user_id: string(),
     vintage_id: string(),
     vineyard_id: string(),
     name: string(),
@@ -79,6 +84,7 @@ const wineTable = table('wine')
 const stageHistoryTable = table('stage_history')
   .columns({
     id: string(),
+    user_id: string(),
     entity_type: string(),
     entity_id: string(),
     stage: string(),
@@ -94,6 +100,7 @@ const stageHistoryTable = table('stage_history')
 const taskTemplateTable = table('task_template')
   .columns({
     id: string(),
+    user_id: string(),
     vineyard_id: string(),
     stage: string(),
     entity_type: string(),
@@ -113,6 +120,7 @@ const taskTemplateTable = table('task_template')
 const taskTable = table('task')
   .columns({
     id: string(),
+    user_id: string(),
     task_template_id: string(),
     entity_type: string(),
     entity_id: string(),
@@ -132,6 +140,7 @@ const taskTable = table('task')
 const measurementTable = table('measurement')
   .columns({
     id: string(),
+    user_id: string(),
     entity_type: string(),
     entity_id: string(),
     date: number(),
@@ -181,116 +190,123 @@ export type Schema = typeof schema;
 
 export const permissions = definePermissions<{ sub: string }, Schema>(
   schema,
-  () => ({
-    vineyard: {
-      row: {
-        select: ANYONE_CAN,
-        insert: ANYONE_CAN,
-        update: {
-          preMutation: ANYONE_CAN,
-          postMutation: ANYONE_CAN,
+  () => {
+    const allowIfOwner = (
+      authData: { sub: string },
+      { cmp }: ExpressionBuilder<Schema, any>
+    ) => cmp('user_id' as any, authData.sub);
+
+    return {
+      vineyard: {
+        row: {
+          select: [allowIfOwner],
+          insert: [allowIfOwner],
+          update: {
+            preMutation: [allowIfOwner],
+            postMutation: [allowIfOwner],
+          },
+          delete: [allowIfOwner],
         },
-        delete: ANYONE_CAN,
       },
-    },
-    block: {
-      row: {
-        select: ANYONE_CAN,
-        insert: ANYONE_CAN,
-        update: {
-          preMutation: ANYONE_CAN,
-          postMutation: ANYONE_CAN,
+      block: {
+        row: {
+          select: [allowIfOwner],
+          insert: [allowIfOwner],
+          update: {
+            preMutation: [allowIfOwner],
+            postMutation: [allowIfOwner],
+          },
+          delete: [allowIfOwner],
         },
-        delete: ANYONE_CAN,
       },
-    },
-    vine: {
-      row: {
-        select: ANYONE_CAN,
-        insert: ANYONE_CAN,
-        update: {
-          preMutation: ANYONE_CAN,
-          postMutation: ANYONE_CAN,
+      vine: {
+        row: {
+          select: [allowIfOwner],
+          insert: [allowIfOwner],
+          update: {
+            preMutation: [allowIfOwner],
+            postMutation: [allowIfOwner],
+          },
+          delete: [allowIfOwner],
         },
-        delete: ANYONE_CAN,
       },
-    },
-    vintage: {
-      row: {
-        select: ANYONE_CAN,
-        insert: ANYONE_CAN,
-        update: {
-          preMutation: ANYONE_CAN,
-          postMutation: ANYONE_CAN,
+      vintage: {
+        row: {
+          select: [allowIfOwner],
+          insert: [allowIfOwner],
+          update: {
+            preMutation: [allowIfOwner],
+            postMutation: [allowIfOwner],
+          },
+          delete: [allowIfOwner],
         },
-        delete: ANYONE_CAN,
       },
-    },
-    wine: {
-      row: {
-        select: ANYONE_CAN,
-        insert: ANYONE_CAN,
-        update: {
-          preMutation: ANYONE_CAN,
-          postMutation: ANYONE_CAN,
+      wine: {
+        row: {
+          select: [allowIfOwner],
+          insert: [allowIfOwner],
+          update: {
+            preMutation: [allowIfOwner],
+            postMutation: [allowIfOwner],
+          },
+          delete: [allowIfOwner],
         },
-        delete: ANYONE_CAN,
       },
-    },
-    stage_history: {
-      row: {
-        select: ANYONE_CAN,
-        insert: ANYONE_CAN,
-        update: {
-          preMutation: ANYONE_CAN,
-          postMutation: ANYONE_CAN,
+      stage_history: {
+        row: {
+          select: [allowIfOwner],
+          insert: [allowIfOwner],
+          update: {
+            preMutation: [allowIfOwner],
+            postMutation: [allowIfOwner],
+          },
+          delete: [allowIfOwner],
         },
-        delete: ANYONE_CAN,
       },
-    },
-    task_template: {
-      row: {
-        select: ANYONE_CAN,
-        insert: ANYONE_CAN,
-        update: {
-          preMutation: ANYONE_CAN,
-          postMutation: ANYONE_CAN,
+      task_template: {
+        row: {
+          select: [allowIfOwner],
+          insert: [allowIfOwner],
+          update: {
+            preMutation: [allowIfOwner],
+            postMutation: [allowIfOwner],
+          },
+          delete: [allowIfOwner],
         },
-        delete: ANYONE_CAN,
       },
-    },
-    task: {
-      row: {
-        select: ANYONE_CAN,
-        insert: ANYONE_CAN,
-        update: {
-          preMutation: ANYONE_CAN,
-          postMutation: ANYONE_CAN,
+      task: {
+        row: {
+          select: [allowIfOwner],
+          insert: [allowIfOwner],
+          update: {
+            preMutation: [allowIfOwner],
+            postMutation: [allowIfOwner],
+          },
+          delete: [allowIfOwner],
         },
-        delete: ANYONE_CAN,
       },
-    },
-    measurement: {
-      row: {
-        select: ANYONE_CAN,
-        insert: ANYONE_CAN,
-        update: {
-          preMutation: ANYONE_CAN,
-          postMutation: ANYONE_CAN,
+      measurement: {
+        row: {
+          select: [allowIfOwner],
+          insert: [allowIfOwner],
+          update: {
+            preMutation: [allowIfOwner],
+            postMutation: [allowIfOwner],
+          },
+          delete: [allowIfOwner],
         },
-        delete: ANYONE_CAN,
       },
-    },
-    measurement_range: {
-      row: {
-        select: ANYONE_CAN,
-        insert: ANYONE_CAN,
-        update: {
-          preMutation: ANYONE_CAN,
-          postMutation: ANYONE_CAN,
+      measurement_range: {
+        row: {
+          select: ANYONE_CAN,
+          insert: [],
+          update: {
+            preMutation: [],
+            postMutation: [],
+          },
+          delete: [],
         },
-        delete: ANYONE_CAN,
       },
-    },
-  })
+    };
+  }
 );

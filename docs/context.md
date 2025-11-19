@@ -558,6 +558,384 @@ Vintage: 2025 Cab Franc Harvest
 - ~40 default task templates across all vintage/wine stages
 - Task templates for "default" vineyard (customizable per vineyard)
 
+## Production Deployment & Sync Configuration
+
+**Status**: ✅ Fully operational (Nov 18, 2025)
+
+### Production Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│ Netlify (Frontend)                              │
+│ - React app (gilbertgrape.netlify.app)         │
+│ - Connects to zero-cache via WebSocket         │
+│ - Clerk authentication                          │
+└──────────────────┬──────────────────────────────┘
+                   │
+                   ↓ (WebSocket: wss://)
+┌─────────────────────────────────────────────────┐
+│ Railway: zero-cache Service                    │
+│ - Docker (rocicorp/zero:latest)                │
+│ - Port: 4848                                    │
+│ - Auto-deploys permissions on startup          │
+│ - Connects to PostgreSQL via internal network  │
+└──────────────────┬──────────────────────────────┘
+                   │
+                   ↓ (postgres.railway.internal)
+┌─────────────────────────────────────────────────┐
+│ Railway: PostgreSQL                             │
+│ - wal_level=logical (for replication)          │
+│ - Gilbert database with all tables             │
+│ - zero.permissions table for access control    │
+└─────────────────────────────────────────────────┘
+```
+
+### Critical Configuration Files
+
+**1. Dockerfile (zero-cache deployment)**
+
+Location: `/Dockerfile`
+
+```dockerfile
+# Use official Zero Docker image
+FROM rocicorp/zero:latest
+
+# Copy schema file
+COPY schema.cjs /app/schema.cjs
+
+# Set working directory
+WORKDIR /app
+
+# Zero runs on port 4848
+EXPOSE 4848
+
+# Deploy permissions and start zero-cache
+CMD ["sh", "-c", "zero-deploy-permissions --schema-path /app/schema.cjs --upstream-db \"$ZERO_UPSTREAM_DB\" && zero-cache --schema-path /app/schema.cjs"]
+```
+
+**Key Points**:
+- Uses official `rocicorp/zero:latest` image
+- Copies `schema.cjs` (NOT schema.js or schema.ts)
+- **Auto-deploys permissions** on every container startup
+- Zero-cache auto-detects environment variables (no explicit flags needed except schema-path)
+- Simple CMD - complexity caused deployment failures
+
+**2. railway.json (Railway build configuration)**
+
+Location: `/railway.json`
+
+```json
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}
+```
+
+**3. Railway Environment Variables (zero-cache service)**
+
+Required variables:
+- `ZERO_UPSTREAM_DB` = `${{Postgres.DATABASE_URL}}` (Railway variable reference)
+- `ZERO_REPLICA_FILE` = `./sync-replica.db` (relative path in container)
+- `ZERO_AUTH_SECRET` = (secure secret, same value NOT needed on frontend)
+- `ZERO_ADMIN_PASSWORD` = (secure password for /statz endpoint)
+- `PORT` = `4848` (optional, Railway auto-detects)
+
+**IMPORTANT**:
+- Frontend does NOT need `ZERO_AUTH_SECRET` or `auth` prop in ZeroProvider
+- Only `PUBLIC_ZERO_SERVER` needed on frontend (Netlify)
+- Auth is handled server-side by zero-cache
+
+**4. Netlify Environment Variables**
+
+Required:
+- `PUBLIC_ZERO_SERVER` = `https://grape-tracker-production.up.railway.app`
+- `PUBLIC_CLERK_PUBLISHABLE_KEY` = (Clerk key)
+
+**NOT needed**:
+- ~~`PUBLIC_ZERO_AUTH_SECRET`~~ - Authentication handled by zero-cache, not frontend
+
+### Zero Permissions System
+
+**Critical Concept**: Zero uses explicit permissions stored in `zero.permissions` table in PostgreSQL. Without permissions, reads work but **writes are silently ignored**.
+
+**Permissions Deployment**:
+
+1. **Automatic** (preferred): Dockerfile deploys on every Railway deployment
+2. **Manual** (for testing):
+   ```bash
+   # Generate SQL file
+   npx zero-deploy-permissions --schema-path schema.cjs --output-file permissions.sql --output-format sql
+
+   # Apply via Railway CLI
+   railway connect Postgres
+   \i permissions.sql
+   ```
+
+**Verifying Permissions**:
+
+```sql
+-- Check how many tables have permissions
+SELECT count(*)
+FROM (
+  SELECT jsonb_object_keys(permissions->'tables') as table_name
+  FROM zero.permissions
+) tables;
+-- Should return 10 (all tables)
+
+-- View all tables with permissions
+SELECT jsonb_object_keys(permissions->'tables') as table_name
+FROM zero.permissions;
+```
+
+**Permission Structure** (from schema.cjs):
+
+All tables use `ANYONE_CAN` for all operations:
+- `vineyard`, `block`, `vine` (vineyard management)
+- `vintage`, `wine` (winery management)
+- `stage_history` (vintage/wine stage tracking)
+- `task_template`, `task` (task management)
+- `measurement`, `measurement_range` (chemistry tracking)
+
+```typescript
+permissions = definePermissions(schema, () => ({
+  vineyard: {
+    row: {
+      select: ANYONE_CAN,
+      insert: ANYONE_CAN,
+      update: { preMutation: ANYONE_CAN, postMutation: ANYONE_CAN },
+      delete: ANYONE_CAN,
+    },
+  },
+  // ... repeated for all 10 tables
+}));
+```
+
+### Sync Failure Prevention
+
+**Problem Solved** (Nov 18, 2025):
+User experienced silent data loss where:
+1. Data appeared saved in UI (optimistic updates working)
+2. Zero replication failed on backend (PostgreSQL issues)
+3. No user feedback - appeared to work but didn't persist
+4. Discovered hours later when logging back in
+
+**Solution Implemented**: Sync Status Indicator
+
+**File**: `src/components/SyncStatusIndicator.tsx`
+
+**Features**:
+- Real-time connection status in header (next to UserButton)
+- 4 visual states:
+  - 🟢 **Connected** (green) - "Synced" - normal operation
+  - 🔶 **Syncing** (orange, rotating) - "Syncing..." - temporary state
+  - ⭕ **Offline** (red outline) - "Offline" - no internet connection
+  - ⚠️ **Error** (red warning) - "Sync Error" - replication failed
+- Click to expand details popup showing:
+  - Current status
+  - Error messages (if any)
+  - Warning messages for offline/error states
+  - "Refresh to retry" button for errors
+- Detects connection failures via:
+  - Console.error interception (catches Zero WebSocket failures)
+  - Network online/offline events
+  - Zero object availability checks (every 5 seconds)
+
+**How It Works**:
+
+```typescript
+// Intercept console.error to detect Zero failures
+const originalConsoleError = console.error;
+console.error = (...args: any[]) => {
+  const message = args.join(' ');
+  if (message.includes('Failed to connect') ||
+      message.includes('WebSocket') ||
+      message.includes('Connect timed out')) {
+    setStatus('error');
+    setErrorMessage('Zero sync server not responding. Changes may not be saved.');
+  }
+  originalConsoleError.apply(console, args);
+};
+
+// Listen for network events
+window.addEventListener('online', handleOnline);
+window.addEventListener('offline', handleOffline);
+
+// Periodic connection check
+const checkConnectionStatus = () => {
+  if (zero) {
+    if (status !== 'error') setStatus('connected');
+  } else {
+    setStatus('offline');
+  }
+};
+setInterval(checkConnectionStatus, 5000);
+```
+
+**User Experience**:
+- **Normal**: Green "● Synced" in header - no action needed
+- **Offline**: Red "○ Offline" with warning popup - data saves locally, syncs when back online
+- **Error**: Red "⚠ Sync Error" with error details - user can refresh or contact support
+- **User can't lose data silently** - always know sync status
+
+**Documentation**: See `SYNC-FAILURE-PREVENTION.md` for complete guide
+
+### Common Production Issues & Solutions
+
+**1. Zero-cache won't start / Deploy logs show only "Starting Container"**
+
+**Symptom**: Railway deploy succeeds but zero-cache doesn't run, no logs appear
+
+**Causes**:
+- Complex CMD with shell scripts failing silently
+- Missing environment variables
+- Wrong root directory in Railway settings
+- npm/yarn not available in container
+
+**Solution**:
+- Keep Dockerfile CMD simple - just run zero-cache with schema-path
+- Use official rocicorp/zero Docker image (has zero-cache binary)
+- Ensure Railway root directory is empty or `/` (not `/backend`)
+- Let zero-cache auto-detect env vars instead of passing them explicitly
+
+**2. Permissions not updating when schema changes**
+
+**Symptom**: New tables added to schema.cjs but writes still fail
+
+**Causes**:
+- Permissions not deployed to PostgreSQL
+- Old permissions in database don't match schema
+
+**Solution**:
+- Dockerfile now auto-deploys permissions on startup
+- For manual deploy: `railway connect Postgres` then `\i permissions.sql`
+- Verify with: `SELECT count(*) FROM (SELECT jsonb_object_keys(permissions->'tables')...`
+
+**3. Frontend shows "AuthInvalidated: Failed to decode auth token"**
+
+**Symptom**: WebSocket connection fails with JWT decode errors
+
+**Cause**: Frontend trying to pass raw `ZERO_AUTH_SECRET` as auth token (incorrect)
+
+**Solution**:
+- Remove `auth` prop from ZeroProvider entirely
+- Zero-cache handles authentication server-side
+- Frontend only needs `PUBLIC_ZERO_SERVER` environment variable
+
+**4. Data appears in UI but doesn't persist after refresh**
+
+**Symptom**: Optimistic updates work, but data doesn't survive page reload
+
+**Causes**:
+- Zero-cache not running or crashing
+- Permissions not configured for table
+- Replication not working (wal_level not logical)
+
+**Solution**:
+1. Check zero-cache Railway logs for errors
+2. Verify permissions: `SELECT * FROM zero.permissions`
+3. Check replication status: `SELECT * FROM pg_replication_slots WHERE slot_name LIKE 'zero_%'`
+4. Ensure PostgreSQL has `wal_level = logical`
+
+**5. WebSocket connections timeout (HTTP 499 errors)**
+
+**Symptom**: Railway HTTP logs show `GET /sync/v37/connect 499` with 1-10s duration
+
+**Causes**:
+- Zero-cache not responding to connection requests
+- Port not properly exposed
+- Environment variables missing
+
+**Solution**:
+- Verify zero-cache is actually running (check deploy logs)
+- Ensure `EXPOSE 4848` in Dockerfile
+- Confirm all required env vars set in Railway
+- Check zero-cache logs for startup errors
+
+### Schema File Naming
+
+**Critical**: Zero-cache expects CommonJS format
+
+- ✅ `schema.cjs` - Use this in production (Dockerfile copies this)
+- ✅ `schema.ts` - Source file (TypeScript)
+- ❌ `schema.js` - Old file, deprecated
+- ❌ Trying to use ES modules with Zero will fail
+
+**Compilation** (if editing schema.ts):
+```bash
+# Build schema.cjs from schema.ts
+npx tsc schema.ts --module commonjs --target es2020
+```
+
+### Deployment Checklist
+
+**Before deploying schema changes**:
+- [ ] Update `schema.ts` with new tables/fields
+- [ ] Add permissions for new tables in `definePermissions` section
+- [ ] Compile to `schema.cjs` if auto-build not working
+- [ ] Commit both schema.ts and schema.cjs
+- [ ] Push to GitHub (Railway auto-deploys)
+- [ ] Verify zero-cache restarts successfully in Railway
+- [ ] Check deploy logs for "Deploying permissions" message
+- [ ] Test writes to new tables in production
+
+**Monitoring zero-cache health**:
+```bash
+# Check if zero-cache is running
+railway logs --service zero-cache
+
+# Check PostgreSQL replication
+railway connect Postgres
+SELECT slot_name, active, restart_lsn FROM pg_replication_slots WHERE slot_name LIKE 'zero_%';
+
+# Check permissions
+SELECT count(*) FROM (SELECT jsonb_object_keys(permissions->'tables') FROM zero.permissions) t;
+```
+
+### Recovery Procedures
+
+**If zero-cache is broken**:
+1. Check Railway deploy logs for errors
+2. Verify all environment variables are set
+3. Simplify Dockerfile CMD if complex
+4. Redeploy with `railway up`
+5. Check PostgreSQL for orphaned replication slots
+
+**If permissions are wrong**:
+1. Generate fresh permissions.sql: `npx zero-deploy-permissions --schema-path schema.cjs --output-file permissions.sql`
+2. Connect to Railway PostgreSQL: `railway connect Postgres`
+3. Apply permissions: `\i permissions.sql`
+4. Verify: `SELECT count(*) FROM (SELECT jsonb_object_keys(permissions->'tables')...`
+5. Redeploy zero-cache to pick up changes
+
+**If replication is broken**:
+1. Check replication slots: `SELECT * FROM pg_replication_slots WHERE slot_name LIKE 'zero_%'`
+2. Drop orphaned slots: `SELECT pg_drop_replication_slot('slot_name')`
+3. Restart zero-cache service on Railway
+4. New replication slot will be created automatically
+5. Monitor logs for "Created replication slot" message
+
+**Complete recovery guide**: See `RECOVERY-PLAN.md`
+
+### Key Lessons Learned
+
+1. **Keep Dockerfiles simple** - Complex shell scripts fail silently in containers
+2. **Auto-deploy permissions** - Manual steps get forgotten during deployments
+3. **Frontend doesn't need auth secrets** - Zero handles authentication server-side
+4. **Use official Docker images** - rocicorp/zero:latest works better than custom Node setup
+5. **Monitor sync status** - Silent failures are unacceptable in production
+6. **Test with cleared storage** - Optimistic updates can hide sync failures
+7. **Railway variable references work** - `${{Postgres.DATABASE_URL}}` is the correct syntax
+8. **Permissions are required** - Zero blocks writes without explicit permissions, reads still work
+9. **Schema.cjs not schema.js** - Zero-cache needs CommonJS format in production
+10. **Root directory matters** - Railway needs to deploy from repo root, not `/backend`
+
 ## Getting Started for New Claude Instances
 
 1. Read `docs/engineering-principles.md` - understand code standards
@@ -570,3 +948,5 @@ Vintage: 2025 Cab Franc Harvest
 8. Follow fat arrow + named export patterns
 9. Keep components in single files until they exceed 500-600 lines
 10. Let components fetch their own data using hooks when possible
+11. **Review Production Deployment section** - understand zero-cache config and sync status
+12. **Check SYNC-FAILURE-PREVENTION.md** - understand sync monitoring and prevention measures

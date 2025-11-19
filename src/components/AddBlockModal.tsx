@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { Modal } from './Modal';
 import { type BlockFormData } from './vineyard-types';
 import { useZero } from '../contexts/ZeroContext';
@@ -18,6 +19,7 @@ export const AddBlockModal = ({
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { user } = useUser();
   const zero = useZero();
   return (
     <Modal
@@ -48,6 +50,7 @@ export const AddBlockModal = ({
 
             await zero.mutate.block.insert({
               id: blockId,
+              user_id: user!.id,
               name: blockData.name.toUpperCase(),
               location: blockData.location || '',
               size_acres: blockData.sizeAcres || 0,

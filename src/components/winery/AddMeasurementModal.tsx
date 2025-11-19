@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { Modal } from '../Modal';
 import { useZero } from '../../contexts/ZeroContext';
 import styles from '../../App.module.css';
@@ -22,6 +23,7 @@ export const AddMeasurementModal = ({
 }: AddMeasurementModalProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useUser();
   const zero = useZero();
 
   return (
@@ -54,6 +56,7 @@ export const AddMeasurementModal = ({
 
             await zero.mutate.measurement.insert({
               id: `${entityId}-measurement-${now}`,
+              user_id: user!.id,
               entity_type: entityType,
               entity_id: entityId,
               date: measurementDate,
