@@ -15,7 +15,8 @@
     "backend:watch": "cd backend && cargo watch -x run",
     "test": "rstest",
     "test:watch": "rstest --watch",
-    "test:coverage": "rstest --coverage"
+    "test:coverage": "rstest --coverage",
+    "some-shit": "yarn test"
   },
   "keywords": [],
   "author": "",
