@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { useZero } from '../../contexts/ZeroContext';
 import type { EntityType } from './stages';
 import { calculateDueDate } from './taskHelpers';
@@ -20,6 +21,7 @@ export type StageTransitionResult = {
  * Encapsulates the business logic for completing current stage and starting new stage
  */
 export const useStageTransition = (entityType: EntityType, entityId: string, wineType?: string) => {
+  const { user } = useUser();
   const zero = useZero();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
       // Step 2: Create new stage_history entry for the new stage
       await zero.mutate.stage_history.insert({
         id: crypto.randomUUID(),
+        user_id: user!.id,
         entity_type: entityType,
         entity_id: entityId,
         stage: data.toStage,
@@ -99,6 +102,7 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
 
         await zero.mutate.task.insert({
           id: crypto.randomUUID(),
+          user_id: user!.id,
           task_template_id: template.id,
           entity_type: entityType,
           entity_id: entityId,

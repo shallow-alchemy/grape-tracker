@@ -11,6 +11,14 @@ const mockVintageUpdate = rs.fn().mockResolvedValue(undefined);
 const mockTaskTemplateRun = rs.fn();
 const mockTaskInsert = rs.fn().mockResolvedValue(undefined);
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({
+    user: {
+      id: 'test-user-123',
+    },
+  }),
+}));
+
 rs.mock('./taskHelpers', () => ({
   calculateDueDate: (baseTime: number) => baseTime + 86400000, // Add 1 day
 }));

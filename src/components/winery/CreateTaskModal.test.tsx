@@ -5,6 +5,15 @@ import { CreateTaskModal } from './CreateTaskModal';
 
 const mockTaskInsert = rs.fn().mockResolvedValue(undefined);
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({
+    user: {
+      id: 'test-user-123',
+    },
+  }),
+}));
+
+
 rs.mock('../../contexts/ZeroContext', () => ({
   useZero: () => ({
     mutate: {

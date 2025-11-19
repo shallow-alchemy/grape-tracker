@@ -9,6 +9,15 @@ const mockStageHistoryInsert = rs.fn().mockResolvedValue(undefined);
 const mockMeasurementInsert = rs.fn().mockResolvedValue(undefined);
 
 // Mock modules before importing
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({
+    user: {
+      id: 'test-user-123',
+    },
+  }),
+}));
+
+
 rs.mock('../../contexts/ZeroContext', () => ({
   useZero: () => ({
     query: {

@@ -11,6 +11,7 @@ export type VineData = {
 
 export type VineDataRaw = {
   id: string;
+  user_id: string;
   block: string;
   sequence_number: number;
   variety: string;
@@ -33,6 +34,7 @@ export type BlockData = {
 
 export type BlockDataRaw = {
   id: string;
+  user_id: string;
   name: string;
   location: string;
   size_acres: number;
@@ -44,6 +46,7 @@ export type BlockDataRaw = {
 
 export type VineyardData = {
   id: string;
+  user_id: string;
   name: string;
   location: string;
   varieties: string[];

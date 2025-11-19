@@ -7,6 +7,14 @@ import { AddBlockModal } from './AddBlockModal';
 const mockBlockInsert = rs.fn().mockResolvedValue(undefined);
 
 // Mock modules
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({
+    user: {
+      id: 'test-user-123',
+    },
+  }),
+}));
+
 rs.mock('../contexts/ZeroContext', () => ({
   useZero: () => ({
     mutate: {

@@ -12,6 +12,15 @@ const mockZero = {
   },
 };
 
+// Mock Clerk
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({
+    user: {
+      id: 'test-user-123',
+    },
+  }),
+}));
+
 // Mock Zero context
 rs.mock('../../contexts/ZeroContext', () => ({
   useZero: () => mockZero,

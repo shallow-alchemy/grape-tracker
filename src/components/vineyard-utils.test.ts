@@ -287,6 +287,7 @@ describe('vineyard-utils', () => {
     test('transforms raw vine data to VineData format', () => {
       const rawVine: VineDataRaw = {
         id: '001',
+        user_id: 'test-user-1',
         block: 'North Block',
         sequence_number: 1,
         variety: 'Cabernet Sauvignon',
@@ -313,6 +314,7 @@ describe('vineyard-utils', () => {
     test('handles missing notes', () => {
       const rawVine: VineDataRaw = {
         id: '001',
+        user_id: 'test-user-1',
         block: 'North Block',
         sequence_number: 1,
         variety: 'Pinot Noir',
@@ -332,6 +334,7 @@ describe('vineyard-utils', () => {
     test('sets qrGenerated to false when qr_generated is 0', () => {
       const rawVine: VineDataRaw = {
         id: '001',
+        user_id: 'test-user-1',
         block: 'North Block',
         sequence_number: 1,
         variety: 'Pinot Noir',
@@ -351,6 +354,7 @@ describe('vineyard-utils', () => {
     test('sets qrGenerated to true when qr_generated is greater than 0', () => {
       const rawVine: VineDataRaw = {
         id: '001',
+        user_id: 'test-user-1',
         block: 'North Block',
         sequence_number: 1,
         variety: 'Pinot Noir',
@@ -372,6 +376,7 @@ describe('vineyard-utils', () => {
     test('transforms raw block data to BlockData format', () => {
       const rawBlock: BlockDataRaw = {
         id: 'block-1',
+        user_id: 'test-user-1',
         name: 'North Block',
         location: 'North hillside',
         size_acres: 5.5,
@@ -394,6 +399,7 @@ describe('vineyard-utils', () => {
     test('handles all block fields correctly', () => {
       const rawBlock: BlockDataRaw = {
         id: 'block-2',
+        user_id: 'test-user-1',
         name: 'South Block',
         location: 'South valley',
         size_acres: 3.2,
