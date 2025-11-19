@@ -10,7 +10,7 @@
     "dev:zero": "npx zero-cache-dev --schema-path schema.cjs",
     "build": "rsbuild build",
     "preview": "rsbuild preview",
-    "zero-cache": "npx zero-cache-dev --schema-path schema.cjs",
+    "zero-cache": "npx zero-cache --upstream-db $ZERO_UPSTREAM_DB --replica-file $ZERO_REPLICA_FILE --schema-path schema.cjs --auth-secret $ZERO_AUTH_SECRET --admin-password $ZERO_ADMIN_PASSWORD",
     "backend": "cd backend && cargo run",
     "backend:watch": "cd backend && cargo watch -x run",
     "test": "rstest",
