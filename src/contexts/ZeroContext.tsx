@@ -20,6 +20,7 @@ export const ZeroProvider = ({ children }: { children: ReactNode }) => {
       userID={user.id}
       server={process.env.PUBLIC_ZERO_SERVER || 'http://localhost:4848'}
       schema={schema}
+      auth={process.env.PUBLIC_ZERO_AUTH_SECRET}
     >
       {children}
     </ZeroProviderInternal>
