@@ -2,7 +2,7 @@
 FROM rocicorp/zero:latest
 
 # Copy schema file
-COPY schema.js /app/schema.js
+COPY schema.cjs /app/schema.cjs
 
 # Set working directory
 WORKDIR /app
@@ -10,5 +10,5 @@ WORKDIR /app
 # Zero runs on port 4848
 EXPOSE 4848
 
-# Command with reduced logging to avoid Railway rate limits
-CMD ["zero-cache", "--schema-path", "/app/schema.js", "--log-level", "warn"]
+# Start zero-cache with all required flags
+CMD ["sh", "-c", "zero-cache --upstream-db $ZERO_UPSTREAM_DB --replica-file $ZERO_REPLICA_FILE --schema-path /app/schema.cjs --auth-secret $ZERO_AUTH_SECRET --admin-password $ZERO_ADMIN_PASSWORD"]
