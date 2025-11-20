@@ -56,10 +56,10 @@ export const DeleteBlockConfirmModal = ({
       closeDisabled={isSubmitting}
     >
       <div>
-        <p style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--color-text-secondary)' }}>
-          You are about to delete <strong style={{ color: 'var(--color-text-accent)' }}>{blockToDelete.name}</strong>.
+        <p className={styles.deleteWarningText}>
+          You are about to delete <strong className={styles.deleteWarningHighlight}>{blockToDelete.name}</strong>.
           {vineCountInBlock > 0 && (
-            <span> This block contains <strong style={{ color: 'var(--color-text-accent)' }}>{vineCountInBlock} vine{vineCountInBlock > 1 ? 's' : ''}</strong>.</span>
+            <span> This block contains <strong className={styles.deleteWarningHighlight}>{vineCountInBlock} vine{vineCountInBlock > 1 ? 's' : ''}</strong>.</span>
           )}
         </p>
 
@@ -76,16 +76,15 @@ export const DeleteBlockConfirmModal = ({
                     setDeleteMigrateToBlock(availableBlocks[0].id);
                   }
                 }}
-                style={{ marginRight: 'var(--spacing-sm)' }}
+                className={styles.radioInputSpaced}
               />
               MIGRATE {vineCountInBlock} VINE{vineCountInBlock > 1 ? 'S' : ''} TO:
             </label>
             {!deleteVines && (
               <select
-                className={styles.formSelect}
+                className={`${styles.formSelect} ${styles.selectWithTopMargin}`}
                 value={deleteMigrateToBlock || ''}
                 onChange={(e) => setDeleteMigrateToBlock(e.target.value)}
-                style={{ marginTop: 'var(--spacing-sm)' }}
               >
                 {availableBlocks.map((block) => (
                   <option key={block.id} value={block.id}>
@@ -108,7 +107,7 @@ export const DeleteBlockConfirmModal = ({
                   setDeleteVines(true);
                   setDeleteMigrateToBlock(null);
                 }}
-                style={{ marginRight: 'var(--spacing-sm)' }}
+                className={styles.radioInputSpaced}
               />
               DELETE BLOCK AND ALL {vineCountInBlock} VINE{vineCountInBlock > 1 ? 'S' : ''}
             </label>

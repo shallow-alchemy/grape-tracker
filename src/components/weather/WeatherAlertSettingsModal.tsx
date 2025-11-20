@@ -65,7 +65,6 @@ export const WeatherAlertSettingsModal = ({ onClose, onSave }: { onClose: () => 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Track input values as strings to allow empty state during editing
   const [inputValues, setInputValues] = useState({
     tempHigh: defaultAlertSettings.temperature.highThreshold.toString(),
     tempLow: defaultAlertSettings.temperature.lowThreshold.toString(),
@@ -87,7 +86,6 @@ export const WeatherAlertSettingsModal = ({ onClose, onSave }: { onClose: () => 
           const data = await response.json();
           const loadedSettings = data.settings as AlertSettings;
           setSettings(loadedSettings);
-          // Update input values when settings load
           setInputValues({
             tempHigh: loadedSettings.temperature.highThreshold.toString(),
             tempLow: loadedSettings.temperature.lowThreshold.toString(),
@@ -100,7 +98,6 @@ export const WeatherAlertSettingsModal = ({ onClose, onSave }: { onClose: () => 
           });
         }
       } catch (err) {
-        // Error loading settings - will use defaults
       } finally {
         setLoading(false);
       }
@@ -122,14 +119,12 @@ export const WeatherAlertSettingsModal = ({ onClose, onSave }: { onClose: () => 
       });
 
       if (response.ok) {
-        // Refetch weather to update alerts with new settings
         if (onSave) {
           onSave();
         }
         onClose();
       }
     } catch (err) {
-      // Error saving settings
     } finally {
       setSaving(false);
     }

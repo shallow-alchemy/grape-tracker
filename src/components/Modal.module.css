@@ -43,3 +43,16 @@
   text-transform: uppercase;
   margin: 0 0 var(--spacing-lg) 0;
 }
+.modalTitleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modalTitleHeader.withRight {
+  margin-bottom: 0;
+}
+
+.modalTitle.withRight {
+  margin-bottom: 0;
+}

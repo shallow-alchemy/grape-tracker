@@ -2,6 +2,7 @@ import { test, describe, expect, rs, afterEach } from '@rstest/core';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AllTasksView } from './AllTasksView';
+import styles from '../../App.module.css';
 
 const now = Date.now();
 const oneDayMs = 86400000;
@@ -293,7 +294,7 @@ describe('AllTasksView', () => {
       render(<AllTasksView />);
 
       const prevButton = screen.getByText('← PREVIOUS');
-      expect(prevButton).toHaveStyle({ opacity: '0.5' });
+      expect(prevButton).toHaveClass(styles.paginationButtonDisabled);
     });
 
     test('disables next button on last page', async () => {
@@ -309,7 +310,7 @@ describe('AllTasksView', () => {
       const nextButton = screen.getByText('NEXT →');
       await user.click(nextButton);
 
-      expect(nextButton).toHaveStyle({ opacity: '0.5' });
+      expect(nextButton).toHaveClass(styles.paginationButtonDisabled);
     });
 
     test('shows correct tasks per page', () => {

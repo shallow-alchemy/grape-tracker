@@ -28,7 +28,6 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   const [wineModalInitialVintageId, setWineModalInitialVintageId] = useState<string | undefined>(undefined);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Determine active tab from route
   const activeTab: ActiveTab = location.includes('/winery/wines') ? 'wines' : 'vintages';
 
   const showSuccessMessage = (message: string) => {
@@ -56,7 +55,6 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
     if (hasInternalNav) {
       window.history.back();
     } else {
-      // Navigate back to the appropriate list view
       if (initialVintageId || initialVintageTasksId) {
         setLocation('/winery/vintages');
       } else if (initialWineId || initialWineTasksId) {
@@ -67,7 +65,6 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
     }
   };
 
-  // Show vintage tasks
   if (initialVintageTasksId) {
     const [vintagesData] = useQuery(zero.query.vintage.where('id', initialVintageTasksId));
     const vintage = vintagesData[0];
@@ -94,7 +91,6 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
     );
   }
 
-  // Show wine tasks
   if (initialWineTasksId) {
     const [winesData] = useQuery(zero.query.wine.where('id', initialWineTasksId));
     const wine = winesData[0];
@@ -148,43 +144,16 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
         </button>
       </div>
 
-      {/* Tab Navigation */}
-      <div style={{
-        display: 'flex',
-        gap: 'var(--spacing-md)',
-        marginBottom: 'var(--spacing-lg)',
-        borderBottom: '1px solid var(--color-border)',
-        paddingBottom: 'var(--spacing-sm)',
-      }}>
+      <div className={styles.tabNav}>
         <button
           onClick={() => setLocation('/winery/vintages')}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: activeTab === 'vintages' ? 'var(--color-primary-500)' : 'var(--color-text-secondary)',
-            fontFamily: 'var(--font-heading)',
-            fontSize: 'var(--font-size-sm)',
-            cursor: 'pointer',
-            padding: 'var(--spacing-sm) var(--spacing-md)',
-            borderBottom: activeTab === 'vintages' ? '2px solid var(--color-primary-500)' : 'none',
-            transition: 'color 0.2s ease',
-          }}
+          className={`${styles.tabButton} ${activeTab === 'vintages' ? styles.tabButtonActive : ''}`}
         >
           VINTAGES
         </button>
         <button
           onClick={() => setLocation('/winery/wines')}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: activeTab === 'wines' ? 'var(--color-primary-500)' : 'var(--color-text-secondary)',
-            fontFamily: 'var(--font-heading)',
-            fontSize: 'var(--font-size-sm)',
-            cursor: 'pointer',
-            padding: 'var(--spacing-sm) var(--spacing-md)',
-            borderBottom: activeTab === 'wines' ? '2px solid var(--color-primary-500)' : 'none',
-            transition: 'color 0.2s ease',
-          }}
+          className={`${styles.tabButton} ${activeTab === 'wines' ? styles.tabButtonActive : ''}`}
         >
           WINES
         </button>

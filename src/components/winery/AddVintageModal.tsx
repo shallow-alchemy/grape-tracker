@@ -57,7 +57,6 @@ export const AddVintageModal = ({
             const ta = formData.get('ta') as string;
             const notes = formData.get('notes') as string;
 
-            // Validation
             if (!vintageYear) {
               setFormErrors({ vintageYear: 'Vintage year is required' });
               setIsSubmitting(false);
@@ -107,7 +106,6 @@ export const AddVintageModal = ({
               updated_at: now,
             });
 
-            // Create initial stage history entry
             await zero.mutate.stage_history.insert({
               id: `${vintageId}-harvested-${now}`,
               user_id: user!.id,
@@ -122,7 +120,6 @@ export const AddVintageModal = ({
               updated_at: now,
             });
 
-            // Create harvest measurement if any values provided
             const hasMeasurements = brix || ph || ta;
             if (hasMeasurements) {
               const measurementDate = harvestDate ? new Date(harvestDate).getTime() : now;
@@ -154,21 +151,12 @@ export const AddVintageModal = ({
         }}
       >
         <div className={styles.formGroup}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-xs)' }}>
-            <label className={styles.formLabel} style={{ marginBottom: 0 }}>VARIETY *</label>
+          <div className={styles.formHeaderRow}>
+            <label className={`${styles.formLabel} ${styles.formLabelNoMargin}`}>VARIETY *</label>
             <button
               type="button"
               onClick={() => setGrapeSource(grapeSource === 'own_vineyard' ? 'purchased' : 'own_vineyard')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--color-primary-500)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--font-size-xs)',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-                padding: 0,
-              }}
+              className={styles.formTextLink}
             >
               {grapeSource === 'own_vineyard' ? 'Use Sourced Grapes' : 'Use Own Vineyard'}
             </button>
@@ -177,13 +165,7 @@ export const AddVintageModal = ({
             <>
               {varieties.length === 0 ? (
                 <>
-                  <div className={styles.formInput} style={{
-                    opacity: 0.5,
-                    cursor: 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
+                  <div className={`${styles.formInput} ${styles.formInputDisabled}`}>
                     No varieties configured
                   </div>
                   <div className={styles.formHint}>
@@ -246,7 +228,7 @@ export const AddVintageModal = ({
 
         {grapeSource === 'own_vineyard' ? (
           <div className={styles.formGroup}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
+            <div className={styles.formGrid2Col}>
               <div>
                 <label className={styles.formLabel}>WEIGHT (LBS)</label>
                 <input
@@ -285,9 +267,9 @@ export const AddVintageModal = ({
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>HARVEST MEASUREMENTS (OPTIONAL)</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--spacing-md)', alignItems: 'start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label className={styles.formLabel} style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--spacing-xs)', whiteSpace: 'nowrap' }}>BRIX</label>
+          <div className={styles.formGrid3Col}>
+            <div className={styles.formColumn}>
+              <label className={`${styles.formLabel} ${styles.formLabelSmall}`}>BRIX</label>
               <input
                 type="number"
                 name="brix"
@@ -298,8 +280,8 @@ export const AddVintageModal = ({
                 placeholder="0-40"
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label className={styles.formLabel} style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--spacing-xs)', whiteSpace: 'nowrap' }}>PH</label>
+            <div className={styles.formColumn}>
+              <label className={`${styles.formLabel} ${styles.formLabelSmall}`}>PH</label>
               <input
                 type="number"
                 name="ph"
@@ -310,8 +292,8 @@ export const AddVintageModal = ({
                 placeholder="0-14"
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label className={styles.formLabel} style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--spacing-xs)', whiteSpace: 'nowrap' }}>TA (G/L)</label>
+            <div className={styles.formColumn}>
+              <label className={`${styles.formLabel} ${styles.formLabelSmall}`}>TA (G/L)</label>
               <input
                 type="number"
                 name="ta"

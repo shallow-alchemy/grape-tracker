@@ -57,7 +57,7 @@ export const VineDetailsView = ({
         <div className={styles.vineDetailsHeader}>
           <h1 className={styles.vineDetailsTitle}>VINE NOT FOUND</h1>
         </div>
-        <p style={{ padding: 'var(--spacing-lg)', color: 'var(--color-text-secondary)' }}>
+        <p className={styles.notFoundMessage}>
           The requested vine could not be found.
         </p>
       </div>
@@ -113,7 +113,6 @@ export const VineDetailsView = ({
         });
       }
     } catch (error) {
-      // Error generating QR STL file
     }
   };
 
@@ -124,7 +123,7 @@ export const VineDetailsView = ({
       </button>
       <div className={styles.vineDetailsHeader}>
         <h1 className={styles.vineDetailsTitle}>VINE {vine?.block}-{vine?.id}</h1>
-        <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
+        <div className={styles.actionButtonGroup}>
           <button className={styles.actionButton} onClick={() => setShowQRModal(true)}>
             GENERATE TAG
           </button>
@@ -327,7 +326,7 @@ export const VineDetailsView = ({
               </button>
             </div>
 
-            <div style={{ marginTop: 'var(--spacing-xl)', paddingTop: 'var(--spacing-xl)', borderTop: '1px solid var(--color-border)' }}>
+            <div className={styles.dangerZoneSeparator}>
               <button
                 type="button"
                 className={styles.deleteButton}
@@ -356,8 +355,8 @@ export const VineDetailsView = ({
       >
         {vine && (
           <div>
-            <p style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--color-text-secondary)' }}>
-              Are you sure you want to delete <strong style={{ color: 'var(--color-text-accent)' }}>vine {vine.block}-{vine.id}</strong>? This action cannot be undone.
+            <p className={styles.deleteConfirmText}>
+              Are you sure you want to delete <strong className={styles.deleteConfirmTextAccent}>vine {vine.block}-{vine.id}</strong>? This action cannot be undone.
             </p>
 
             {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}

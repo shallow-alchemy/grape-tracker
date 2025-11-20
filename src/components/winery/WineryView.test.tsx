@@ -3,7 +3,6 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { WineryView } from './WineryView';
 
-// Create mock data
 const mockVintagesData: any[] = [];
 
 const mockZero = {
@@ -12,7 +11,14 @@ const mockZero = {
   },
 };
 
-// Mock Clerk
+rs.mock('wouter', () => ({
+  useLocation: () => ['/winery/vintages', rs.fn()],
+}));
+
+rs.mock('../../App.module.css', () => ({
+  default: {},
+}));
+
 rs.mock('@clerk/clerk-react', () => ({
   useUser: () => ({
     user: {
@@ -21,12 +27,10 @@ rs.mock('@clerk/clerk-react', () => ({
   }),
 }));
 
-// Mock Zero context
 rs.mock('../../contexts/ZeroContext', () => ({
   useZero: () => mockZero,
 }));
 
-// Mock useQuery from Zero
 rs.mock('@rocicorp/zero/react', () => ({
   useQuery: (query: any) => {
     if (query === mockZero.query.vintage) {
@@ -36,36 +40,69 @@ rs.mock('@rocicorp/zero/react', () => ({
   },
 }));
 
-// Mock AddVintageModal
 rs.mock('./AddVintageModal', () => ({
-  AddVintageModal: rs.fn(({ isOpen, onClose, onSuccess }: any) =>
+  AddVintageModal: ({ isOpen, onClose, onSuccess }: any) =>
     isOpen ? (
       <div role="dialog" data-testid="add-vintage-modal">
         <div>Add Vintage Modal</div>
         <button onClick={onClose}>Close</button>
         <button onClick={() => onSuccess('Vintage added!')}>Submit</button>
       </div>
-    ) : null
-  ),
+    ) : null,
 }));
 
-// Mock VintagesList
+rs.mock('./AddWineModal', () => ({
+  AddWineModal: ({ isOpen, onClose, onSuccess }: any) =>
+    isOpen ? (
+      <div role="dialog" data-testid="add-wine-modal">
+        <div>Add Wine Modal</div>
+        <button onClick={onClose}>Close</button>
+        <button onClick={() => onSuccess('Wine added!')}>Submit</button>
+      </div>
+    ) : null,
+}));
+
 rs.mock('./VintagesList', () => ({
-  VintagesList: rs.fn(() => (
+  VintagesList: () => (
     <div data-testid="vintages-list">
       <div>Vintages List</div>
     </div>
-  )),
+  ),
 }));
 
-// Mock VintageDetailsView
+rs.mock('./WinesList', () => ({
+  WinesList: () => (
+    <div data-testid="wines-list">
+      <div>Wines List</div>
+    </div>
+  ),
+}));
+
 rs.mock('./VintageDetailsView', () => ({
-  VintageDetailsView: rs.fn(({ vintageId, onBack, onWineClick: _onWineClick }: any) => (
+  VintageDetailsView: ({ vintageId, onBack, onWineClick: _onWineClick }: any) => (
     <div data-testid="vintage-details">
       <div>Vintage Details: {vintageId}</div>
       <button onClick={onBack}>Back</button>
     </div>
-  )),
+  ),
+}));
+
+rs.mock('./WineDetailsView', () => ({
+  WineDetailsView: ({ wineId, onBack }: any) => (
+    <div data-testid="wine-details">
+      <div>Wine Details: {wineId}</div>
+      <button onClick={onBack}>Back</button>
+    </div>
+  ),
+}));
+
+rs.mock('./TaskListView', () => ({
+  TaskListView: ({ entityType, entityId, entityName, onBack }: any) => (
+    <div data-testid="task-list">
+      <div>Task List: {entityType} - {entityName}</div>
+      <button onClick={onBack}>Back</button>
+    </div>
+  ),
 }));
 
 describe('WineryView', () => {

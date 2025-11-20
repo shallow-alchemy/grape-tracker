@@ -1,10 +1,15 @@
 # Vintages UI Planning
 
-**Status:** Planning Phase (Nov 14, 2025)
-**Backend:** ✅ Complete (migrations, schema, seed data)
+**Document Type:** Implementation Reference
+**Status:** ✅ Complete (features implemented)
+**Roadmap Priority:** See [../roadmap.md](../roadmap.md) for current priorities
+**Last Updated:** Nov 19, 2025
+
+> **Note:** This document provides detailed implementation guidance for vintage management features. For "what to build next" decisions, always check [../roadmap.md](../roadmap.md) first.
+
 **Related Docs:**
-- [Winery Frontend Plan](./winery-frontend-plan.md) - Wine production workflow (separate from vintages)
-- [Roadmap](./roadmap.md) - Overall project roadmap
+- [Winery Production Plan](./winery-production.md) - Wine production workflow (separate from vintages)
+- [Roadmap](../roadmap.md) - Overall project roadmap
 
 ---
 

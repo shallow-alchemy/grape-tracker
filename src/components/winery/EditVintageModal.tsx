@@ -36,7 +36,6 @@ export const EditVintageModal = ({
   const { user } = useUser();
   const zero = useZero();
 
-  // Fetch existing harvest measurement
   const [measurementsData] = useQuery(
     zero.query.measurement
       .where('entity_type', 'vintage')
@@ -118,11 +117,9 @@ export const EditVintageModal = ({
               updated_at: now,
             });
 
-            // Update or create harvest measurement
             const hasMeasurements = brix || ph || ta;
             if (hasMeasurements) {
               if (harvestMeasurement) {
-                // Update existing measurement
                 await zero.mutate.measurement.update({
                   id: harvestMeasurement.id,
                   date: measurementDate,
@@ -132,7 +129,6 @@ export const EditVintageModal = ({
                   updated_at: now,
                 });
               } else {
-                // Create new measurement
                 await zero.mutate.measurement.insert({
                   id: `${vintage.id}-harvest-measurement-${now}`,
                   user_id: user!.id,
@@ -151,7 +147,6 @@ export const EditVintageModal = ({
                 });
               }
             } else if (harvestMeasurement) {
-              // Delete measurement if all values are cleared
               await zero.mutate.measurement.delete({
                 id: harvestMeasurement.id,
               });
@@ -199,7 +194,7 @@ export const EditVintageModal = ({
         </div>
 
         <div className={styles.formGroup}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
+          <div className={styles.formGrid2Col}>
             <div>
               <label className={styles.formLabel}>WEIGHT (LBS)</label>
               <input
@@ -231,9 +226,9 @@ export const EditVintageModal = ({
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>HARVEST MEASUREMENTS (OPTIONAL)</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--spacing-md)', alignItems: 'start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label className={styles.formLabel} style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--spacing-xs)', whiteSpace: 'nowrap' }}>BRIX</label>
+          <div className={styles.formGrid3Col}>
+            <div className={styles.formColumn}>
+              <label className={`${styles.formLabel} ${styles.formLabelSmall}`}>BRIX</label>
               <input
                 type="number"
                 name="brix"
@@ -245,8 +240,8 @@ export const EditVintageModal = ({
                 defaultValue={harvestMeasurement?.brix ?? ''}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label className={styles.formLabel} style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--spacing-xs)', whiteSpace: 'nowrap' }}>PH</label>
+            <div className={styles.formColumn}>
+              <label className={`${styles.formLabel} ${styles.formLabelSmall}`}>PH</label>
               <input
                 type="number"
                 name="ph"
@@ -258,8 +253,8 @@ export const EditVintageModal = ({
                 defaultValue={harvestMeasurement?.ph ?? ''}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label className={styles.formLabel} style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--spacing-xs)', whiteSpace: 'nowrap' }}>TA (G/L)</label>
+            <div className={styles.formColumn}>
+              <label className={`${styles.formLabel} ${styles.formLabelSmall}`}>TA (G/L)</label>
               <input
                 type="number"
                 name="ta"
@@ -302,7 +297,7 @@ export const EditVintageModal = ({
           </button>
         </div>
 
-        <div style={{ marginTop: 'var(--spacing-lg)', paddingTop: 'var(--spacing-lg)', borderTop: '1px solid var(--color-border)' }}>
+        <div className={styles.dangerZoneSeparator}>
           <button
             type="button"
             className={styles.deleteButton}

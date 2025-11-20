@@ -24,3 +24,8 @@
   font-size: 0.75rem;
   padding: var(--spacing-xs) var(--spacing-md);
 }
+
+.spacedInline {
+  margin-left: var(--spacing-sm);
+  vertical-align: middle;
+}

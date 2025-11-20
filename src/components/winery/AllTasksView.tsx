@@ -56,41 +56,25 @@ export const AllTasksView = () => {
         <div className={styles.vineyardTitle}>ALL TASKS</div>
       </div>
 
-      {/* Search Bar */}
       <div className={styles.detailSection}>
         <input
           type="text"
           placeholder="Search tasks by title..."
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
-          style={{
-            width: '100%',
-            padding: 'var(--spacing-md)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--font-size-base)',
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--color-text-primary)',
-          }}
+          className={styles.taskSearchInput}
         />
       </div>
 
-      {/* Results Count */}
       <div className={styles.detailSection}>
-        <div style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: 'var(--font-size-sm)',
-          color: 'var(--color-text-secondary)',
-        }}>
+        <div className={styles.tasksResultCount}>
           {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''} found
           {totalPages > 1 && ` (Page ${currentPage + 1} of ${totalPages})`}
         </div>
       </div>
 
-      {/* Tasks List */}
       <div className={styles.detailSection}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+        <div className={styles.tasksListContainer}>
           {paginatedTasks.length > 0 ? (
             paginatedTasks.map((task) => {
               const overdue = isOverdue(task.due_date, task.completed_at, task.skipped ? 1 : 0);
@@ -101,139 +85,66 @@ export const AllTasksView = () => {
                 <div
                   key={task.id}
                   onClick={() => navigateToTask(task)}
-                  style={{
-                    padding: 'var(--spacing-md)',
-                    border: `1px solid ${overdue ? 'var(--color-error)' : 'var(--color-border)'}`,
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: completed || skipped ? 'var(--color-surface)' : 'var(--color-surface-elevated)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--color-primary-500)';
-                    e.currentTarget.style.backgroundColor = 'rgba(58, 122, 58, 0.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = overdue ? 'var(--color-error)' : 'var(--color-border)';
-                    e.currentTarget.style.backgroundColor = completed || skipped ? 'var(--color-surface)' : 'var(--color-surface-elevated)';
-                  }}
+                  className={`${styles.taskCard} ${overdue ? styles.taskCardOverdue : ''} ${completed || skipped ? styles.taskCardCompleted : ''}`}
                 >
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: 'var(--spacing-xs)',
-                  }}>
-                    <div style={{
-                      fontFamily: 'var(--font-heading)',
-                      fontSize: 'var(--font-size-sm)',
-                      color: completed || skipped ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
-                      textDecoration: completed || skipped ? 'line-through' : 'none',
-                    }}>
+                  <div className={styles.taskCardHeader}>
+                    <div className={`${styles.taskCardTitle} ${completed || skipped ? styles.taskCardTitleMuted : ''}`}>
                       {task.name}
                     </div>
                     {overdue && (
-                      <div style={{
-                        fontSize: 'var(--font-size-xs)',
-                        color: 'var(--color-error)',
-                        fontFamily: 'var(--font-body)',
-                        textTransform: 'uppercase',
-                      }}>
+                      <div className={`${styles.taskStatusBadge} ${styles.taskStatusOverdue}`}>
                         OVERDUE
                       </div>
                     )}
                     {completed && (
-                      <div style={{
-                        fontSize: 'var(--font-size-xs)',
-                        color: 'var(--color-success)',
-                        fontFamily: 'var(--font-body)',
-                        textTransform: 'uppercase',
-                      }}>
+                      <div className={`${styles.taskStatusBadge} ${styles.taskStatusCompleted}`}>
                         COMPLETED
                       </div>
                     )}
                     {skipped && (
-                      <div style={{
-                        fontSize: 'var(--font-size-xs)',
-                        color: 'var(--color-text-muted)',
-                        fontFamily: 'var(--font-body)',
-                        textTransform: 'uppercase',
-                      }}>
+                      <div className={`${styles.taskStatusBadge} ${styles.taskStatusSkipped}`}>
                         SKIPPED
                       </div>
                     )}
                   </div>
 
                   {task.description && (
-                    <div style={{
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--color-text-secondary)',
-                      fontFamily: 'var(--font-body)',
-                      marginBottom: 'var(--spacing-xs)',
-                    }}>
+                    <div className={styles.taskCardDescription}>
                       {task.description}
                     </div>
                   )}
 
-                  <div style={{
-                    fontSize: 'var(--font-size-xs)',
-                    color: overdue ? 'var(--color-error)' : 'var(--color-text-secondary)',
-                    fontFamily: 'var(--font-body)',
-                  }}>
+                  <div className={`${styles.taskCardDueDate} ${overdue ? styles.taskCardDueDateOverdue : ''}`}>
                     Due: {formatDueDate(task.due_date)} • {task.entity_type === 'vintage' ? 'Vintage' : 'Wine'}
                   </div>
                 </div>
               );
             })
           ) : (
-            <div style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-secondary)',
-              textAlign: 'center',
-              padding: 'var(--spacing-xl)',
-            }}>
+            <div className={styles.tasksEmptyState}>
               {searchQuery ? 'No tasks found matching your search.' : 'No tasks yet.'}
             </div>
           )}
         </div>
       </div>
 
-      {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className={styles.detailSection}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: 'var(--spacing-md)',
-            alignItems: 'center',
-          }}>
+          <div className={styles.paginationControls}>
             <button
-              className={styles.actionButton}
+              className={`${styles.actionButton} ${currentPage === 0 ? styles.paginationButtonDisabled : ''}`}
               onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
               disabled={currentPage === 0}
-              style={{
-                opacity: currentPage === 0 ? 0.5 : 1,
-                cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
-              }}
             >
               ← PREVIOUS
             </button>
-            <div style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-secondary)',
-            }}>
+            <div className={styles.paginationInfo}>
               Page {currentPage + 1} of {totalPages}
             </div>
             <button
-              className={styles.actionButton}
+              className={`${styles.actionButton} ${currentPage === totalPages - 1 ? styles.paginationButtonDisabled : ''}`}
               onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={currentPage === totalPages - 1}
-              style={{
-                opacity: currentPage === totalPages - 1 ? 0.5 : 1,
-                cursor: currentPage === totalPages - 1 ? 'not-allowed' : 'pointer',
-              }}
             >
               NEXT →
             </button>

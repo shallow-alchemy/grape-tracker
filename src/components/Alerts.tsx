@@ -12,7 +12,6 @@ const groupAlerts = (alerts: Alert[]) => {
     const type = alert.alert_type;
 
     if (!groups[type]) {
-      // Extract the label (everything before the colon or first day)
       const labelMatch = alert.message.match(/^([^:]+):/);
       groups[type] = {
         label: labelMatch ? labelMatch[1] : type.toUpperCase(),
@@ -21,8 +20,6 @@ const groupAlerts = (alerts: Alert[]) => {
       };
     }
 
-    // Extract day and value info from message
-    // Patterns: "DAY EXPECTED XX°F", "DAY LOW XX°F", or just "DAY"
     const dayMatch = alert.message.match(/:\s*(\w+)(?:\s+(?:EXPECTED|LOW)\s+(\d+)°F)?/);
     if (dayMatch) {
       const day = dayMatch[1];

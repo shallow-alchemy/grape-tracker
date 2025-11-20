@@ -11,13 +11,10 @@ export const SyncStatusIndicator = () => {
   const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
-    // Monitor Zero connection status
     let statusCheckInterval: number;
 
-    // Intercept console errors to detect Zero connection failures
     const originalConsoleError = console.error;
     console.error = (...args: any[]) => {
-      // Check if this is a Zero connection error
       const message = args.join(' ');
       if (message.includes('Failed to connect') ||
           message.includes('WebSocket') ||
@@ -25,18 +22,12 @@ export const SyncStatusIndicator = () => {
         setStatus('error');
         setErrorMessage('Zero sync server not responding. Changes may not be saved.');
       }
-      // Call original console.error
       originalConsoleError.apply(console, args);
     };
 
     const checkConnectionStatus = () => {
-      // Zero doesn't expose connection status directly, so we monitor activity
-      // This is a workaround until Zero adds official connection status API
-
       try {
-        // If we can access zero object, we're likely connected
         if (zero) {
-          // Only set connected if we're not already in error state
           if (status !== 'error') {
             setStatus('connected');
           }
@@ -50,10 +41,8 @@ export const SyncStatusIndicator = () => {
       }
     };
 
-    // Check every 5 seconds
     statusCheckInterval = window.setInterval(checkConnectionStatus, 5000);
 
-    // Listen for network online/offline events
     const handleOnline = () => {
       setStatus('syncing');
       setErrorMessage('');
@@ -68,7 +57,6 @@ export const SyncStatusIndicator = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Initial check
     if (!navigator.onLine) {
       setStatus('offline');
       setErrorMessage('No internet connection');
@@ -82,17 +70,18 @@ export const SyncStatusIndicator = () => {
     };
   }, [zero, status]);
 
-  const getStatusColor = (): string => {
+  const getStatusColorClass = (): string => {
     switch (status) {
       case 'connected':
-        return 'var(--color-success)';
+        return styles.statusConnected;
       case 'syncing':
-        return 'var(--color-warning)';
+        return styles.statusSyncing;
       case 'offline':
+        return styles.statusOffline;
       case 'error':
-        return 'var(--color-danger)';
+        return styles.statusError;
       default:
-        return 'var(--color-text-muted)';
+        return '';
     }
   };
 
@@ -114,11 +103,11 @@ export const SyncStatusIndicator = () => {
   const getStatusIcon = (): string => {
     switch (status) {
       case 'connected':
-        return '●'; // Solid circle
+        return '●';
       case 'syncing':
-        return '◐'; // Half circle (rotating in CSS)
+        return '◐';
       case 'offline':
-        return '○'; // Empty circle
+        return '○';
       case 'error':
         return '⚠';
       default:
@@ -129,9 +118,8 @@ export const SyncStatusIndicator = () => {
   return (
     <div className={styles.syncIndicator}>
       <button
-        className={styles.statusButton}
+        className={`${styles.statusButton} ${getStatusColorClass()}`}
         onClick={() => setShowDetails(!showDetails)}
-        style={{ color: getStatusColor() }}
         aria-label="Sync status"
       >
         <span className={status === 'syncing' ? styles.rotating : ''}>
@@ -156,7 +144,7 @@ export const SyncStatusIndicator = () => {
           <div className={styles.detailsContent}>
             <div className={styles.statusRow}>
               <span className={styles.label}>Status:</span>
-              <span style={{ color: getStatusColor() }}>{getStatusText()}</span>
+              <span className={getStatusColorClass()}>{getStatusText()}</span>
             </div>
 
             {errorMessage && (

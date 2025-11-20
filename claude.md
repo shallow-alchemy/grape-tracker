@@ -6,6 +6,16 @@ This is **Gilbert**, a mobile-first grape tracking app with an 80s hacker termin
 
 **📖 Start here**: Read **[`docs/README.md`](docs/README.md)** for complete documentation navigation.
 
+## Finding "What's Next"
+
+**Always check [`docs/04-product/roadmap.md`](docs/04-product/roadmap.md) first** for current priorities.
+
+Documents in `docs/04-product/detailed-specs/` are **implementation references**, not todo lists:
+- Use them AFTER a feature is prioritized in the roadmap
+- They provide detailed implementation guidance
+- Status headers indicate if features are complete/in-progress/planned
+- See [`docs/04-product/detailed-specs/README.md`](docs/04-product/detailed-specs/README.md) for more info
+
 ## Essential Documentation
 
 ### Quick Start (Read These First)
@@ -22,7 +32,7 @@ This is **Gilbert**, a mobile-first grape tracking app with an 80s hacker termin
 ### Reference Documentation
 8. **[Database Schema](docs/02-architecture/database-schema.md)** - All tables and relationships
 9. **[Deployment Guide](docs/deployment.md)** - Railway + Netlify production deployment
-10. **[Roadmap](docs/roadmap.md)** - Product development priorities
+10. **[Roadmap](docs/04-product/roadmap.md)** - Product development priorities
 11. **[Theme](docs/theme.md)** - 80s terminal aesthetic, mobile-first design
 12. **[Theme Tokens](src/index.css)** - CSS custom properties (single source of truth)
 

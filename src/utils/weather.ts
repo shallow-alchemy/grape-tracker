@@ -24,13 +24,13 @@ export type Alert = {
 };
 
 export const getWeatherIcon = (code: number): IconType => {
-  if (code === 0) return WiDaySunny; // Clear sky
-  if (code >= 1 && code <= 3) return WiCloudy; // Partly cloudy
-  if (code >= 45 && code <= 48) return WiFog; // Foggy
-  if (code >= 51 && code <= 67) return WiRain; // Drizzle/Rain
-  if (code >= 71 && code <= 86) return WiSnow; // Snow
-  if (code >= 95 && code <= 99) return WiThunderstorm; // Thunderstorm
-  return WiCloudy; // Default
+  if (code === 0) return WiDaySunny;
+  if (code >= 1 && code <= 3) return WiCloudy;
+  if (code >= 45 && code <= 48) return WiFog;
+  if (code >= 51 && code <= 67) return WiRain;
+  if (code >= 71 && code <= 86) return WiSnow;
+  if (code >= 95 && code <= 99) return WiThunderstorm;
+  return WiCloudy;
 };
 
 export const fetchWeather = async (latitude: number, longitude: number, vineyardId = 'default'): Promise<WeatherData> => {

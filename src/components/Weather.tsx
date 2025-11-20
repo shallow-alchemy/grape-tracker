@@ -20,14 +20,12 @@ export const Weather = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Query all tasks
   const [tasksData] = useQuery(zero.query.task);
 
-  // Get next priority task (incomplete, not skipped, soonest due date)
   const nextTask = tasksData
     .filter(t => !t.completed_at && !t.skipped)
     .sort((a, b) => a.due_date - b.due_date)
-    .slice(0, 1); // Show only the highest priority task
+    .slice(0, 1);
 
   useEffect(() => {
     localStorage.setItem('showHighTemps', JSON.stringify(showHighTemps));
@@ -35,7 +33,6 @@ export const Weather = () => {
 
   const loadWeather = async () => {
     try {
-      // Try to get user's location
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
@@ -53,7 +50,6 @@ export const Weather = () => {
             }
           },
           async () => {
-            // If location denied, use default coordinates (San Francisco)
             try {
               const data = await fetchWeather(37.7749, -122.4194);
               setWeatherData(data);
@@ -66,7 +62,6 @@ export const Weather = () => {
           }
         );
       } else {
-        // If geolocation not supported, use default coordinates
         try {
           const data = await fetchWeather(37.7749, -122.4194);
           setWeatherData(data);
@@ -122,7 +117,7 @@ export const Weather = () => {
           {nextTask.length > 0 ? (
             <div className={styles.activityItem}>
               <span
-                className={styles.activityText}
+                className={`${styles.activityText} ${styles.clickableActivityText}`}
                 onClick={() => {
                   const task = nextTask[0];
                   const route = task.entity_type === 'vintage'
@@ -130,7 +125,6 @@ export const Weather = () => {
                     : `/winery/wines/${task.entity_id}/tasks`;
                   setLocation(route);
                 }}
-                style={{ cursor: 'pointer' }}
               >
                 {'>'} {nextTask[0].name} — {formatDueDate(nextTask[0].due_date)}
               </span>
@@ -141,19 +135,7 @@ export const Weather = () => {
                     completed_at: Date.now(),
                   });
                 }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--color-interaction-400)',
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: '0.7rem',
-                  cursor: 'pointer',
-                  padding: 0,
-                  marginLeft: 'var(--spacing-md)',
-                  transition: 'color var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-interaction-300)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-interaction-400)'}
+                className={styles.taskCompleteButton}
               >
                 Mark complete →
               </button>

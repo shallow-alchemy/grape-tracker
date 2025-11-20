@@ -140,7 +140,7 @@ export const BlockSettingsModal = ({
             {isSubmitting ? 'SAVING...' : 'SAVE SETTINGS'}
           </button>
         </div>
-        <div style={{ marginTop: 'var(--spacing-xl)', paddingTop: 'var(--spacing-xl)', borderTop: '1px solid var(--color-border)' }}>
+        <div className={styles.dangerZoneDivider}>
           <button
             type="button"
             className={styles.deleteButton}

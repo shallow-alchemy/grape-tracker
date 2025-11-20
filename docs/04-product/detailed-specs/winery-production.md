@@ -1,12 +1,15 @@
 # Winery Frontend Implementation Plan
 
-**Status**: Planning Phase (Nov 13, 2025)
-**Backend**: ✅ Complete (migrations, schema, seed data)
-**Next**: Frontend component implementation
+**Document Type:** Implementation Reference
+**Status:** ✅ Complete (features implemented)
+**Roadmap Priority:** See [../roadmap.md](../roadmap.md) for current priorities
+**Last Updated:** Nov 19, 2025
+
+> **Note:** This document provides detailed implementation guidance for wine production features. For "what to build next" decisions, always check [../roadmap.md](../roadmap.md) first.
 
 **Related Documentation:**
-- [Vintages UI Planning](./vintages_ui_planning.md) - Vintage management UI (list, detail, edit, delete)
-- [Roadmap](./roadmap.md) - Overall project roadmap
+- [Vintages UI Planning](./vintages-ui.md) - Vintage management UI (list, detail, edit, delete)
+- [Roadmap](../roadmap.md) - Overall project roadmap
 
 **Scope:**
 This document covers **wine production workflow** (creating wines from vintages, stage transitions, tasks, measurements). For vintage management (harvest records), see the vintages UI planning doc linked above.

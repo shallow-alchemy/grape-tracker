@@ -16,10 +16,6 @@ export type StageTransitionResult = {
   tasksCreated?: number;
 };
 
-/**
- * Custom hook for handling stage transitions
- * Encapsulates the business logic for completing current stage and starting new stage
- */
 export const useStageTransition = (entityType: EntityType, entityId: string, wineType?: string) => {
   const { user } = useUser();
   const zero = useZero();
@@ -36,7 +32,6 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
     try {
       const now = Date.now();
 
-      // Step 1: Find and complete the current stage_history entry
       const allStageHistory = await zero.query.stage_history
         .where('entity_type', entityType)
         .where('entity_id', entityId)
@@ -54,7 +49,6 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
         });
       }
 
-      // Step 2: Create new stage_history entry for the new stage
       await zero.mutate.stage_history.insert({
         id: crypto.randomUUID(),
         user_id: user!.id,
@@ -69,7 +63,6 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
         updated_at: now,
       });
 
-      // Step 3: Update the entity's current_stage field
       if (entityType === 'wine') {
         await zero.mutate.wine.update({
           id: entityId,
@@ -84,7 +77,6 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
         });
       }
 
-      // Step 4: Create tasks from templates
       const allTemplates = await zero.query.task_template.run();
 
       const relevantTemplates = allTemplates.filter(template => {

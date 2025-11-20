@@ -21,38 +21,30 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
   const [vintagesData] = useQuery(zero.query.vintage);
   const vintages = [...vintagesData].sort((a, b) => b.vintage_year - a.vintage_year);
 
-  // Fetch all wines
   const [winesData] = useQuery(zero.query.wine);
 
-  // Fetch all harvest measurements for vintages
   const [measurementsData] = useQuery(
     zero.query.measurement
       .where('entity_type', 'vintage')
       .where('stage', 'harvest')
   );
 
-  // Fetch all tasks
   const [tasksData] = useQuery(zero.query.task);
 
-  // Modal state
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [taskModalVintageId, setTaskModalVintageId] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Create a map of vintage ID to harvest measurements
   const harvestMeasurements = new Map(
     measurementsData.map(m => [m.entity_id, m])
   );
 
-  // Count wines per vintage (including blends that use this vintage)
   const getWineCount = (vintageId: string): number => {
     return winesData.filter(wine => {
-      // Check if this is the primary vintage
       if (wine.vintage_id === vintageId) {
         return true;
       }
 
-      // Check if this vintage is in the blend components
       if (wine.blend_components && Array.isArray(wine.blend_components)) {
         return wine.blend_components.some((component: any) => component.vintage_id === vintageId);
       }
@@ -117,7 +109,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
             <h3 className={styles.featuredVintageHeading}>
               {featuredVintage.vintage_year} {featuredVintage.variety}
               {featuredVintage.grape_source === 'purchased' && (
-                <WarningBadge text="SOURCED" style={{ marginLeft: 'var(--spacing-sm)', verticalAlign: 'middle' }} />
+                <WarningBadge text="SOURCED" spaced />
               )}
             </h3>
             <div className={styles.featuredVintageStage}>
@@ -126,7 +118,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
           </div>
 
           <div className={styles.featuredVintageContent}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+            <div className={styles.flexColumnGap}>
             <div className={styles.featuredMetricsGrid}>
               {featuredVintage.harvest_date && (
                 <div className={styles.featuredMetricItem}>
@@ -153,9 +145,9 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
             {(harvestMeasurements.get(featuredVintage.id)?.brix !== null && harvestMeasurements.get(featuredVintage.id)?.brix !== undefined ||
               harvestMeasurements.get(featuredVintage.id)?.ph !== null && harvestMeasurements.get(featuredVintage.id)?.ph !== undefined ||
               harvestMeasurements.get(featuredVintage.id)?.ta !== null && harvestMeasurements.get(featuredVintage.id)?.ta !== undefined) && (
-              <div style={{ marginTop: 'var(--spacing-sm)' }}>
-                <div className={styles.featuredMetricLabel} style={{ marginBottom: 'var(--spacing-xs)' }}>MEASUREMENTS</div>
-                <div style={{ display: 'flex', gap: 'var(--spacing-lg)', flexWrap: 'wrap' }}>
+              <div className={styles.measurementsSection}>
+                <div className={`${styles.featuredMetricLabel} ${styles.taskCardText}`}>MEASUREMENTS</div>
+                <div className={styles.measurementsFlex}>
                   {harvestMeasurements.get(featuredVintage.id)?.brix !== null && harvestMeasurements.get(featuredVintage.id)?.brix !== undefined && (
                     <div className={styles.featuredMetricItem}>
                       <div className={styles.featuredMetricLabel}>BRIX</div>
@@ -187,8 +179,8 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
               </div>
             )}
 
-            <div style={{ marginTop: 'var(--spacing-sm)' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-xs)' }}>
+            <div className={styles.winesContainerSection}>
+              <div className={styles.winesSectionHeader}>
                 <div className={styles.featuredBlockLabel}>
                   WINES ({(() => {
                     const count = winesData.filter(wine => {
@@ -207,18 +199,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                     e.stopPropagation();
                     onCreateWine(featuredVintage.id);
                   }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--color-interaction-400)',
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: '0.7rem',
-                    cursor: 'pointer',
-                    transition: 'color var(--transition-fast)',
-                    padding: 0
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-interaction-300)'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-interaction-400)'}
+                  className={styles.createNewButton}
                 >
                   Create new →
                 </button>
@@ -236,13 +217,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                 }).sort((a, b) => a.name.localeCompare(b.name));
 
                 return vintageWines.length > 0 ? (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 'var(--spacing-xs)',
-                    maxHeight: '200px',
-                    overflowY: 'auto'
-                  }}>
+                  <div className={styles.winesContainer}>
                     {vintageWines.map((wine) => {
                       const isBlend = wine.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
                       return (
@@ -260,59 +235,20 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                           }}
                           role="button"
                           tabIndex={0}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: 'var(--spacing-xs)',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: 'var(--radius-sm)',
-                            cursor: 'pointer',
-                            transition: 'all var(--transition-fast)',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = 'var(--color-primary-500)';
-                            e.currentTarget.style.backgroundColor = 'rgba(58, 122, 58, 0.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = 'var(--color-border)';
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
+                          className={styles.wineCardSmall}
                         >
-                          <div style={{ flex: 1 }}>
-                            <div style={{
-                              fontFamily: 'var(--font-heading)',
-                              fontSize: 'var(--font-size-xs)',
-                              color: 'var(--color-text-primary)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 'var(--spacing-xs)',
-                              flexWrap: 'wrap'
-                            }}>
+                          <div className={styles.wineCardSmallContent}>
+                            <div className={styles.wineCardSmallTitle}>
                               <span>{wine.name}</span>
-                              <span style={{
-                                fontSize: 'var(--font-size-xs)',
-                                color: 'var(--color-text-muted)',
-                                marginLeft: 'var(--spacing-xs)'
-                              }}>
+                              <span className={styles.wineCardSmallBadge}>
                                 {isBlend ? 'BLEND' : 'VARIETAL'}
                               </span>
                             </div>
-                            <div style={{
-                              fontSize: 'var(--font-size-xs)',
-                              color: 'var(--color-text-secondary)',
-                              fontFamily: 'var(--font-body)',
-                              marginTop: '2px'
-                            }}>
+                            <div className={styles.wineCardSmallSubtext}>
                               {wine.wine_type.toUpperCase()} • {wine.current_volume_gallons} GAL • {formatWineStatus(wine.status)}
                             </div>
                           </div>
-                          <div style={{
-                            fontFamily: 'var(--font-heading)',
-                            fontSize: 'var(--font-size-sm)',
-                            color: 'var(--color-text-secondary)',
-                            marginLeft: 'var(--spacing-xs)'
-                          }}>
+                          <div className={styles.wineCardSmallArrow}>
                             →
                           </div>
                         </div>
@@ -331,7 +267,6 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
             )}
             </div>
 
-            {/* Tasks Section */}
             {(() => {
               const vintageTasks = tasksData
                 .filter(task => task.entity_type === 'vintage' && task.entity_id === featuredVintage.id)
@@ -344,20 +279,9 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                 });
 
               return vintageTasks.length > 0 ? (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  width: '100%',
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 'var(--spacing-sm)',
-                    minWidth: '250px',
-                    maxWidth: '300px',
-                    width: '100%',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-xs)' }}>
+                <div className={styles.tasksContainerOuter}>
+                  <div className={styles.tasksContainerInner}>
+                    <div className={styles.winesSectionHeader}>
                       <div className={styles.featuredMetricLabel}>
                         TASKS ({vintageTasks.filter(t => !t.completed_at).length})
                       </div>
@@ -368,44 +292,19 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                           setTaskModalVintageId(featuredVintage.id);
                           setShowCreateTaskModal(true);
                         }}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--color-interaction-400)',
-                          fontFamily: 'var(--font-heading)',
-                          fontSize: '0.7rem',
-                          cursor: 'pointer',
-                          transition: 'color var(--transition-fast)',
-                          padding: 0,
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-interaction-300)'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-interaction-400)'}
+                        className={styles.createNewButton}
                       >
                         Add task →
                       </button>
                     </div>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 'var(--spacing-xs)',
-                    maxHeight: '250px',
-                    overflowY: 'auto',
-                  }}>
+                  <div className={styles.tasksList}>
                     {vintageTasks.map(task => {
                       const isCompleted = task.completed_at !== null && task.completed_at !== undefined;
+                      const hasDueDate = task.due_date && task.due_date > 946684800000;
                       return (
                         <div
                           key={task.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: 'var(--spacing-xs)',
-                            padding: 'var(--spacing-xs)',
-                            background: isCompleted ? 'var(--color-background)' : 'var(--color-surface-elevated)',
-                            border: '1px solid var(--color-border)',
-                            borderRadius: 'var(--radius-sm)',
-                            opacity: isCompleted ? 0.5 : 1,
-                          }}
+                          className={`${styles.taskCard} ${isCompleted ? styles.taskCardCompleted : styles.taskCardActive}`}
                         >
                           <input
                             type="checkbox"
@@ -417,24 +316,14 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                                 completed_at: isCompleted ? undefined : Date.now()
                               });
                             }}
-                            style={{
-                              marginTop: '2px',
-                              flexShrink: 0,
-                            }}
+                            className={styles.taskCheckbox}
                           />
-                          <div style={{ flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                            <div style={{
-                              textDecoration: isCompleted ? 'line-through' : 'none',
-                              marginBottom: (task.due_date && task.due_date > 946684800000) ? '2px' : 0,
-                            }}>
+                          <div className={styles.taskCardContent}>
+                            <div className={`${hasDueDate ? styles.taskCardText : ''} ${isCompleted ? styles.taskCardTextCompleted : ''}`}>
                               {task.name || task.description}
                             </div>
-                            {task.due_date && task.due_date > 946684800000 && (
-                              <div style={{
-                                fontSize: 'var(--font-size-xs)',
-                                color: 'var(--color-text-muted)',
-                                fontFamily: 'var(--font-mono)',
-                              }}>
+                            {hasDueDate && (
+                              <div className={styles.taskCardDate}>
                                 {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </div>
                             )}
@@ -462,46 +351,35 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
               onClick={() => handleClick(vintage.id)}
               onKeyDown={(e) => handleKeyDown(e, vintage.id)}
             >
-              {/* Header with title and stage */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-sm)' }}>
-                <h3 className={styles.vintageHeading} style={{ margin: 0 }}>
+              <div className={styles.vintageCardHeader}>
+                <h3 className={`${styles.vintageHeading} ${styles.vintageCardHeaderTitle}`}>
                   {vintage.vintage_year} {vintage.variety}
                   {vintage.grape_source === 'purchased' && (
-                    <WarningBadge text="SOURCED" style={{ marginLeft: 'var(--spacing-sm)', verticalAlign: 'middle' }} />
+                    <WarningBadge text="SOURCED" spaced />
                   )}
                 </h3>
-                <div className={styles.vintageStage} style={{ marginTop: 0 }}>
+                <div className={`${styles.vintageStage} ${styles.vintageCardHeaderStage}`}>
                   {formatStage(vintage.current_stage)}
                 </div>
               </div>
 
-              {/* Blocks and Wines count */}
               {(vintage.block_ids && Array.isArray(vintage.block_ids) && vintage.block_ids.length > 0 || getWineCount(vintage.id) > 0) && (
-                <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
+                <div className={styles.vintageCardInfo}>
                   {vintage.block_ids && Array.isArray(vintage.block_ids) && vintage.block_ids.length > 0 && (
-                    <div style={{
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--color-text-secondary)',
-                      fontFamily: 'var(--font-body)'
-                    }}>
+                    <div className={styles.vintageCardInfoText}>
                       {getBlockCount(vintage.block_ids as string[])}
                     </div>
                   )}
 
                   {getWineCount(vintage.id) > 0 && (
-                    <div style={{
-                      fontSize: 'var(--font-size-xs)',
-                      color: 'var(--color-text-secondary)',
-                      fontFamily: 'var(--font-body)'
-                    }}>
+                    <div className={styles.vintageCardInfoText}>
                       {getWineCount(vintage.id) === 1 ? '1 WINE' : `${getWineCount(vintage.id)} WINES`}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Metrics in 2-column grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-xs) var(--spacing-md)' }}>
+              <div className={styles.metricsGrid2Col}>
                 {vintage.harvest_date && (
                   <div className={styles.metricItem}>
                     <span className={styles.metricLabel}>HARVEST DATE:</span>
@@ -549,14 +427,12 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
         </>
       )}
 
-      {/* Success Message */}
       {successMessage && (
         <div className={styles.successMessage}>
           {successMessage}
         </div>
       )}
 
-      {/* Create Task Modal */}
       {taskModalVintageId && (
         <CreateTaskModal
           isOpen={showCreateTaskModal}

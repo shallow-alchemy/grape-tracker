@@ -178,6 +178,22 @@
   opacity: 0.8;
 }
 
+.statusConnected {
+  color: var(--color-success);
+}
+
+.statusSyncing {
+  color: var(--color-warning);
+}
+
+.statusOffline {
+  color: var(--color-danger);
+}
+
+.statusError {
+  color: var(--color-danger);
+}
+
 /* Mobile styles */
 @media (max-width: 768px) {
   .detailsPopup {

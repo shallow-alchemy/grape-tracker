@@ -25,37 +25,30 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const [winesData] = useQuery(zero.query.wine.where('id', wineId));
   const wine = winesData[0];
 
-  // Fetch vintage data (primary vintage)
   const [vintagesData] = useQuery(
     wine ? zero.query.vintage.where('id', wine.vintage_id) : zero.query.vintage.where('id', 'none')
   );
   const vintage = vintagesData[0];
 
-  // Fetch all vintages for blend component lookups
   const [allVintagesData] = useQuery(zero.query.vintage);
 
-  // Check if this is a blend
   const isBlend = wine?.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
 
-  // Fetch stage history
   const [stageHistoryData] = useQuery(
     zero.query.stage_history
       .where('entity_type', 'wine')
       .where('entity_id', wineId)
   );
 
-  // Sort stage history by started_at descending (most recent first)
   const stageHistory = [...stageHistoryData].sort((a, b) => b.started_at - a.started_at);
   const currentStageHistory = stageHistory.find(s => !s.completed_at);
 
-  // Fetch measurements for this wine
   const [measurementsData] = useQuery(
     zero.query.measurement
       .where('entity_type', 'wine')
       .where('entity_id', wineId)
   );
 
-  // Sort measurements by date descending
   const measurements = [...measurementsData].sort((a, b) => b.date - a.date);
   const latestMeasurement = measurements[0];
 
@@ -66,7 +59,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
 
   if (!wine) {
     return (
-      <div style={{ padding: 'var(--spacing-lg)' }}>
+      <div className={styles.paddingContainer}>
         <div className={styles.errorMessage}>WINE NOT FOUND</div>
         <button className={styles.actionButton} onClick={onBack}>
           BACK TO LIST
@@ -101,7 +94,6 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
 
   const daysInStage = getDaysInStage();
 
-  // Expand stage history to include skipped stages
   type ExpandedStageHistoryEntry = {
     id: string;
     stage: string;
@@ -119,7 +111,6 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
     for (let i = 0; i < stageHistory.length; i++) {
       const current = stageHistory[i];
 
-      // Add the actual stage history entry
       expanded.push({
         id: current.id,
         stage: current.stage,
@@ -130,14 +121,12 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         isSkippedPlaceholder: false,
       });
 
-      // Check if there's a next stage and if we skipped any stages in between
       if (i < stageHistory.length - 1) {
         const next = stageHistory[i + 1];
         const currentStageIndex = wineStages.findIndex(s => s.value === next.stage);
         const nextStageIndex = wineStages.findIndex(s => s.value === current.stage);
 
         if (currentStageIndex !== -1 && nextStageIndex !== -1) {
-          // Add placeholder entries for skipped stages
           for (let j = currentStageIndex + 1; j < nextStageIndex; j++) {
             expanded.push({
               id: `skipped-${wineStages[j].value}-${i}`,
@@ -165,7 +154,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         <div className={styles.vineyardTitle}>
           {vintage ? `${vintage.vintage_year} ${wine.name}` : wine.name}
         </div>
-        <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
+        <div className={styles.actionButtonGroup}>
           <button className={styles.actionButton} onClick={() => setLocation(`/winery/wines/${wineId}/tasks`)}>
             TASKS
           </button>
@@ -178,50 +167,23 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         </div>
       </div>
 
-      {/* Current Stage */}
       <div className={styles.detailSection}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-sm)' }}>
-          <div className={styles.sectionHeader} style={{ marginBottom: 0 }}>CURRENT STAGE</div>
-          <button
-            onClick={() => setShowStageModal(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--color-interaction-400)',
-              fontFamily: 'var(--font-heading)',
-              fontSize: '0.7rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              cursor: 'pointer',
-              transition: 'color var(--transition-fast)',
-              padding: 0,
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-interaction-300)'}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-interaction-400)'}
-          >
+        <div className={styles.stageHeaderRow}>
+          <div className={`${styles.sectionHeader} ${styles.sectionHeaderNoMargin}`}>CURRENT STAGE</div>
+          <button onClick={() => setShowStageModal(true)} className={styles.markCompleteButton}>
             Mark Complete →
           </button>
         </div>
-        <div style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: 'var(--font-size-md)',
-          color: 'var(--color-primary-500)',
-          textTransform: 'uppercase'
-        }}>
+        <div className={styles.currentStageDisplay}>
           {formatStage(wine.current_stage)}
           {daysInStage !== null && (
-            <span style={{
-              marginLeft: 'var(--spacing-sm)',
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-text-secondary)'
-            }}>
+            <span className={styles.currentStageDays}>
               ({daysInStage} {daysInStage === 1 ? 'day' : 'days'})
             </span>
           )}
         </div>
       </div>
 
-      {/* Wine Details */}
       <div className={styles.detailSection}>
         <div className={styles.sectionHeader}>WINE DETAILS</div>
         <div className={styles.detailGrid}>
@@ -244,59 +206,30 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         </div>
       </div>
 
-      {/* Blend Information or Source Vintage */}
       {isBlend ? (
         <div className={styles.detailSection}>
           <div className={styles.sectionHeader}>
             BLEND VARIETIES
-            <span style={{
-              marginLeft: 'var(--spacing-sm)',
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-primary-500)',
-              fontFamily: 'var(--font-body)',
-              textTransform: 'none'
-            }}>
+            <span className={styles.sectionHeaderBadge}>
               (Multi-Vintage Blend)
             </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+          <div className={styles.flexColumnGap}>
             {(wine.blend_components as Array<{ vintage_id: string; percentage: number }>).map((variety, index) => {
               const varietyVintage = allVintagesData.find(v => v.id === variety.vintage_id);
               return (
-                <div
-                  key={index}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: 'var(--spacing-sm)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-sm)',
-                  }}
-                >
+                <div key={index} className={styles.blendVarietyCard}>
                   <div>
-                    <div style={{
-                      fontFamily: 'var(--font-heading)',
-                      fontSize: 'var(--font-size-sm)',
-                      color: 'var(--color-text-primary)'
-                    }}>
+                    <div className={styles.blendVarietyName}>
                       {varietyVintage ? `${varietyVintage.vintage_year} ${varietyVintage.variety}` : 'Unknown Vintage'}
                     </div>
                     {varietyVintage?.grape_source === 'purchased' && (
-                      <div style={{
-                        fontSize: 'var(--font-size-xs)',
-                        color: 'var(--color-text-secondary)',
-                        fontFamily: 'var(--font-body)'
-                      }}>
+                      <div className={styles.blendVarietySource}>
                         Purchased{varietyVintage.supplier_name ? ` from ${varietyVintage.supplier_name}` : ''}
                       </div>
                     )}
                   </div>
-                  <div style={{
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: 'var(--font-size-md)',
-                    color: 'var(--color-primary-500)'
-                  }}>
+                  <div className={styles.blendVarietyPercentage}>
                     {variety.percentage}%
                   </div>
                 </div>
@@ -308,13 +241,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         <div className={styles.detailSection}>
           <div className={styles.sectionHeader}>
             SOURCE VINTAGE
-            <span style={{
-              marginLeft: 'var(--spacing-sm)',
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-primary-500)',
-              fontFamily: 'var(--font-body)',
-              textTransform: 'none'
-            }}>
+            <span className={styles.sectionHeaderBadge}>
               (Varietal)
             </span>
           </div>
@@ -343,18 +270,11 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         </div>
       )}
 
-      {/* Latest Measurements */}
       {latestMeasurement && (
         <div className={styles.detailSection}>
           <div className={styles.sectionHeader}>
             LATEST MEASUREMENTS
-            <span style={{
-              marginLeft: 'var(--spacing-sm)',
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-text-secondary)',
-              fontFamily: 'var(--font-body)',
-              textTransform: 'none'
-            }}>
+            <span className={styles.sectionHeaderDate}>
               ({formatDate(latestMeasurement.date)})
             </span>
           </div>
@@ -387,95 +307,54 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         </div>
       )}
 
-      {/* Stage History */}
       {expandedStageHistory.length > 0 && (
         <div className={styles.detailSection}>
           <div className={styles.sectionHeader}>STAGE HISTORY</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-            {expandedStageHistory.map((stage) => (
-              <div
-                key={stage.id}
-                style={{
-                  padding: 'var(--spacing-sm)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: !stage.completed_at
-                    ? 'rgba(58, 122, 58, 0.1)'
-                    : 'rgba(138, 150, 138, 0.05)',
-                  opacity: stage.isSkippedPlaceholder ? 0.5 : 1,
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: 'var(--spacing-xs)'
-                }}>
-                  <div style={{
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: 'var(--font-size-sm)',
-                    color: !stage.completed_at ? 'var(--color-primary-500)' : 'var(--color-text-muted)',
-                    textDecoration: stage.isSkippedPlaceholder ? 'line-through' : 'none',
-                  }}>
-                    {formatStage(stage.stage)}
-                  </div>
-                  <div style={{
-                    fontSize: 'var(--font-size-xs)',
-                    fontFamily: 'var(--font-body)'
-                  }}>
-                    {!stage.completed_at ? (
-                      <div style={{ color: 'var(--color-success)' }}>
-                        IN PROGRESS
-                      </div>
-                    ) : stage.skipped ? (
-                      <div style={{ color: 'var(--color-text-muted)' }}>
-                        SKIPPED
-                      </div>
-                    ) : (
-                      <div style={{ color: 'var(--color-primary-500)' }}>
-                        COMPLETE ✓
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {!stage.isSkippedPlaceholder && (
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    gap: 'var(--spacing-md)',
-                    fontSize: 'var(--font-size-xs)',
-                    fontFamily: 'var(--font-body)',
-                    color: 'var(--color-text-secondary)',
-                  }}>
-                    <div style={{
-                      flex: 1,
-                      whiteSpace: 'pre-wrap'
-                    }}>
-                      {stage.notes || ''}
+          <div className={styles.flexColumnGap}>
+            {expandedStageHistory.map((stage) => {
+              const isCurrentStage = !stage.completed_at;
+              return (
+                <div
+                  key={stage.id}
+                  className={`${styles.stageHistoryCard} ${isCurrentStage ? styles.stageHistoryCardCurrent : ''} ${stage.isSkippedPlaceholder ? styles.stageHistoryCardSkipped : ''}`}
+                >
+                  <div className={styles.stageHistoryHeader}>
+                    <div className={`${styles.stageHistoryTitle} ${isCurrentStage ? styles.stageHistoryTitleCurrent : ''} ${stage.isSkippedPlaceholder ? styles.stageHistoryTitleSkipped : ''}`}>
+                      {formatStage(stage.stage)}
                     </div>
-                    <div style={{
-                      minWidth: '120px',
-                      textAlign: 'right',
-                      flexShrink: 0
-                    }}>
-                      {!stage.completed_at ? (
-                        <>{formatDate(stage.started_at)}</>
+                    <div className={styles.stageHistoryStatus}>
+                      {isCurrentStage ? (
+                        <div className={styles.stageHistoryStatusInProgress}>IN PROGRESS</div>
                       ) : stage.skipped ? (
-                        <>{stage.completed_at ? formatDate(stage.completed_at) : 'N/A'}</>
+                        <div className={styles.stageHistoryStatusSkipped}>SKIPPED</div>
                       ) : (
-                        <>{stage.completed_at ? formatDate(stage.completed_at) : 'N/A'}</>
+                        <div className={styles.stageHistoryStatusComplete}>COMPLETE ✓</div>
                       )}
                     </div>
                   </div>
-                )}
-              </div>
-            ))}
+                  {!stage.isSkippedPlaceholder && (
+                    <div className={styles.stageHistoryBody}>
+                      <div className={styles.stageHistoryNotes}>
+                        {stage.notes || ''}
+                      </div>
+                      <div className={styles.stageHistoryDate}>
+                        {isCurrentStage ? (
+                          <>{formatDate(stage.started_at)}</>
+                        ) : stage.skipped ? (
+                          <>{stage.completed_at ? formatDate(stage.completed_at) : 'N/A'}</>
+                        ) : (
+                          <>{stage.completed_at ? formatDate(stage.completed_at) : 'N/A'}</>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Actions */}
       {successMessage && (
         <div className={styles.successMessage}>
           {successMessage}

@@ -24,7 +24,6 @@ export const TaskListView = ({
 }: TaskListViewProps) => {
   const zero = useZero();
 
-  // Fetch all tasks for this entity
   const [tasksData] = useQuery(
     zero.query.task
       .where('entity_type', entityType)
@@ -40,7 +39,6 @@ export const TaskListView = ({
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
-  // Categorize tasks
   const overdueTasks = tasksData.filter(t =>
     isOverdue(t.due_date, t.completed_at, t.skipped ? 1 : 0)
   );
@@ -65,48 +63,21 @@ export const TaskListView = ({
     return (
       <div
         key={task.id}
-        style={{
-          padding: 'var(--spacing-md)',
-          border: `1px solid ${overdue ? 'var(--color-error)' : 'var(--color-border)'}`,
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: completed || skipped ? 'var(--color-surface)' : 'var(--color-surface-elevated)',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-        }}
+        className={`${styles.taskCard} ${overdue ? styles.taskCardOverdue : ''} ${completed || skipped ? styles.taskCardCompleted : ''}`}
         onClick={() => setSelectedTask(task)}
       >
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 'var(--spacing-xs)',
-        }}>
-          <div style={{
-            fontFamily: 'var(--font-heading)',
-            fontSize: 'var(--font-size-sm)',
-            color: completed || skipped ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
-            textDecoration: completed || skipped ? 'line-through' : 'none',
-          }}>
+        <div className={styles.taskCardHeader}>
+          <div className={`${styles.taskCardTitle} ${completed || skipped ? styles.taskCardTitleMuted : ''}`}>
             {task.name}
           </div>
           {overdue && (
-            <div style={{
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-error)',
-              fontFamily: 'var(--font-body)',
-              textTransform: 'uppercase',
-            }}>
+            <div className={`${styles.taskStatusBadge} ${styles.taskStatusOverdue}`}>
               OVERDUE
             </div>
           )}
           {completed && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-              <div style={{
-                fontSize: 'var(--font-size-xs)',
-                color: 'var(--color-success)',
-                fontFamily: 'var(--font-body)',
-                textTransform: 'uppercase',
-              }}>
+            <div className={styles.completedStatusRow}>
+              <div className={`${styles.taskStatusBadge} ${styles.taskStatusCompleted}`}>
                 COMPLETED
               </div>
               <button
@@ -118,51 +89,26 @@ export const TaskListView = ({
                   });
                   showSuccessMessage('Task marked as incomplete');
                 }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--color-interaction-400)',
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: '0.7rem',
-                  cursor: 'pointer',
-                  padding: 0,
-                  transition: 'color var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-interaction-300)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-interaction-400)'}
+                className={styles.taskCompleteButton}
               >
                 Undo →
               </button>
             </div>
           )}
           {skipped && (
-            <div style={{
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-text-muted)',
-              fontFamily: 'var(--font-body)',
-              textTransform: 'uppercase',
-            }}>
+            <div className={`${styles.taskStatusBadge} ${styles.taskStatusSkipped}`}>
               SKIPPED
             </div>
           )}
         </div>
 
         {task.description && (
-          <div style={{
-            fontSize: 'var(--font-size-xs)',
-            color: 'var(--color-text-secondary)',
-            fontFamily: 'var(--font-body)',
-            marginBottom: 'var(--spacing-xs)',
-          }}>
+          <div className={styles.taskCardDescription}>
             {task.description}
           </div>
         )}
 
-        <div style={{
-          fontSize: 'var(--font-size-xs)',
-          color: overdue ? 'var(--color-error)' : 'var(--color-text-secondary)',
-          fontFamily: 'var(--font-body)',
-        }}>
+        <div className={`${styles.taskCardDueDate} ${overdue ? styles.taskCardDueDateOverdue : ''}`}>
           Due: {formatDueDate(task.due_date)}
         </div>
       </div>
@@ -186,64 +132,53 @@ export const TaskListView = ({
         </button>
       </div>
 
-      {/* Overdue Tasks */}
       {overdueTasks.length > 0 && (
         <div className={styles.detailSection}>
-          <div className={styles.sectionHeader} style={{ color: 'var(--color-error)' }}>
+          <div className={`${styles.sectionHeader} ${styles.sectionHeaderError}`}>
             OVERDUE ({overdueTasks.length})
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+          <div className={styles.tasksListContainer}>
             {overdueTasks.map(task => <TaskCard key={task.id} task={task} />)}
           </div>
         </div>
       )}
 
-      {/* Upcoming Tasks */}
       {upcomingTasks.length > 0 && (
         <div className={styles.detailSection}>
           <div className={styles.sectionHeader}>
             UPCOMING ({upcomingTasks.length})
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+          <div className={styles.tasksListContainer}>
             {upcomingTasks.map(task => <TaskCard key={task.id} task={task} />)}
           </div>
         </div>
       )}
 
-      {/* Completed Tasks */}
       {completedTasks.length > 0 && (
         <div className={styles.detailSection}>
           <div className={styles.sectionHeader}>
             COMPLETED ({completedTasks.length})
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+          <div className={styles.tasksListContainer}>
             {completedTasks.map(task => <TaskCard key={task.id} task={task} />)}
           </div>
         </div>
       )}
 
-      {/* Skipped Tasks */}
       {skippedTasks.length > 0 && (
         <div className={styles.detailSection}>
           <div className={styles.sectionHeader}>
             SKIPPED ({skippedTasks.length})
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+          <div className={styles.tasksListContainer}>
             {skippedTasks.map(task => <TaskCard key={task.id} task={task} />)}
           </div>
         </div>
       )}
 
-      {/* No Tasks */}
       {tasksData.length === 0 && (
         <div className={styles.detailSection}>
-          <div style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-text-secondary)',
-            textAlign: 'center',
-            padding: 'var(--spacing-xl)',
-          }}>
+          <div className={styles.tasksEmptyState}>
             No tasks yet. Create one or advance the stage to generate tasks automatically.
           </div>
         </div>
@@ -255,7 +190,6 @@ export const TaskListView = ({
         </div>
       )}
 
-      {/* Task Completion Modal */}
       {selectedTask && (
         <TaskCompletionModal
           isOpen={!!selectedTask}
@@ -269,7 +203,6 @@ export const TaskListView = ({
         />
       )}
 
-      {/* Create Task Modal */}
       <CreateTaskModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}

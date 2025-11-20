@@ -1,5 +1,14 @@
 # Terroir Optimizer - Product Specification
 
+**Document Type:** Implementation Reference
+**Status:** 📋 Planned (not yet implemented)
+**Roadmap Priority:** See [../roadmap.md](../roadmap.md) - PLANNING & OPTIMIZATION section
+**Last Updated:** Nov 19, 2025
+
+> **Note:** This document provides detailed planning and implementation guidance for the AI terroir optimizer. For "what to build next" decisions, always check [../roadmap.md](../roadmap.md) first.
+
+---
+
 ## Feature Overview
 
 The Terroir Optimizer is a context-aware AI planning tool that helps users make informed decisions about grape varietal selection based on their location, existing vineyard, and winemaking goals. It serves new growers, existing growers expanding their vineyards, and winemakers planning vine plantings to achieve specific wine styles.

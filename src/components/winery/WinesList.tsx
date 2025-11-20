@@ -10,7 +10,6 @@ export const WinesList = ({ onWineClick }: WinesListProps) => {
   const zero = useZero();
   const [winesData] = useQuery(zero.query.wine);
 
-  // Organize wines by status
   const activeWines = winesData.filter(w => w.status === 'active');
   const agingWines = winesData.filter(w => w.status === 'aging');
   const bottledWines = winesData.filter(w => w.status === 'bottled');
@@ -40,14 +39,7 @@ export const WinesList = ({ onWineClick }: WinesListProps) => {
       >
         <h3 className={styles.vintageHeading}>
           {wine.name}
-          <span style={{
-            marginLeft: 'var(--spacing-sm)',
-            fontSize: 'var(--font-size-xs)',
-            color: 'var(--color-text-accent)',
-            border: '1px solid var(--color-primary-500)',
-            padding: '2px var(--spacing-xs)',
-            borderRadius: 'var(--radius-sm)',
-          }}>
+          <span className={styles.wineTypeBadge}>
             {isBlend ? 'BLEND' : 'VARIETAL'}
           </span>
         </h3>
@@ -83,8 +75,8 @@ export const WinesList = ({ onWineClick }: WinesListProps) => {
   return (
     <div>
       {activeWines.length > 0 && (
-        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-          <div className={styles.sectionHeader} style={{ marginBottom: 'var(--spacing-md)' }}>
+        <div className={styles.wineSection}>
+          <div className={`${styles.sectionHeader} ${styles.wineSectionHeader}`}>
             ACTIVE WINES
           </div>
           <div className={styles.vintagesContainer}>
@@ -94,8 +86,8 @@ export const WinesList = ({ onWineClick }: WinesListProps) => {
       )}
 
       {agingWines.length > 0 && (
-        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-          <div className={styles.sectionHeader} style={{ marginBottom: 'var(--spacing-md)' }}>
+        <div className={styles.wineSection}>
+          <div className={`${styles.sectionHeader} ${styles.wineSectionHeader}`}>
             AGING WINES
           </div>
           <div className={styles.vintagesContainer}>
@@ -105,8 +97,8 @@ export const WinesList = ({ onWineClick }: WinesListProps) => {
       )}
 
       {bottledWines.length > 0 && (
-        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-          <div className={styles.sectionHeader} style={{ marginBottom: 'var(--spacing-md)' }}>
+        <div className={styles.wineSection}>
+          <div className={`${styles.sectionHeader} ${styles.wineSectionHeader}`}>
             BOTTLED WINES
           </div>
           <div className={styles.vintagesContainer}>

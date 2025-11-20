@@ -29,7 +29,6 @@ export const DeleteWineConfirmModal = ({
   );
   const vintage = vintagesData[0];
 
-  // Fetch related records to show what will be deleted
   const [stageHistoryData] = useQuery(
     zero.query.stage_history
       .where('entity_type', 'wine')
@@ -55,22 +54,18 @@ export const DeleteWineConfirmModal = ({
     setError(null);
 
     try {
-      // Delete related stage history
       for (const stage of stageHistoryData) {
         await zero.mutate.stage_history.delete({ id: stage.id });
       }
 
-      // Delete related measurements
       for (const measurement of measurementsData) {
         await zero.mutate.measurement.delete({ id: measurement.id });
       }
 
-      // Delete related tasks
       for (const task of tasksData) {
         await zero.mutate.task.delete({ id: task.id });
       }
 
-      // Delete the wine itself
       await zero.mutate.wine.delete({ id: wineId });
 
       const wineName = vintage ? `${vintage.vintage_year} ${wine.name}` : wine.name;

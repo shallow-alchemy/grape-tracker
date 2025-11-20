@@ -39,8 +39,8 @@ export const Modal = ({ isOpen, onClose, title, titleRight, children, closeDisab
         className={`${styles.modalContent} ${styles[size]}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: titleRight ? 0 : undefined }}>
-          <h2 className={styles.modalTitle} style={{ marginBottom: titleRight ? 0 : undefined }}>{title}</h2>
+        <div className={`${styles.modalTitleHeader} ${titleRight ? styles.withRight : ''}`}>
+          <h2 className={`${styles.modalTitle} ${titleRight ? styles.withRight : ''}`}>{title}</h2>
           {titleRight && <div>{titleRight}</div>}
         </div>
         {children}

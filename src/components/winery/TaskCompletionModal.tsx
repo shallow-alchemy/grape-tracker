@@ -73,36 +73,20 @@ export const TaskCompletionModal = ({
       closeDisabled={isSubmitting}
     >
       <div className={styles.vineForm}>
-        {/* Task Info */}
         <div className={styles.formGroup}>
-          <div style={{
-            fontFamily: 'var(--font-heading)',
-            fontSize: 'var(--font-size-md)',
-            color: 'var(--color-text-primary)',
-            marginBottom: 'var(--spacing-xs)',
-          }}>
+          <div className={styles.taskCompletionName}>
             {taskName}
           </div>
           {taskDescription && (
-            <div style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-secondary)',
-              marginBottom: 'var(--spacing-sm)',
-            }}>
+            <div className={styles.taskCompletionDescription}>
               {taskDescription}
             </div>
           )}
-          <div style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--font-size-sm)',
-            color: overdue ? 'var(--color-error)' : 'var(--color-text-secondary)',
-          }}>
+          <div className={overdue ? styles.taskCompletionDueDateOverdue : styles.taskCompletionDueDate}>
             Due: {formatDueDate(dueDate)}
           </div>
         </div>
 
-        {/* Notes */}
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>NOTES (OPTIONAL)</label>
           <textarea
@@ -119,7 +103,6 @@ export const TaskCompletionModal = ({
           <div className={styles.formError}>{formError}</div>
         )}
 
-        {/* Actions */}
         <div className={styles.modalFooter}>
           <button
             type="button"

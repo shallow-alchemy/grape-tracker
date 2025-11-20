@@ -4,13 +4,15 @@ This section contains feature-specific planning documents, product requirements,
 
 ## Documents
 
-### Active Features
-- **[vintages-ui-planning.md](./vintages-ui-planning.md)** - Vintages feature UI design and planning
-- **[winery-backend-plan.md](./winery-backend-plan.md)** - Winery backend API design
-- **[winery-frontend-plan.md](./winery-frontend-plan.md)** - Winery frontend implementation plan
+### Product Roadmap
+- **[roadmap.md](./roadmap.md)** - Overall product roadmap organized by topic with priorities
 
-### Product Strategy
-- **[roadmap.md](./roadmap.md)** - Overall product roadmap and priorities
+### Detailed Feature Specifications
+Located in `detailed-specs/` - Complete implementation guides for major features:
+
+- **[terroir-optimizer.md](./detailed-specs/terroir-optimizer.md)** - AI-powered terroir optimizer with 3 planning modes (active - for future implementation)
+- **[vintages-ui.md](./detailed-specs/vintages-ui.md)** - Vintage management UI specification (reference - feature complete)
+- **[winery-production.md](./detailed-specs/winery-production.md)** - Wine production workflow specification (reference - feature complete)
 
 ## Adding New Feature Plans
 

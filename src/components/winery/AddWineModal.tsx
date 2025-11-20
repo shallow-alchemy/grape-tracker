@@ -17,7 +17,6 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
   const zero = useZero();
   const [vintagesData] = useQuery(zero.query.vintage);
 
-  // Sort vintages by year descending
   const vintages = [...vintagesData].sort((a, b) => b.vintage_year - a.vintage_year);
 
   const [formData, setFormData] = useState({
@@ -37,7 +36,6 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Set initial vintage when modal opens
   useEffect(() => {
     if (isOpen && initialVintageId) {
       setFormData(prev => ({ ...prev, vintageId: initialVintageId }));
@@ -91,7 +89,6 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
     e.preventDefault();
     setError(null);
 
-    // Validation
     if (!formData.vintageId) {
       setError('Please select a primary vintage');
       return;
@@ -113,7 +110,6 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
       return;
     }
 
-    // Blend validation
     if (isBlend) {
       const filledVarieties = blendVarieties.filter(v => v.vintageId && v.percentage);
 
@@ -129,7 +125,6 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
         return;
       }
 
-      // Check for duplicate vintages (including primary)
       const vintageIds = [...filledVarieties.map(v => v.vintageId), formData.vintageId];
       const uniqueIds = new Set(vintageIds);
       if (vintageIds.length !== uniqueIds.size) {
@@ -144,14 +139,12 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
       const wineId = crypto.randomUUID();
       const now = Date.now();
 
-      // Prepare blend components if this is a blend
       let blendComponentsData = null;
       if (isBlend) {
         const filledVarieties = blendVarieties.filter(v => v.vintageId && v.percentage);
         const varietiesTotal = filledVarieties.reduce((sum, v) => sum + Number(v.percentage), 0);
         const primaryPercentage = 100 - varietiesTotal;
 
-        // Include primary vintage with its calculated percentage
         blendComponentsData = [
           {
             vintage_id: formData.vintageId,
@@ -164,7 +157,6 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
         ];
       }
 
-      // Create wine record
       await zero.mutate.wine.insert({
         id: wineId,
         user_id: user!.id,
@@ -182,7 +174,6 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
         updated_at: now,
       });
 
-      // Create initial stage history
       await zero.mutate.stage_history.insert({
         id: crypto.randomUUID(),
         user_id: user!.id,
@@ -214,23 +205,14 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
     <Modal isOpen={isOpen} title="ADD WINE" onClose={handleClose}>
       <form className={styles.vineForm} onSubmit={handleSubmit}>
         <div className={styles.formGroup}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-xs)' }}>
-            <label className={styles.formLabel} style={{ marginBottom: 0 }}>
+          <div className={styles.formHeaderRow}>
+            <label className={`${styles.formLabel} ${styles.formLabelNoMargin}`}>
               VINTAGE (REQUIRED)
             </label>
             <button
               type="button"
               onClick={() => setIsBlend(!isBlend)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--color-primary-500)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--font-size-xs)',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-                padding: 0
-              }}
+              className={styles.formTextLink}
             >
               {isBlend ? 'Single vintage' : 'This is a blend'}
             </button>
@@ -252,8 +234,8 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
         </div>
 
         {selectedVintage && !isBlend && (
-          <div className={styles.infoBox} style={{ marginBottom: 'var(--spacing-md)' }}>
-            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+          <div className={`${styles.infoBox} ${styles.infoBoxWithMargin}`}>
+            <div className={styles.infoBoxText}>
               {selectedVintage.harvest_volume_gallons !== null && selectedVintage.harvest_volume_gallons !== undefined && (
                 <div>Harvest Volume: {selectedVintage.harvest_volume_gallons} gallons</div>
               )}
@@ -264,36 +246,24 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
           </div>
         )}
 
-        {/* Blend Varieties */}
         {isBlend && (
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>
               BLEND VARIETIES
               {selectedVintage && (
-                <span style={{
-                  marginLeft: 'var(--spacing-sm)',
-                  fontSize: 'var(--font-size-xs)',
-                  color: 'var(--color-text-secondary)',
-                  fontFamily: 'var(--font-body)',
-                  textTransform: 'none'
-                }}>
+                <span className={styles.blendInfoHint}>
                   {selectedVintage.vintage_year} {selectedVintage.variety} gets remaining {getPrimaryPercentage().toFixed(1)}%
                 </span>
               )}
             </label>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xs)' }}>
+            <div className={styles.blendVarietiesContainer}>
               {blendVarieties.map((variety, index) => (
-                <div key={index} style={{
-                  display: 'flex',
-                  gap: 'var(--spacing-sm)',
-                  alignItems: 'center'
-                }}>
+                <div key={index} className={styles.blendVarietyRow}>
                   <select
-                    className={styles.formSelect}
+                    className={`${styles.formSelect} ${styles.blendVarietySelect}`}
                     value={variety.vintageId}
                     onChange={(e) => updateBlendVariety(index, 'vintageId', e.target.value)}
-                    style={{ flex: 2 }}
                   >
                     <option value="">Select vintage...</option>
                     {vintages.map((vintage) => (
@@ -308,18 +278,12 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
                     step="0.1"
                     min="0"
                     max="100"
-                    className={styles.formInput}
+                    className={`${styles.formInput} ${styles.blendPercentageInput}`}
                     value={variety.percentage}
                     onChange={(e) => updateBlendVariety(index, 'percentage', e.target.value)}
                     placeholder="0"
-                    style={{ width: '80px', textAlign: 'right' }}
                   />
-                  <span style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-secondary)',
-                    width: '20px'
-                  }}>
+                  <span className={styles.blendPercentSymbol}>
                     %
                   </span>
 
@@ -327,15 +291,7 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
                     <button
                       type="button"
                       onClick={() => removeBlendVariety(index)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--color-error)',
-                        cursor: 'pointer',
-                        fontSize: 'var(--font-size-md)',
-                        padding: 'var(--spacing-xs)',
-                        width: '24px'
-                      }}
+                      className={styles.blendRemoveButton}
                       title="Remove variety"
                     >
                       ✕
@@ -347,12 +303,8 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
 
             <button
               type="button"
-              className={styles.modalButton}
+              className={`${styles.modalButton} ${styles.smallModalButton}`}
               onClick={addBlendVariety}
-              style={{
-                fontSize: 'var(--font-size-xs)',
-                padding: 'var(--spacing-xs) var(--spacing-sm)'
-              }}
             >
               + ADD VARIETY
             </button>
@@ -362,7 +314,7 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>
             WINE NAME (REQUIRED)
-            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', marginLeft: 'var(--spacing-xs)' }}>
+            <span className={styles.formHintLabel}>
               e.g., "Lodi", "Azure", "Reserve"
             </span>
           </label>
@@ -443,7 +395,7 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
         </div>
 
         {error && (
-          <div className={styles.errorMessage} style={{ marginBottom: 'var(--spacing-md)' }}>
+          <div className={`${styles.errorMessage} ${styles.formErrorWithMargin}`}>
             {error}
           </div>
         )}

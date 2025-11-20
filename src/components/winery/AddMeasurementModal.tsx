@@ -92,9 +92,9 @@ export const AddMeasurementModal = ({
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>MEASUREMENTS (OPTIONAL)</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)', alignItems: 'start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label className={styles.formLabel} style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--spacing-xs)' }}>PH</label>
+          <div className={styles.formGrid2Col}>
+            <div className={styles.formColumn}>
+              <label className={`${styles.formLabel} ${styles.formLabelSmall}`}>PH</label>
               <input
                 type="number"
                 name="ph"
@@ -105,8 +105,8 @@ export const AddMeasurementModal = ({
                 placeholder="0-14"
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label className={styles.formLabel} style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--spacing-xs)' }}>TA (G/L)</label>
+            <div className={styles.formColumn}>
+              <label className={`${styles.formLabel} ${styles.formLabelSmall}`}>TA (G/L)</label>
               <input
                 type="number"
                 name="ta"
@@ -116,8 +116,8 @@ export const AddMeasurementModal = ({
                 placeholder="g/L"
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label className={styles.formLabel} style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--spacing-xs)' }}>BRIX</label>
+            <div className={styles.formColumn}>
+              <label className={`${styles.formLabel} ${styles.formLabelSmall}`}>BRIX</label>
               <input
                 type="number"
                 name="brix"
@@ -128,8 +128,8 @@ export const AddMeasurementModal = ({
                 placeholder="0-40"
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label className={styles.formLabel} style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--spacing-xs)' }}>TEMP (°F)</label>
+            <div className={styles.formColumn}>
+              <label className={`${styles.formLabel} ${styles.formLabelSmall}`}>TEMP (°F)</label>
               <input
                 type="number"
                 name="temperature"

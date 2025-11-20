@@ -84,14 +84,13 @@ export const VineyardSettingsModal = ({
 
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>LOCATION</label>
-            <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+            <div className={styles.locationInputRow}>
               <input
                 type="text"
                 name="location"
-                className={styles.formInput}
+                className={`${styles.formInput} ${styles.locationInputFlex}`}
                 defaultValue={vineyardData.location}
                 placeholder="Coordinates or address"
-                style={{ flex: 1 }}
               />
               <button
                 type="button"

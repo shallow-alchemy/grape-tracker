@@ -30,7 +30,6 @@ export const EditWineModal = ({ isOpen, onClose, onSuccess, onDelete, wineId }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // Update form when wine data loads
   if (wine && formData.name === '' && wine.name !== '') {
     setFormData({
       name: wine.name,
@@ -63,7 +62,6 @@ export const EditWineModal = ({ isOpen, onClose, onSuccess, onDelete, wineId }: 
     e.preventDefault();
     setError(null);
 
-    // Validation
     if (!formData.name.trim()) {
       setError('Wine name is required');
       return;
@@ -146,7 +144,7 @@ export const EditWineModal = ({ isOpen, onClose, onSuccess, onDelete, wineId }: 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>
             CURRENT VOLUME (GALLONS)
-            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', marginLeft: 'var(--spacing-xs)' }}>
+            <span className={styles.originalVolumeHint}>
               Original: {wine.volume_gallons} gal
             </span>
           </label>
@@ -192,7 +190,7 @@ export const EditWineModal = ({ isOpen, onClose, onSuccess, onDelete, wineId }: 
         </div>
 
         {error && (
-          <div className={styles.errorMessage} style={{ marginBottom: 'var(--spacing-md)' }}>
+          <div className={`${styles.errorMessage} ${styles.formErrorWithMargin}`}>
             {error}
           </div>
         )}
@@ -215,7 +213,7 @@ export const EditWineModal = ({ isOpen, onClose, onSuccess, onDelete, wineId }: 
           </button>
         </div>
 
-        <div style={{ marginTop: 'var(--spacing-lg)', paddingTop: 'var(--spacing-lg)', borderTop: '1px solid var(--color-border)' }}>
+        <div className={styles.dangerZoneSeparator}>
           <button
             type="button"
             className={styles.deleteButton}

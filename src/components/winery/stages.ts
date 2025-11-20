@@ -1,5 +1,3 @@
-// Stage definitions and utilities for wine and vintage production workflows
-
 export type EntityType = 'wine' | 'vintage';
 
 export type WineStage =
@@ -84,38 +82,26 @@ export const VINTAGE_STAGES: StageMetadata[] = [
   },
 ];
 
-/**
- * Get stage metadata for a given entity type
- */
 export const getStagesForEntity = (entityType: EntityType): StageMetadata[] => {
   return entityType === 'wine' ? WINE_STAGES : VINTAGE_STAGES;
 };
 
-/**
- * Get metadata for a specific stage
- */
 export const getStageMetadata = (stage: string, entityType: EntityType): StageMetadata | undefined => {
   const stages = getStagesForEntity(entityType);
   return stages.find(s => s.value === stage);
 };
 
-/**
- * Get the next stage in sequence
- */
 export const getNextStage = (currentStage: string, entityType: EntityType): StageMetadata | null => {
   const stages = getStagesForEntity(entityType);
   const currentIndex = stages.findIndex(s => s.value === currentStage);
 
   if (currentIndex === -1 || currentIndex === stages.length - 1) {
-    return null; // Stage not found or already at last stage
+    return null;
   }
 
   return stages[currentIndex + 1];
 };
 
-/**
- * Get all stages that can be skipped to (all stages after current)
- */
 export const getSkippableStages = (currentStage: string, entityType: EntityType): StageMetadata[] => {
   const stages = getStagesForEntity(entityType);
   const currentIndex = stages.findIndex(s => s.value === currentStage);
@@ -124,13 +110,9 @@ export const getSkippableStages = (currentStage: string, entityType: EntityType)
     return [];
   }
 
-  // Return all stages after current (excluding immediate next, which is default)
   return stages.slice(currentIndex + 2);
 };
 
-/**
- * Check if a stage transition is valid
- */
 export const canTransitionTo = (
   fromStage: string,
   toStage: string,
@@ -140,13 +122,9 @@ export const canTransitionTo = (
   const fromIndex = stages.findIndex(s => s.value === fromStage);
   const toIndex = stages.findIndex(s => s.value === toStage);
 
-  // Can only move forward in stages
   return fromIndex !== -1 && toIndex !== -1 && toIndex > fromIndex;
 };
 
-/**
- * Format a stage value for display
- */
 export const formatStage = (stage: string): string => {
   return stage
     .split('_')
@@ -154,9 +132,6 @@ export const formatStage = (stage: string): string => {
     .join(' ');
 };
 
-/**
- * Get how many stages are being skipped
- */
 export const getSkippedStageCount = (
   fromStage: string,
   toStage: string,
@@ -170,6 +145,5 @@ export const getSkippedStageCount = (
     return 0;
   }
 
-  // Number of stages between from and to (exclusive)
   return Math.max(0, toIndex - fromIndex - 1);
 };

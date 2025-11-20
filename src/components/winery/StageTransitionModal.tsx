@@ -35,7 +35,6 @@ export const StageTransitionModal = ({
   const skippableStages = getSkippableStages(currentStage, entityType);
   const currentMeta = getStageMetadata(currentStage, entityType);
 
-  // Form state
   const [selectedStage, setSelectedStage] = useState(nextStage?.value || '');
   const [notes, setNotes] = useState('');
   const [skipCurrentStage, setSkipCurrentStage] = useState(false);
@@ -90,16 +89,10 @@ export const StageTransitionModal = ({
   };
 
   if (!nextStage) {
-    // No next stage available (already at final stage)
     return (
       <Modal isOpen={isOpen} onClose={handleClose} title="STAGE COMPLETE">
         <div className={styles.vineForm}>
-          <p style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-text-secondary)',
-            margin: 0,
-          }}>
+          <p className={styles.stageCompleteMessage}>
             This {entityType} is already at the final stage: <strong>{currentMeta?.label}</strong>
           </p>
           <div className={styles.formActions}>
@@ -125,22 +118,13 @@ export const StageTransitionModal = ({
       onClose={handleClose}
       title="COMPLETE STAGE"
       titleRight={
-        <label style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--spacing-xs)',
-          fontFamily: 'var(--font-body)',
-          fontSize: 'var(--font-size-sm)',
-          color: 'var(--color-text-secondary)',
-          cursor: 'pointer',
-          margin: 0,
-        }}>
+        <label className={styles.skipCheckboxLabel}>
           <input
             type="checkbox"
             checked={skipCurrentStage}
             onChange={(e) => setSkipCurrentStage(e.target.checked)}
             disabled={isLoading}
-            style={{ cursor: 'pointer' }}
+            className={styles.checkboxCursor}
           />
           Skipped
         </label>
@@ -148,63 +132,30 @@ export const StageTransitionModal = ({
       closeDisabled={isLoading}
     >
       <form className={styles.vineForm} onSubmit={handleSubmit}>
-        {/* Current → Next Stage Display */}
         <div className={styles.formGroup}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--spacing-md)',
-            padding: 'var(--spacing-md)',
-            background: 'var(--color-surface-elevated)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-sm)',
-          }}>
-            <div style={{ flex: 1 }}>
-              <div style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: 'var(--font-size-xs)',
-                color: 'var(--color-text-muted)',
-                textTransform: 'uppercase',
-                marginBottom: 'var(--spacing-xs)',
-              }}>
+          <div className={styles.stageTransitionContainer}>
+            <div className={styles.stageColumn}>
+              <div className={styles.stageLabel}>
                 Current Stage
               </div>
-              <div style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: 'var(--font-size-md)',
-                color: 'var(--color-text-primary)',
-              }}>
+              <div className={styles.currentStageValue}>
                 {currentMeta?.label}
               </div>
             </div>
-            <div style={{
-              fontSize: 'var(--font-size-lg)',
-              color: 'var(--color-primary-500)',
-            }}>
+            <div className={styles.stageArrow}>
               →
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: 'var(--font-size-xs)',
-                color: 'var(--color-text-muted)',
-                textTransform: 'uppercase',
-                marginBottom: 'var(--spacing-xs)',
-              }}>
+            <div className={styles.stageColumn}>
+              <div className={styles.stageLabel}>
                 Next Stage
               </div>
-              <div style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: 'var(--font-size-md)',
-                color: 'var(--color-primary-400)',
-              }}>
+              <div className={styles.nextStageValue}>
                 {selectedMeta?.label}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Skip Ahead Option (if available) */}
         {skippableStages.length > 0 && (
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>OR SKIP AHEAD TO</label>
@@ -229,7 +180,6 @@ export const StageTransitionModal = ({
           </div>
         )}
 
-        {/* Notes */}
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>NOTES (OPTIONAL)</label>
           <textarea
@@ -242,14 +192,12 @@ export const StageTransitionModal = ({
           />
         </div>
 
-        {/* Error Display */}
         {(formError || hookError) && (
           <div className={styles.formError}>
             {formError || hookError}
           </div>
         )}
 
-        {/* Actions */}
         <div className={styles.formActions}>
           <button
             type="button"
