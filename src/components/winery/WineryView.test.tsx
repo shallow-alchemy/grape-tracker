@@ -97,7 +97,7 @@ rs.mock('./WineDetailsView', () => ({
 }));
 
 rs.mock('./TaskListView', () => ({
-  TaskListView: ({ entityType, entityId, entityName, onBack }: any) => (
+  TaskListView: ({ entityType, entityId: _entityId, entityName, onBack }: any) => (
     <div data-testid="task-list">
       <div>Task List: {entityType} - {entityName}</div>
       <button onClick={onBack}>Back</button>
