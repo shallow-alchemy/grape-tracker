@@ -1,9 +1,42 @@
 # Gilbert - Development Roadmap
 
-**Last Updated:** Nov 19, 2025
-**Priorities Established:** Nov 19, 2025
+**Last Updated:** Jan 19, 2025
+**Priorities Established:** Jan 19, 2025
 
 This roadmap organizes features by topic area rather than timeline. Within each category, features are listed in priority order (Priority 1 = next to implement). Features are marked as ✅ Complete, 🔄 In Progress, or 🔲 Not Started.
+
+---
+
+## INFRASTRUCTURE & TOOLING (BLOCKING)
+
+### Priority 0: zero-query Rust Crate
+**Status:** 🔄 In Progress (Planning Phase)
+**Timeline:** 2-3 weeks
+**Blocks:** User-specific data isolation for all features
+
+**Detailed Plan:** See [`docs/zero-query-crate-plan.md`](../zero-query-crate-plan.md)
+
+A Rust query builder for Zero synced queries, enabling user-specific data without Node.js microservice.
+
+**Phases:**
+1. ✅ Planning & architecture documented
+2. 🔲 TypeScript reference implementation (validation baseline)
+3. 🔲 Rust crate development (AST types → query builder → expressions)
+4. 🔲 Cross-validation (Rust output matches TypeScript byte-for-byte)
+5. 🔲 Publish to crates.io as `zero-query`
+6. 🔲 Integrate with Gilbert backend
+
+**Why This Matters:**
+- Currently: ANYONE_CAN permissions (no user isolation!)
+- After: Proper multi-user data isolation with synced queries
+- Bonus: Community contribution to Rust/Zero ecosystem
+
+**Validation Strategy:**
+- Build TypeScript Node.js service first (official Zero SDK)
+- Deploy to Gilbert, verify user isolation works
+- Build Rust crate to match TypeScript behavior exactly
+- Compare AST JSON outputs (must be byte-identical)
+- Only publish/use Rust version after validation passes
 
 ---
 
