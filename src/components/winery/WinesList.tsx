@@ -1,5 +1,5 @@
 import { useQuery } from '@rocicorp/zero/react';
-import { useZero } from '../../contexts/ZeroContext';
+import { myWines } from '../../queries';
 import styles from '../../App.module.css';
 
 type WinesListProps = {
@@ -7,12 +7,11 @@ type WinesListProps = {
 };
 
 export const WinesList = ({ onWineClick }: WinesListProps) => {
-  const zero = useZero();
-  const [winesData] = useQuery(zero.query.wine);
+  const [winesData] = useQuery(myWines()) as any as any;
 
-  const activeWines = winesData.filter(w => w.status === 'active');
-  const agingWines = winesData.filter(w => w.status === 'aging');
-  const bottledWines = winesData.filter(w => w.status === 'bottled');
+  const activeWines = winesData.filter((w: any) => w.status === 'active');
+  const agingWines = winesData.filter((w: any) => w.status === 'aging');
+  const bottledWines = winesData.filter((w: any) => w.status === 'bottled');
 
   const formatStage = (stage: string): string => {
     return stage
@@ -21,7 +20,7 @@ export const WinesList = ({ onWineClick }: WinesListProps) => {
       .join(' ');
   };
 
-  const renderWineCard = (wine: typeof winesData[0]) => {
+  const renderWineCard = (wine: any) => {
     const isBlend = wine.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
 
     return (

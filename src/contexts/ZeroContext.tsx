@@ -20,6 +20,7 @@ export const ZeroProvider = ({ children }: { children: ReactNode }) => {
       userID={user.id}
       server={process.env.PUBLIC_ZERO_SERVER || 'http://localhost:4848'}
       schema={schema}
+      getQueriesURL={process.env.PUBLIC_ZERO_QUERIES_URL || 'http://localhost:3002/get-queries'}
     >
       {children}
     </ZeroProviderInternal>

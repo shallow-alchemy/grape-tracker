@@ -1,0 +1,30 @@
+{
+  "name": "queries-service",
+  "version": "1.0.0",
+  "description": "Zero synced queries endpoint for Gilbert (TypeScript reference implementation)",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "echo 'No tests yet'"
+  },
+  "dependencies": {
+    "@clerk/backend": "^1.15.0",
+    "@rocicorp/zero": "^0.24.2025101500",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

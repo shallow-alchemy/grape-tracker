@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
-import { useZero } from '../../contexts/ZeroContext';
+import { myWines, myVintages, myStageHistoryByEntity, myMeasurementsByEntity } from '../../queries';
 import { EditWineModal } from './EditWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
 import { AddMeasurementModal } from './AddMeasurementModal';
@@ -20,34 +20,25 @@ type WineDetailsViewProps = {
 };
 
 export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
-  const zero = useZero();
   const [, setLocation] = useLocation();
-  const [winesData] = useQuery(zero.query.wine.where('id', wineId));
-  const wine = winesData[0];
+  const [allWinesData] = useQuery(myWines()) as any as any;
+  const wine = allWinesData.find((w: any) => w.id === wineId);
 
-  const [vintagesData] = useQuery(
-    wine ? zero.query.vintage.where('id', wine.vintage_id) : zero.query.vintage.where('id', 'none')
-  );
-  const vintage = vintagesData[0];
-
-  const [allVintagesData] = useQuery(zero.query.vintage);
+  const [allVintagesData] = useQuery(myVintages()) as any as any;
+  const vintage = allVintagesData.find((v: any) => v.id === wine?.vintage_id);
 
   const isBlend = wine?.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
 
   const [stageHistoryData] = useQuery(
-    zero.query.stage_history
-      .where('entity_type', 'wine')
-      .where('entity_id', wineId)
-  );
+    myStageHistoryByEntity('wine', wineId)
+  ) as any;
 
   const stageHistory = [...stageHistoryData].sort((a, b) => b.started_at - a.started_at);
   const currentStageHistory = stageHistory.find(s => !s.completed_at);
 
   const [measurementsData] = useQuery(
-    zero.query.measurement
-      .where('entity_type', 'wine')
-      .where('entity_id', wineId)
-  );
+    myMeasurementsByEntity('wine', wineId)
+  ) as any;
 
   const measurements = [...measurementsData].sort((a, b) => b.date - a.date);
   const latestMeasurement = measurements[0];
@@ -216,7 +207,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
           </div>
           <div className={styles.flexColumnGap}>
             {(wine.blend_components as Array<{ vintage_id: string; percentage: number }>).map((variety, index) => {
-              const varietyVintage = allVintagesData.find(v => v.id === variety.vintage_id);
+              const varietyVintage = allVintagesData.find((v: any) => v.id === variety.vintage_id);
               return (
                 <div key={index} className={styles.blendVarietyCard}>
                   <div>

@@ -1,22 +1,19 @@
 import { useQuery } from '@rocicorp/zero/react';
-import { useZero } from '../contexts/ZeroContext';
+import { myVines, myBlocks, myVineyards } from '../queries';
 import { type VineDataRaw, type BlockDataRaw, type VineyardData } from './vineyard-types';
 
 export const useVines = () => {
-  const zero = useZero();
-  const [vinesData] = useQuery(zero.query.vine);
+  const [vinesData] = useQuery(myVines()) as any;
   return vinesData as VineDataRaw[];
 };
 
 export const useBlocks = () => {
-  const zero = useZero();
-  const [blocksData] = useQuery(zero.query.block);
+  const [blocksData] = useQuery(myBlocks()) as any;
   return blocksData as BlockDataRaw[];
 };
 
 export const useVineyard = () => {
-  const zero = useZero();
-  const [vineyardData] = useQuery(zero.query.vineyard);
+  const [vineyardData] = useQuery(myVineyards()) as any;
   const data = vineyardData as VineyardData[];
   return data.length > 0 ? data[0] : null;
 };

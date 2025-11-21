@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
-import { useZero } from '../../contexts/ZeroContext';
+import { myVintages, myWines, myMeasurementsByEntity, myStageHistoryByEntity } from '../../queries';
 import { EditVintageModal } from './EditVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
@@ -21,14 +21,13 @@ type VintageDetailsViewProps = {
 };
 
 export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDetailsViewProps) => {
-  const zero = useZero();
   const [, setLocation] = useLocation();
-  const [vintagesData] = useQuery(zero.query.vintage.where('id', vintageId));
-  const vintage = vintagesData[0];
+  const [allVintagesData] = useQuery(myVintages()) as any as any;
+  const vintage = allVintagesData.find((v: any) => v.id === vintageId);
 
-  const [allWinesData] = useQuery(zero.query.wine);
+  const [allWinesData] = useQuery(myWines()) as any as any;
 
-  const wines = allWinesData.filter(wine => {
+  const wines = allWinesData.filter((wine: any) => {
     if (wine.vintage_id === vintageId) {
       return true;
     }
@@ -38,21 +37,17 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
     }
 
     return false;
-  }).sort((a, b) => a.name.localeCompare(b.name));
+  }).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-  const [measurementsData] = useQuery(
-    zero.query.measurement
-      .where('entity_type', 'vintage')
-      .where('entity_id', vintageId)
-      .where('stage', 'harvest')
-  );
+  const [allMeasurementsData] = useQuery(
+    myMeasurementsByEntity('vintage', vintageId)
+  ) as any;
+  const measurementsData = allMeasurementsData.filter((m: any) => m.stage === 'harvest');
   const harvestMeasurement = measurementsData[0];
 
   const [stageHistoryData] = useQuery(
-    zero.query.stage_history
-      .where('entity_type', 'vintage')
-      .where('entity_id', vintageId)
-  );
+    myStageHistoryByEntity('vintage', vintageId)
+  ) as any;
 
   const stageHistory = [...stageHistoryData].sort((a, b) => b.started_at - a.started_at);
 
@@ -249,7 +244,7 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
             WINES FROM THIS VINTAGE ({wines.length})
           </div>
           <div className={styles.flexColumnGap}>
-            {wines.map((wine) => {
+            {wines.map((wine: any) => {
               const isBlend = wine.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
               return (
                 <div

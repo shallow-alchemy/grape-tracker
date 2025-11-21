@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useQuery } from '@rocicorp/zero/react';
-import { useZero } from '../../contexts/ZeroContext';
+import { myVintages, myWines } from '../../queries';
 import { AddVintageModal } from './AddVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { VintagesList } from './VintagesList';
@@ -21,7 +21,6 @@ type WineryViewProps = {
 type ActiveTab = 'vintages' | 'wines';
 
 export const WineryView = ({ initialVintageId, initialWineId, initialVintageTasksId, initialWineTasksId }: WineryViewProps) => {
-  const zero = useZero();
   const [location, setLocation] = useLocation();
   const [showAddVintageModal, setShowAddVintageModal] = useState(false);
   const [showAddWineModal, setShowAddWineModal] = useState(false);
@@ -66,8 +65,8 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   };
 
   if (initialVintageTasksId) {
-    const [vintagesData] = useQuery(zero.query.vintage.where('id', initialVintageTasksId));
-    const vintage = vintagesData[0];
+    const [allVintagesData] = useQuery(myVintages()) as any as any;
+    const vintage = allVintagesData.find((v: any) => v.id === initialVintageTasksId);
 
     if (!vintage) {
       return (
@@ -92,8 +91,8 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   }
 
   if (initialWineTasksId) {
-    const [winesData] = useQuery(zero.query.wine.where('id', initialWineTasksId));
-    const wine = winesData[0];
+    const [allWinesData] = useQuery(myWines()) as any as any;
+    const wine = allWinesData.find((w: any) => w.id === initialWineTasksId);
 
     if (!wine) {
       return (

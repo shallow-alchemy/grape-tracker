@@ -1,6 +1,6 @@
 import { useQuery } from '@rocicorp/zero/react';
 import { useLocation, Link } from 'wouter';
-import { useZero } from '../../contexts/ZeroContext';
+import { myTasks } from '../../queries';
 import { formatDueDate } from '../winery/taskHelpers';
 import styles from '../../App.module.css';
 
@@ -90,13 +90,12 @@ export const SuppliesNeeded = () => {
 };
 
 export const TaskManagement = () => {
-  const zero = useZero();
   const [, setLocation] = useLocation();
-  const [tasksData] = useQuery(zero.query.task);
+  const [tasksData] = useQuery(myTasks()) as any as any;
 
   const upcomingTasks = tasksData
-    .filter(t => !t.completed_at && !t.skipped)
-    .sort((a, b) => a.due_date - b.due_date)
+    .filter((t: any) => !t.completed_at && !t.skipped)
+    .sort((a: any, b: any) => a.due_date - b.due_date)
     .slice(0, 5);
 
   return (
@@ -107,7 +106,7 @@ export const TaskManagement = () => {
       </div>
       <div className={styles.taskList}>
         {upcomingTasks.length > 0 ? (
-          upcomingTasks.map((task) => (
+          upcomingTasks.map((task: any) => (
             <div
               key={task.id}
               className={`${styles.taskItem} ${styles.clickableActivityText}`}
