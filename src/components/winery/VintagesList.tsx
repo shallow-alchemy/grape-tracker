@@ -19,15 +19,15 @@ type VintagesListProps = {
 
 export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: VintagesListProps) => {
   const zero = useZero();
-  const [vintagesData] = useQuery(myVintages()) as any as any;
+  const [vintagesData] = useQuery(myVintages() as any) as any;
   const vintages = [...vintagesData].sort((a: any, b: any) => b.vintage_year - a.vintage_year);
 
-  const [winesData] = useQuery(myWines()) as any as any;
+  const [winesData] = useQuery(myWines() as any) as any;
 
-  const [allMeasurementsData] = useQuery(myMeasurements()) as any as any;
+  const [allMeasurementsData] = useQuery(myMeasurements() as any) as any;
   const measurementsData = allMeasurementsData.filter((m: any) => m.entity_type === 'vintage' && m.stage === 'harvest');
 
-  const [tasksData] = useQuery(myTasks()) as any as any;
+  const [tasksData] = useQuery(myTasks() as any) as any;
 
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [taskModalVintageId, setTaskModalVintageId] = useState<string>('');
@@ -51,7 +51,8 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
     }).length;
   };
 
-  const formatStage = (stage: string): string => {
+  const formatStage = (stage: string | null | undefined): string => {
+    if (!stage) return 'UNKNOWN';
     return stage
       .split('_')
       .map(word => word.toUpperCase())

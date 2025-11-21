@@ -16,7 +16,7 @@ type AddWineModalProps = {
 export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: AddWineModalProps) => {
   const { user } = useUser();
   const zero = useZero();
-  const [vintagesData] = useQuery(myVintages()) as any as any;
+  const [vintagesData] = useQuery(myVintages() as any) as any;
 
   const vintages = [...vintagesData].sort((a, b) => b.vintage_year - a.vintage_year);
 

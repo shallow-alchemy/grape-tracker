@@ -27,7 +27,7 @@ export const DeleteVintageConfirmModal = ({
 
   const zero = useZero();
 
-  const [winesData] = useQuery(myWinesByVintage(vintage.id)) as any as any;
+  const [winesData] = useQuery(myWinesByVintage(vintage.id) as any) as any;
 
   const [stageHistoryData] = useQuery(
     myStageHistoryByEntity('vintage', vintage.id)
@@ -41,13 +41,13 @@ export const DeleteVintageConfirmModal = ({
     myTasksByEntity('vintage', vintage.id)
   ) as any;
 
-  const [allWineTasksData] = useQuery(myTasksByEntity('wine', winesData[0]?.id || 'none')) as any as any;
+  const [allWineTasksData] = useQuery(myTasksByEntity('wine', winesData[0]?.id || 'none') as any) as any;
   const wineTasksData = allWineTasksData.filter((t: any) => winesData.some((w: any) => w.id === t.entity_id));
 
-  const [allWineMeasurementsData] = useQuery(myMeasurementsByEntity('wine', winesData[0]?.id || 'none')) as any as any;
+  const [allWineMeasurementsData] = useQuery(myMeasurementsByEntity('wine', winesData[0]?.id || 'none') as any) as any;
   const wineMeasurementsData = allWineMeasurementsData.filter((m: any) => winesData.some((w: any) => w.id === m.entity_id));
 
-  const [allWineStageHistoryData] = useQuery(myStageHistoryByEntity('wine', winesData[0]?.id || 'none')) as any as any;
+  const [allWineStageHistoryData] = useQuery(myStageHistoryByEntity('wine', winesData[0]?.id || 'none') as any) as any;
   const wineStageHistoryData = allWineStageHistoryData.filter((s: any) => winesData.some((w: any) => w.id === s.entity_id));
 
   const handleDelete = async () => {

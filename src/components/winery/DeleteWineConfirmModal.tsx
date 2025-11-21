@@ -22,10 +22,10 @@ export const DeleteWineConfirmModal = ({
   const [error, setError] = useState<string | null>(null);
 
   const zero = useZero();
-  const [allWinesData] = useQuery(myWines()) as any as any;
+  const [allWinesData] = useQuery(myWines() as any) as any;
   const wine = allWinesData.find((w: any) => w.id === wineId);
 
-  const [allVintagesData] = useQuery(myVintages()) as any as any;
+  const [allVintagesData] = useQuery(myVintages() as any) as any;
   const vintage = allVintagesData.find((v: any) => v.id === wine?.vintage_id);
 
   const [stageHistoryData] = useQuery(

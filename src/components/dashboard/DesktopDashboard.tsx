@@ -91,7 +91,7 @@ export const SuppliesNeeded = () => {
 
 export const TaskManagement = () => {
   const [, setLocation] = useLocation();
-  const [tasksData] = useQuery(myTasks()) as any as any;
+  const [tasksData] = useQuery(myTasks() as any) as any;
 
   const upcomingTasks = tasksData
     .filter((t: any) => !t.completed_at && !t.skipped)

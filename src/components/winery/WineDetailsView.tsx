@@ -21,10 +21,10 @@ type WineDetailsViewProps = {
 
 export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const [, setLocation] = useLocation();
-  const [allWinesData] = useQuery(myWines()) as any as any;
+  const [allWinesData] = useQuery(myWines() as any) as any;
   const wine = allWinesData.find((w: any) => w.id === wineId);
 
-  const [allVintagesData] = useQuery(myVintages()) as any as any;
+  const [allVintagesData] = useQuery(myVintages() as any) as any;
   const vintage = allVintagesData.find((v: any) => v.id === wine?.vintage_id);
 
   const isBlend = wine?.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;

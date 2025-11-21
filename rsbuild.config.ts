@@ -5,8 +5,7 @@ import { pluginTypeCheck } from '@rsbuild/plugin-type-check';
 const { publicVars } = loadEnv();
 
 export default defineConfig({
-  // Temporarily disable type checking to test runtime behavior
-  plugins: [pluginReact()], // pluginTypeCheck() disabled
+  plugins: [pluginReact(), pluginTypeCheck()],
   html: {
     template: './index.html',
   },

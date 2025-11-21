@@ -21,7 +21,7 @@ export const Weather = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  const [tasksData] = useQuery(myTasks()) as any as any;
+  const [tasksData] = useQuery(myTasks() as any) as any;
 
   const nextTask = tasksData
     .filter((t: any) => !t.completed_at && !t.skipped)

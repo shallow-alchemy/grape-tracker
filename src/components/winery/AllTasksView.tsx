@@ -12,7 +12,7 @@ export const AllTasksView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
 
-  const [tasksData] = useQuery(myTasks()) as any as any;
+  const [tasksData] = useQuery(myTasks() as any) as any;
 
   const filteredTasks = tasksData.filter((task: any) => {
     if (!searchQuery) return true;

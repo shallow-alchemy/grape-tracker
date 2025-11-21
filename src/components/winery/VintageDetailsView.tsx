@@ -22,10 +22,10 @@ type VintageDetailsViewProps = {
 
 export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDetailsViewProps) => {
   const [, setLocation] = useLocation();
-  const [allVintagesData] = useQuery(myVintages()) as any as any;
+  const [allVintagesData] = useQuery(myVintages() as any) as any;
   const vintage = allVintagesData.find((v: any) => v.id === vintageId);
 
-  const [allWinesData] = useQuery(myWines()) as any as any;
+  const [allWinesData] = useQuery(myWines() as any) as any;
 
   const wines = allWinesData.filter((wine: any) => {
     if (wine.vintage_id === vintageId) {

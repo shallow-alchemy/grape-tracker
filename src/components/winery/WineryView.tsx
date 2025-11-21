@@ -65,7 +65,7 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   };
 
   if (initialVintageTasksId) {
-    const [allVintagesData] = useQuery(myVintages()) as any as any;
+    const [allVintagesData] = useQuery(myVintages() as any) as any;
     const vintage = allVintagesData.find((v: any) => v.id === initialVintageTasksId);
 
     if (!vintage) {
@@ -91,7 +91,7 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   }
 
   if (initialWineTasksId) {
-    const [allWinesData] = useQuery(myWines()) as any as any;
+    const [allWinesData] = useQuery(myWines() as any) as any;
     const wine = allWinesData.find((w: any) => w.id === initialWineTasksId);
 
     if (!wine) {

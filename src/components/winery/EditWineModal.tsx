@@ -16,7 +16,7 @@ type EditWineModalProps = {
 
 export const EditWineModal = ({ isOpen, onClose, onSuccess, onDelete, wineId }: EditWineModalProps) => {
   const zero = useZero();
-  const [allWinesData] = useQuery(myWines()) as any as any;
+  const [allWinesData] = useQuery(myWines() as any) as any;
   const wine = allWinesData.find((w: any) => w.id === wineId);
 
   const [formData, setFormData] = useState({

@@ -7,13 +7,14 @@ type WinesListProps = {
 };
 
 export const WinesList = ({ onWineClick }: WinesListProps) => {
-  const [winesData] = useQuery(myWines()) as any as any;
+  const [winesData] = useQuery(myWines() as any) as any;
 
   const activeWines = winesData.filter((w: any) => w.status === 'active');
   const agingWines = winesData.filter((w: any) => w.status === 'aging');
   const bottledWines = winesData.filter((w: any) => w.status === 'bottled');
 
-  const formatStage = (stage: string): string => {
+  const formatStage = (stage: string | null | undefined): string => {
+    if (!stage) return 'UNKNOWN';
     return stage
       .split('_')
       .map(word => word.toUpperCase())
