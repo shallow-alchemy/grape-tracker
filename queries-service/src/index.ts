@@ -4,8 +4,8 @@ import { handleGetQueriesRequest } from '@rocicorp/zero/server';
 import { withValidation } from '@rocicorp/zero';
 import { createClerkClient } from '@clerk/backend';
 import { schema } from '../../schema.js';
-import type { QueryContext } from '../../src/queries.js';
-import * as queries from '../../src/queries.js';
+import type { QueryContext } from '../queries-impl.js';
+import * as queries from '../queries-impl.js';
 
 const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,

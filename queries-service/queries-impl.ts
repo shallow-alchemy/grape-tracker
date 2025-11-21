@@ -1,19 +1,17 @@
-// Client-side query definitions
-// These are imported by components and used with useQuery()
-//
-// NOTE: These are TEMPORARY client-side stubs while we figure out
-// how Zero's custom queries are supposed to work. For now, components
-// use these and Zero should return empty arrays.
-
-import { builder } from '../schema';
+// @ts-nocheck - Zero's synced queries have TypeScript limitations
+import { syncedQuery, syncedQueryWithContext } from '@rocicorp/zero';
+import { z } from 'zod';
+import { builder } from '../schema.js';
 
 export type QueryContext = {
   userID: string;
 };
 
-// Client-side queries use the builder without user_id filtering
-// The queries-service will provide the filtered versions
-export const myVineyards = () => builder.vineyard;
+export const myVineyards = syncedQueryWithContext(
+  'myVineyards',
+  z.tuple([]),
+  (ctx: QueryContext) => builder.vineyard.where('user_id', ctx.userID)
+);
 
 export const myBlocks = syncedQueryWithContext(
   'myBlocks',
