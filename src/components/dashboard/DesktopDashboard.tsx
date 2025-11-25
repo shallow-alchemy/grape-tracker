@@ -2,6 +2,7 @@ import { useQuery } from '@rocicorp/zero/react';
 import { useLocation, Link } from 'wouter';
 import { useZero } from '../../contexts/ZeroContext';
 import { formatDueDate } from '../winery/taskHelpers';
+import { AdminStats } from './AdminStats';
 import styles from '../../App.module.css';
 
 export const RecentActivity = () => {
@@ -135,6 +136,7 @@ export const TaskManagement = () => {
 export const DesktopDashboard = () => {
   return (
     <div className={styles.desktopDashboard}>
+      <AdminStats />
       <div className={styles.desktopRow}>
         <RecentActivity />
         <CurrentVintage />
