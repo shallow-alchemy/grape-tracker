@@ -2,539 +2,604 @@
 
 ## Overview
 
-Zero's synced queries replace the deprecated Permissions API by defining queries on the server that return AST JSON to the client. This enables:
-- User-specific data isolation at the query level
+Zero's synced queries provide server-authoritative query resolution while maintaining Zero's real-time sync capabilities. The server defines queries that return AST JSON to the client, enabling:
+- User-specific data isolation enforced at the server
 - Type-safe query definitions with Zod validation
 - Centralized query logic shared between client and server
-- Server-side authentication context for secure data filtering
+- Optimistic client rendering with server-verified authentication
 
 ## Core Concepts
 
 ### Two Types of Synced Queries
 
-1. **`syncedQuery`** - Global queries without user context
-   - Used for public/shared data (task templates, measurement ranges, etc.)
+1. **`syncedQuery`** - Queries without user context
+   - Used for public/shared data
    - No authentication required
    - All users see the same data
 
-2. **`syncedQueryWithContext`** - User-specific queries
-   - Requires authentication context
-   - First parameter is `QueryContext` containing `userID`
-   - Filters data based on the authenticated user
-   - Enforces user data isolation
+2. **`syncedQueryWithContext`** - User-authenticated queries
+   - First parameter is the context value (typically `userID: string | undefined`)
+   - Client passes userID for optimistic rendering
+   - Server extracts authenticated userID from JWT and passes it
+   - Security enforced server-side
+
+### Critical Pattern: Context is Just a String
+
+**IMPORTANT**: The context parameter for `syncedQueryWithContext` is just `string | undefined`, NOT an object like `{ userID: string }`.
+
+```typescript
+// ✅ CORRECT - Context is string | undefined
+syncedQueryWithContext(
+  'myQuery',
+  z.tuple([]),
+  (userID: string | undefined) => builder.table.where('user_id', userID ?? '')
+)
+
+// ❌ WRONG - Context is NOT an object
+syncedQueryWithContext(
+  'myQuery',
+  z.tuple([]),
+  (ctx: { userID: string }) => builder.table.where('user_id', ctx.userID)
+)
+```
 
 ## Architecture Pattern
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Client Components                                          │
-│  ├─ import { myQuery } from '../queries'                   │
-│  └─ const [data] = useQuery(myQuery())                     │
+│  ├─ import { queries } from './queries'                    │
+│  └─ useQuery(queries.myQuery(user?.id))                    │
+│                     ↑                                       │
+│         Client passes userID for optimistic UI             │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Shared Query Definitions (/src/queries.ts)                │
-│  ├─ export const myQuery = syncedQueryWithContext(...)     │
-│  └─ Imported by both client and server                     │
+│  Shared Query Definitions                                   │
+│  ├─ export const queries = {                               │
+│  │    myQuery: syncedQueryWithContext(...)                 │
+│  │  }                                                       │
+│  └─ Same file imported by both client AND server           │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Queries Service (Express/Hono Server)                      │
-│  ├─ import * as queries from '../queries'                  │
+│  Queries Service (Hono/Express Server)                      │
 │  ├─ POST /get-queries endpoint                             │
-│  └─ Validates auth, injects context, returns AST JSON      │
+│  ├─ Extract userID from JWT (Authorization header)         │
+│  └─ Call: query(userID, ...args)                           │
+│                     ↑                                       │
+│         Server passes VERIFIED userID from JWT             │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  zero-cache Server                                          │
+│  ├─ ZERO_GET_QUERIES_URL env var points to queries service │
+│  └─ Coordinates real-time sync                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Query Definitions
+## Query Definition Patterns (from ztunes)
 
-### Basic Structure
+### Reference Implementation: ztunes/zero/queries.ts
 
 ```typescript
 import { syncedQuery, syncedQueryWithContext } from '@rocicorp/zero';
-import { z } from 'zod';
 import { builder } from './schema';
+import z from 'zod';
 
-// Define the context type
-export type QueryContext = {
-  userID: string;
-};
+export const queries = {
+  // User-authenticated query (no parameters)
+  user: syncedQueryWithContext(
+    'user',
+    z.tuple([]),
+    (userID: string | undefined) =>
+      builder.user.where('id', userID ?? '').one(),
+  ),
 
-// User-specific query (no parameters)
-export const myVintages = syncedQueryWithContext(
-  'myVintages',                                    // Query name
-  z.tuple([]),                                     // Parameter validation (empty tuple = no params)
-  (ctx: QueryContext) =>                           // Query function with context
-    builder.vintage.where('user_id', ctx.userID)   // Filter by user_id
-);
+  // Global query (no auth context)
+  artistPreload: syncedQuery('artistPreload', z.tuple([]), () =>
+    builder.artist.orderBy('popularity', 'desc').limit(1_000),
+  ),
 
-// User-specific query (with parameters)
-export const myTasksByEntity = syncedQueryWithContext(
-  'myTasksByEntity',
-  z.tuple([z.string(), z.string()]),               // Validates two string parameters
-  (ctx: QueryContext, entityType: string, entityId: string) =>
-    builder.task
-      .where('user_id', ctx.userID)                // Filter by user_id
-      .where('entity_type', entityType)            // Filter by entity_type param
-      .where('entity_id', entityId)                // Filter by entity_id param
-);
+  // Global query with parameter
+  getHomepageArtists: syncedQuery(
+    'getHomepageArtists',
+    z.tuple([z.string()]),
+    (q: string) =>
+      builder.artist
+        .where('name', 'ILIKE', `%${q}%`)
+        .orderBy('popularity', 'desc')
+        .limit(20),
+  ),
 
-// Global query (no user context)
-export const taskTemplates = syncedQuery(
-  'taskTemplates',
-  z.tuple([]),
-  () => builder.task_template                      // No user filtering
-);
-```
+  // User-authenticated query with related data
+  getCartItems: syncedQueryWithContext(
+    'getCartItems',
+    z.tuple([]),
+    (userID: string | undefined) =>
+      builder.cartItem
+        .related('album', album =>
+          album.one().related('artist', artist => artist.one()),
+        )
+        .where('userId', userID ?? ''),
+  ),
 
-### Real-World Examples from Rocicorp Repos
-
-#### From zbugs (apps/zbugs/shared/queries.ts)
-
-```typescript
-// Simple queries - all entities
-export const allLabels = syncedQuery(
-  'allLabels',
-  z.tuple([]),
-  () => builder.labels
-);
-
-export const allUsers = syncedQuery(
-  'allUsers',
-  z.tuple([]),
-  () => builder.users
-);
-
-// Query with single parameter
-export const user = syncedQuery(
-  'user',
-  z.tuple([z.string()]),
-  (id: string) => builder.users.where('id', id)
-);
-
-// Query with context and parameters
-export const labels = syncedQueryWithContext(
-  'labels',
-  z.tuple([z.string()]),
-  (ctx: QueryContext, projectName: string) =>
-    builder.labels.where('project', projectName)
-);
-
-// Complex query with multiple related entities
-export const issuePreloadV2 = syncedQueryWithContext(
-  'issuePreloadV2',
-  z.tuple([z.string(), z.string()]),
-  (ctx: QueryContext, userID: string, projectName: string) =>
-    builder.issues
-      .where('project', projectName)
-      .related('labels', q => q.related('label'))
-      .related('viewState', q => q.where('userID', ctx.userID))
-      .related('creator')
-      .related('assignees', q => q.related('user'))
-      .related('emojis', q => q.related('creator'))
-      .related('comments', q =>
-        q.related('creator').related('emojis', e => e.related('creator')).limit(10)
-      )
-);
-
-// User preferences with key lookup
-export const userPref = syncedQueryWithContext(
-  'userPref',
-  z.tuple([z.string()]),
-  (ctx: QueryContext, key: string) =>
-    builder.userPrefs
-      .where('userID', ctx.userID)
-      .where('key', key)
-);
-```
-
-#### From zslack (shared/src/queries.ts)
-
-```typescript
-// Global query with limit
-export const allChannels = syncedQuery(
-  'allChannels',
-  z.tuple([]),
-  () => builder.channels.limit(10)
-);
-
-// User-specific with related data
-export const channelWithMessages = syncedQueryWithContext(
-  'channelWithMessages',
-  z.tuple([z.string()]),
-  (ctx: QueryContext, channelID: string) => {
-    if (!ctx.userID) {
-      throw new Error('User not logged in');
-    }
-    return builder.channels
-      .where('id', channelID)
-      .related('messages', q =>
-        q.orderBy('createdAt', 'desc')
-         .related('sender')
-      );
-  }
-);
-```
-
-## Client Usage
-
-### In React Components
-
-```typescript
-import { useQuery } from '@rocicorp/zero/react';
-import { myVintages, myTasksByEntity, taskTemplates } from '../queries';
-
-export const MyComponent = () => {
-  // Query with no parameters
-  const [vintages] = useQuery(myVintages());
-
-  // Query with parameters
-  const [tasks] = useQuery(myTasksByEntity('wine', 'wine-123'));
-
-  // Global query
-  const [templates] = useQuery(taskTemplates());
-
-  return (
-    <div>
-      {vintages.map(v => <div key={v.id}>{v.variety}</div>)}
-      {tasks.map(t => <div key={t.id}>{t.name}</div>)}
-    </div>
-  );
+  // Global query with parameter and relations
+  getArtist: syncedQuery(
+    'getArtist',
+    z.tuple([z.string()]),
+    (artistID: string) =>
+      builder.artist
+        .where('id', artistID)
+        .related('albums', album => album.related('cartItems'))
+        .one(),
+  ),
 };
 ```
 
-### In Custom Hooks
+### Key Observations
+
+1. **Queries exported as object** - `export const queries = { ... }`
+2. **Context is `string | undefined`** - NOT an object
+3. **Empty string fallback** - `userID ?? ''` prevents null query errors
+4. **`.one()` for single results** - Returns one row or undefined
+
+## Server Implementation Pattern (from ztunes)
+
+### Reference: ztunes/app/routes/api/zero/get-queries.ts
 
 ```typescript
-import { useQuery } from '@rocicorp/zero/react';
-import { myVines } from '../queries';
-
-export const useVines = () => {
-  const [vinesData] = useQuery(myVines());
-  return vinesData as VineDataRaw[];
-};
-
-// Usage in component
-const vines = useVines();
-```
-
-### Important: NO useZero() for Queries
-
-```typescript
-// ❌ WRONG - Old pattern (deprecated)
-import { useZero } from '../../contexts/ZeroContext';
-const zero = useZero();
-const [data] = useQuery(zero.myQuery());
-
-// ✅ CORRECT - New pattern
-import { myQuery } from '../../queries';
-const [data] = useQuery(myQuery());
-```
-
-## Server Implementation
-
-### Express Server Example (Gilbert queries-service)
-
-```typescript
-import express from 'express';
-import { createZero } from '@rocicorp/zero';
+import { json } from '@tanstack/react-start';
+import { schema } from 'zero/schema';
+import { createServerFileRoute } from '@tanstack/react-start/server';
+import { auth } from 'auth/auth';
 import { handleGetQueriesRequest } from '@rocicorp/zero/server';
-import { schema } from '../schema.js';
-import * as queries from '../../src/queries.js';
-import type { QueryContext } from '../../src/queries.js';
+import { ReadonlyJSONValue, withValidation } from '@rocicorp/zero';
+import { queries } from 'zero/queries';
 
-const app = express();
-app.use(express.json());
-
-// Define all queries
-const queryList = [
-  queries.myVineyards,
-  queries.myBlocks,
-  queries.myVines,
-  queries.myVintages,
-  queries.myWines,
-  queries.myTasks,
-  queries.myTasksByEntity,
-  queries.myMeasurements,
-  queries.myMeasurementsByEntity,
-  queries.myStageHistory,
-  queries.myStageHistoryByEntity,
-  queries.myWinesByVintage,
-  queries.taskTemplates,
-  queries.measurementRanges,
-];
-
-// Wrap queries with validation
-const withValidation = <T extends (...args: any[]) => any>(query: T): T => {
-  return ((...args: any[]) => {
-    const result = query(...args);
-    return result;
-  }) as T;
-};
-
-const validatedQueries = Object.fromEntries(
-  queryList.map(q => [q.queryName, withValidation(q)])
+// Wrap all queries with validation
+const validated = Object.fromEntries(
+  Object.values(queries).map(q => [q.queryName, withValidation(q)]),
 );
 
-// Authenticate user from request
-async function authenticateUser(req: express.Request): Promise<QueryContext> {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    throw new Error('Missing or invalid authorization header');
-  }
+export const ServerRoute = createServerFileRoute(
+  '/api/zero/get-queries',
+).methods({
+  POST: async ({ request }) => {
+    // Extract authenticated userID from session
+    const session = await auth.api.getSession(request);
+    const userID = session?.user.id;
 
-  const token = authHeader.substring(7);
-  // Verify token with your auth provider (Clerk, Auth0, etc.)
-  const userId = await verifyToken(token);
-
-  return { userID: userId };
-}
-
-// Handle /get-queries endpoint
-app.post('/get-queries', async (req, res) => {
-  try {
-    const authContext = await authenticateUser(req);
-
-    const result = await handleGetQueriesRequest(
-      (name, args) => {
-        const query = validatedQueries[name];
-        if (!query) {
-          throw new Error(`Unknown query: ${name}`);
-        }
-
-        // Check if query takes context
-        // @ts-expect-error - takesContext not in type definitions but exists at runtime
-        if (query.takesContext) {
-          return { query: query(authContext, ...args) };
-        } else {
-          return { query: query(...args) };
-        }
-      },
-      schema,
-      req
+    return json(
+      await handleGetQueriesRequest(
+        (name, args) => getQuery(userID, name, args),
+        schema,
+        request,
+      ),
     );
+  },
+});
 
-    res.json(result);
-  } catch (error) {
-    console.error('Error handling get-queries:', error);
-    res.status(500).json({ error: 'Internal server error' });
+function getQuery(
+  userID: string | undefined,
+  name: string,
+  args: readonly ReadonlyJSONValue[],
+) {
+  const q = validated[name];
+  if (!q) {
+    throw new Error('Unknown query: ' + name);
   }
-});
-
-app.listen(3001, () => {
-  console.log('Queries service listening on port 3001');
-});
+  // Pass userID as FIRST argument, then spread remaining args
+  return { query: q(userID, ...args) };
+}
 ```
 
-### Hono Server Example (zslack)
+### Hono Implementation (Gilbert/grape-tracker pattern)
 
 ```typescript
+import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { withValidation } from '@rocicorp/zero';
 import { handleGetQueriesRequest } from '@rocicorp/zero/server';
-import { schema } from './schema';
-import * as queries from '../../shared/src/queries';
+import { schema } from '../../schema.js';
+import { activeWines } from './queries.js';
 
 const app = new Hono();
+app.use('/*', cors());
 
-app.post("/get-queries", async (c) => {
-  const authData = c.get("auth");
+// Register queries with validation
+const validatedQueries = {
+  [activeWines.queryName]: withValidation(activeWines),
+};
+
+// Extract userID from JWT
+const extractUserID = (req: Request): string | undefined => {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) return undefined;
+
+  try {
+    const token = authHeader.replace('Bearer ', '');
+    const payloadBase64 = token.split('.')[1];
+    if (!payloadBase64) return undefined;
+
+    const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
+    return payload.sub;
+  } catch (err) {
+    return undefined;
+  }
+};
+
+// Query resolver
+const getQuery = (
+  userID: string | undefined,
+  name: string,
+  args: readonly unknown[]
+) => {
+  const query = validatedQueries[name as keyof typeof validatedQueries];
+  if (!query) throw new Error(`Unknown query: ${name}`);
+  return query(userID, ...args);
+};
+
+app.post('/get-queries', async (c) => {
+  const userID = extractUserID(c.req.raw);
+
   const result = await handleGetQueriesRequest(
-    (name, args) => ({ query: getQuery(authData, name, args) }),
+    (name, args) => ({ query: getQuery(userID, name, args) }),
     schema,
     c.req.raw
   );
+
   return c.json(result);
 });
 
-function getQuery(authData: AuthData, name: string, args: any[]) {
-  const query = queries[name as keyof typeof queries];
-  if (!query) {
-    throw new Error(`Unknown query: ${name}`);
+const port = 3002;
+serve({ fetch: app.fetch, port }, (info) => {
+  console.log(`Listening on http://localhost:${info.port}`);
+});
+```
+
+## Client Usage Pattern (from ztunes)
+
+### Reference: ztunes/app/components/cart.tsx
+
+```typescript
+import { useQuery } from '@rocicorp/zero/react';
+import { queries } from 'zero/queries';
+import { authClient } from 'auth/client';
+
+export function Cart() {
+  const session = authClient.useSession();
+
+  // Pass user ID for optimistic rendering
+  // Server will use authenticated userID from JWT
+  const [items] = useQuery(queries.getCartItems(session.data?.user.id ?? ''));
+
+  if (!session.data?.user) {
+    return null;
   }
 
-  // Queries with context get authData injected
-  if ('takesContext' in query && query.takesContext) {
-    return query({ userID: authData.userId }, ...args);
-  }
-  return query(...args);
+  return <div>Cart ({items.length ?? 0})</div>;
 }
 ```
 
-## Client Configuration
+### Key Patterns
 
-### ZeroProvider Setup
+1. **Import queries object** - `import { queries } from 'zero/queries'`
+2. **Call query as function** - `queries.getCartItems(session.data?.user.id ?? '')`
+3. **Pass userID with fallback** - Prevents query errors when not logged in
+4. **Result is reactive** - Auto-updates when data changes
+
+### ZeroProvider Setup (ztunes)
 
 ```typescript
-import { ZeroProvider } from '@rocicorp/zero/react';
 import { Zero } from '@rocicorp/zero';
-import { schema } from './schema';
+import { ZeroProvider } from '@rocicorp/zero/react';
+import { schema, Schema } from 'zero/schema';
 
-const zero = new Zero({
-  server: import.meta.env.VITE_PUBLIC_SERVER,
-  schema,
-  userID: user.id,
-  auth: () => getToken().then(token => token || ''),
-  // IMPORTANT: Configure queries service endpoint
-  getQueriesURL: import.meta.env.VITE_QUERIES_URL || 'http://localhost:3001/get-queries',
-});
+export function ZeroInit({ children }: { children: React.ReactNode }) {
+  const session = authClient.useSession();
 
-<ZeroProvider zero={zero}>
-  <App />
-</ZeroProvider>
+  const opts = useMemo(() => ({
+    schema,
+    userID: session.data?.user.id ?? 'anon',
+    server: serverURL,
+    mutators: createMutators(session.data?.user.id),
+  }), [session.data?.user.id]);
+
+  return <ZeroProvider {...opts}>{children}</ZeroProvider>;
+}
+```
+
+## hello-zero-solid Pattern (No Auth)
+
+For apps without authentication, pass `undefined` as the context:
+
+### shared/queries.ts
+
+```typescript
+import { syncedQuery, escapeLike } from "@rocicorp/zero";
+import z from "zod";
+import { builder } from "./schema";
+
+export const queries = {
+  users: syncedQuery("user", z.tuple([]), () => builder.user),
+
+  messages: syncedQuery("messages", z.tuple([]), () =>
+    builder.message.orderBy("timestamp", "desc")
+  ),
+
+  filteredMessages: syncedQuery(
+    "filteredMessages",
+    z.tuple([
+      z.object({
+        senderID: z.string(),
+        mediumID: z.string(),
+        body: z.string(),
+        timestamp: z.string(),
+      }),
+    ]),
+    ({ senderID, mediumID, body, timestamp }) => {
+      let q = builder.message
+        .related("medium", (q) => q.one())
+        .related("sender", (q) => q.one())
+        .orderBy("timestamp", "desc");
+
+      if (senderID) q = q.where("senderID", senderID);
+      if (mediumID) q = q.where("mediumID", mediumID);
+      if (body) q = q.where("body", "LIKE", `%${escapeLike(body)}%`);
+      if (timestamp) {
+        q = q.where("timestamp", ">=", new Date(timestamp).getTime());
+      }
+
+      return q;
+    }
+  ),
+};
+```
+
+### server/get-queries.ts
+
+```typescript
+import { handleGetQueriesRequest } from "@rocicorp/zero/server";
+import { withValidation } from "@rocicorp/zero";
+import { queries } from "../shared/queries";
+import { schema } from "../shared/schema";
+import { ReadonlyJSONValue } from "@rocicorp/zero";
+
+const validated = Object.fromEntries(
+  Object.values(queries).map((q) => [q.queryName, withValidation(q)])
+);
+
+export async function handleGetQueries(request: Request) {
+  return await handleGetQueriesRequest(getQuery, schema, request);
+}
+
+function getQuery(name: string, args: readonly ReadonlyJSONValue[]) {
+  const q = validated[name];
+  if (!q) throw new Error(`No such query: ${name}`);
+  // Pass undefined as context (no auth)
+  return { query: q(undefined, ...args) };
+}
 ```
 
 ## Parameter Validation with Zod
 
 ### No Parameters
 ```typescript
-z.tuple([])  // Empty tuple
+z.tuple([])
 ```
 
 ### Single Parameter
 ```typescript
 z.tuple([z.string()])              // One string
 z.tuple([z.number()])              // One number
-z.tuple([z.string().uuid()])       // UUID string
 ```
 
 ### Multiple Parameters
 ```typescript
 z.tuple([z.string(), z.string()])  // Two strings
-z.tuple([z.string(), z.number()])  // String and number
 ```
 
-### Optional Parameters
-```typescript
-z.tuple([z.string(), z.string().optional()])
-```
-
-### Complex Validation
+### Object Parameter
 ```typescript
 z.tuple([
-  z.enum(['vintage', 'wine']),     // Enum
-  z.string().uuid(),               // UUID
-  z.number().min(0).max(100)       // Bounded number
+  z.object({
+    senderID: z.string(),
+    mediumID: z.string(),
+  }),
 ])
 ```
 
-## Common Query Patterns
+## Common Query Patterns for Gilbert
 
-### 1. All User Data
+### 1. All User Data (No Parameters)
+
 ```typescript
-export const myVintages = syncedQueryWithContext(
-  'myVintages',
+export const myVineyards = syncedQueryWithContext(
+  'myVineyards',
   z.tuple([]),
-  (ctx: QueryContext) => builder.vintage.where('user_id', ctx.userID)
+  (userID: string | undefined) => {
+    if (!userID) {
+      return builder.vineyard.where('id', '___never_match___');
+    }
+    return builder.vineyard.where('user_id', userID);
+  }
 );
 ```
 
-### 2. Filtered by Entity
+### 2. Single Record Lookup
+
 ```typescript
-export const myTasksByEntity = syncedQueryWithContext(
-  'myTasksByEntity',
+export const myVintageById = syncedQueryWithContext(
+  'myVintageById',
+  z.tuple([z.string()]),
+  (userID: string | undefined, vintageId: string) => {
+    if (!userID) {
+      return builder.vintage.where('id', '___never_match___');
+    }
+    return builder.vintage
+      .where('user_id', userID)
+      .where('id', vintageId)
+      .one();
+  }
+);
+```
+
+### 3. Filtered by Foreign Key
+
+```typescript
+export const myWinesByVintage = syncedQueryWithContext(
+  'myWinesByVintage',
+  z.tuple([z.string()]),
+  (userID: string | undefined, vintageId: string) => {
+    if (!userID) {
+      return builder.wine.where('id', '___never_match___');
+    }
+    return builder.wine
+      .where('user_id', userID)
+      .where('vintage_id', vintageId);
+  }
+);
+```
+
+### 4. Polymorphic Entity Lookup
+
+```typescript
+export const myMeasurementsByEntity = syncedQueryWithContext(
+  'myMeasurementsByEntity',
   z.tuple([z.string(), z.string()]),
-  (ctx: QueryContext, entityType: string, entityId: string) =>
-    builder.task
-      .where('user_id', ctx.userID)
+  (userID: string | undefined, entityType: string, entityId: string) => {
+    if (!userID) {
+      return builder.measurement.where('id', '___never_match___');
+    }
+    return builder.measurement
+      .where('user_id', userID)
       .where('entity_type', entityType)
-      .where('entity_id', entityId)
+      .where('entity_id', entityId);
+  }
 );
 ```
 
-### 3. With Related Data
+### 5. Global Reference Data (No User Filter)
+
 ```typescript
-export const myWines = syncedQueryWithContext(
-  'myWines',
+export const measurementRanges = syncedQuery(
+  'measurementRanges',
   z.tuple([]),
-  (ctx: QueryContext) =>
-    builder.wine
-      .where('user_id', ctx.userID)
-      .related('vintage')
-      .related('vineyard')
+  () => builder.measurement_range
 );
 ```
 
-### 4. Global Reference Data
+### 6. With Stage Filter
+
 ```typescript
-export const taskTemplates = syncedQuery(
-  'taskTemplates',
+const ACTIVE_STAGES = [
+  'crush',
+  'primary_fermentation',
+  'secondary_fermentation',
+  'racking',
+  'oaking',
+  'aging',
+];
+
+export const activeWines = syncedQueryWithContext(
+  'activeWines',
   z.tuple([]),
-  () => builder.task_template
+  (userID: string | undefined) => {
+    if (userID !== ADMIN_USER_ID) {
+      return builder.wine.where('id', '___never_match___');
+    }
+    return builder.wine.where('current_stage', 'IN', ACTIVE_STAGES);
+  }
 );
 ```
 
-### 5. With Ordering and Limits
-```typescript
-export const recentMeasurements = syncedQueryWithContext(
-  'recentMeasurements',
-  z.tuple([]),
-  (ctx: QueryContext) =>
-    builder.measurement
-      .where('user_id', ctx.userID)
-      .orderBy('date', 'desc')
-      .limit(10)
-);
+## Environment Configuration
+
+### zero-cache Server
+```bash
+ZERO_GET_QUERIES_URL="http://localhost:3002/get-queries"
+ZERO_AUTH_JWKS_URL="https://your-clerk-domain/.well-known/jwks.json"
 ```
 
-## Migration Checklist
+### Client (Rsbuild/Vite)
+```bash
+PUBLIC_ZERO_SERVER="http://localhost:4848"
+```
 
-When migrating from legacy Permissions API to synced queries:
-
-- [ ] Create `/src/queries.ts` for shared query definitions
-- [ ] Define `QueryContext` type with `userID`
-- [ ] Convert all queries to `syncedQueryWithContext` or `syncedQuery`
-- [ ] Create queries service (Express/Hono server)
-- [ ] Implement `/get-queries` endpoint with authentication
-- [ ] Update `schema.ts` to disable legacy queries (`definePermissions: undefined`)
-- [ ] Configure `getQueriesURL` in ZeroProvider
-- [ ] Update all components to import queries directly
-- [ ] Remove `useZero()` calls for query execution
-- [ ] Test with multiple users to verify data isolation
-- [ ] Deploy queries service to production
-- [ ] Update environment variables with production URLs
+### Queries Service
+```bash
+PORT=3002
+```
 
 ## Troubleshooting
 
-### TypeScript Errors: "Property 'myQuery' does not exist on type 'Zero'"
-**Cause**: Using old pattern `zero.myQuery()`
-**Fix**: Import query and call directly: `useQuery(myQuery())`
+### "Query returns 0 results when data exists"
+**Cause**: Client passing `null` instead of userID
+**Fix**: Pass `user?.id` or `user?.id ?? ''` to the query
+
+```typescript
+// ❌ WRONG
+useQuery(queries.myWines(null));
+
+// ✅ CORRECT
+useQuery(queries.myWines(user?.id));
+```
+
+### "Unknown query: myQuery"
+**Cause**: Query not registered in validatedQueries
+**Fix**: Add query to the validatedQueries object in queries-service
+
+```typescript
+const validatedQueries = {
+  [myQuery.queryName]: withValidation(myQuery),  // Add this
+};
+```
 
 ### "Query returns data from all users"
 **Cause**: Using `syncedQuery` instead of `syncedQueryWithContext`
-**Fix**: Change to `syncedQueryWithContext` and filter by `ctx.userID`
+**Fix**: Change to `syncedQueryWithContext` with user filtering
 
-### "Unknown query: myQuery"
-**Cause**: Query not registered in server's query list
-**Fix**: Add query to `queryList` array in queries service
+### TypeScript: "Property 'myQuery' does not exist"
+**Cause**: Using old `zero.myQuery()` pattern
+**Fix**: Import query directly: `import { queries } from './queries'`
 
-### "User not logged in" errors
-**Cause**: Authentication middleware not injecting context
-**Fix**: Verify `authenticateUser()` function and auth token validation
+### Queries work locally but not in production
+**Cause**: `ZERO_GET_QUERIES_URL` not set or misconfigured
+**Fix**: Verify environment variable points to deployed queries service
 
-### Queries return empty results
-**Cause**: `getQueriesURL` not configured or pointing to wrong endpoint
-**Fix**: Set `getQueriesURL` in Zero constructor to queries service URL
+## Migration Checklist
+
+When migrating from legacy Permissions API:
+
+- [ ] Create shared queries file with `syncedQueryWithContext` definitions
+- [ ] Create queries service with Hono/Express
+- [ ] Implement `/get-queries` endpoint with JWT extraction
+- [ ] Register all queries with `withValidation`
+- [ ] Update components to import queries directly
+- [ ] Remove `useZero()` calls for query execution
+- [ ] Configure `ZERO_GET_QUERIES_URL` in zero-cache
+- [ ] Test with multiple users to verify isolation
+- [ ] Remove `ANYONE_CAN` permissions from schema (optional)
 
 ## Best Practices
 
-1. **Always filter by user_id** in user-specific queries
-2. **Use Zod validation** for all parameters
-3. **Keep queries in shared location** accessible to client and server
-4. **Use descriptive query names** that indicate their purpose
-5. **Validate authentication** before processing queries on server
-6. **Handle errors gracefully** with try-catch in endpoint handlers
-7. **Use TypeScript** for type safety across client and server
-8. **Test multi-user scenarios** to verify data isolation
-9. **Document complex queries** with comments explaining filters
-10. **Monitor query performance** and add indexes as needed
+1. **Always handle undefined userID** - Use empty string fallback or ___never_match___
+2. **Share query definitions** - Same file imported by client and server
+3. **Export as object** - `export const queries = { ... }` for easy iteration
+4. **Use Zod for validation** - Catches parameter errors early
+5. **Server extracts userID from JWT** - Never trust client-provided auth
+6. **Client passes userID for optimistic UI** - Makes UI feel instant
+7. **Test multi-user isolation** - Verify one user can't see another's data
 
 ## References
 
+- ztunes (React): https://github.com/rocicorp/ztunes
+- hello-zero-solid (Solid): https://github.com/rocicorp/hello-zero-solid
 - Zero Documentation: https://zerosync.dev
-- Example Repos:
-  - zbugs: https://github.com/rocicorp/mono/tree/main/apps/zbugs
-  - zslack: https://github.com/rocicorp/zslack
-  - ztunes: https://github.com/rocicorp/ztunes
 - Zod Validation: https://zod.dev
