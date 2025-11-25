@@ -4,11 +4,11 @@
   "description": "Mobile-first web app with Zero sync",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n \"zero,backend,queries,frontend\" -c \"cyan,magenta,yellow,green\" \"yarn dev:zero\" \"yarn dev:backend\" \"yarn dev:queries\" \"yarn dev:frontend\"",
+    "dev": "concurrently -n \"zero,queries,backend,frontend\" -c \"cyan,yellow,magenta,green\" \"yarn dev:zero\" \"yarn dev:queries\" \"yarn dev:backend\" \"yarn dev:frontend\"",
     "dev:frontend": "rsbuild dev",
     "dev:backend": "cd backend && cargo run",
+    "dev:zero": "npx zero-cache-dev --schema-path schema.cjs",
     "dev:queries": "cd queries-service && yarn dev",
-    "dev:zero": "ZERO_GET_QUERIES_URL=http://localhost:3002/get-queries npx zero-cache-dev --schema-path schema.cjs",
     "build": "rsbuild build",
     "preview": "rsbuild preview",
     "start": "zero-cache --upstream-db $ZERO_UPSTREAM_DB --replica-file $ZERO_REPLICA_FILE --schema-path schema.cjs --auth-secret $ZERO_AUTH_SECRET --admin-password $ZERO_ADMIN_PASSWORD",
@@ -58,6 +58,6 @@
     "three-mesh-bvh": "^0.9.2",
     "three-stdlib": "^2.36.0",
     "wouter": "^3.7.1",
-    "zod": "^4.1.12"
+    "zod": "^4.1.13"
   }
 }
