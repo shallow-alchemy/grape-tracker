@@ -3,20 +3,12 @@ import { useQuery } from '@rocicorp/zero/react';
 import { activeWines } from '../../shared/queries';
 import styles from '../../App.module.css';
 
-// Admin user ID from Clerk - only this user sees the panel
-const ADMIN_USER_ID = 'user_34zvb6YsnjkI4IFo9qDJyUXGQfK';
-
 export const AdminStats = () => {
   const { user } = useUser();
 
-  // Only render for admin user
-  if (user?.id !== ADMIN_USER_ID) {
-    return null;
-  }
-
-  // Use the synced query - this will be resolved by zero-cache -> queries-service
-  // Client passes null for context; server provides real auth context
-  const [wines] = useQuery(activeWines(null));
+  // Pass user ID as context (like ztunes pattern)
+  // Client passes userID for optimistic rendering, server provides authenticated value
+  const [wines] = useQuery(activeWines(user?.id));
 
   return (
     <div className={styles.desktopPanel}>

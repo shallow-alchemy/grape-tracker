@@ -14,14 +14,13 @@ const ACTIVE_STAGES = [
   'aging',
 ];
 
-type AuthData = { sub: string } | null;
-
 export const activeWines = syncedQueryWithContext(
   'activeWines',
   z.tuple([]),
-  (ctx: AuthData) => {
+  (userID: string | undefined) => {
+    // Server provides authenticated userID from JWT
     // Only return data for admin user
-    if (!ctx || ctx.sub !== ADMIN_USER_ID) {
+    if (userID !== ADMIN_USER_ID) {
       return builder.wine.where('id', '___never_match___');
     }
     // Return wines in active stages (not bottled)
