@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useZero } from '../../contexts/ZeroContext';
+import { myTasksByEntity } from '../../queries';
 import { TaskCompletionModal } from './TaskCompletionModal';
 import { CreateTaskModal } from './CreateTaskModal';
 import { formatDueDate, isOverdue } from './taskHelpers';
@@ -25,13 +26,11 @@ export const TaskListView = ({
   const zero = useZero();
 
   const [tasksData] = useQuery(
-    zero.query.task
-      .where('entity_type', entityType)
-      .where('entity_id', entityId)
-  );
+    myTasksByEntity(entityType, entityId)
+  ) as any;
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = useState<typeof tasksData[0] | null>(null);
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const showSuccessMessage = (message: string) => {
@@ -39,23 +38,23 @@ export const TaskListView = ({
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
-  const overdueTasks = tasksData.filter(t =>
+  const overdueTasks = tasksData.filter((t: any) =>
     isOverdue(t.due_date, t.completed_at, t.skipped ? 1 : 0)
   );
 
-  const upcomingTasks = tasksData.filter(t =>
+  const upcomingTasks = tasksData.filter((t: any) =>
     !t.completed_at && !t.skipped && t.due_date >= Date.now()
   );
 
-  const completedTasks = tasksData.filter(t =>
+  const completedTasks = tasksData.filter((t: any) =>
     t.completed_at !== null && t.completed_at !== undefined
   );
 
-  const skippedTasks = tasksData.filter(t =>
+  const skippedTasks = tasksData.filter((t: any) =>
     t.skipped && !t.completed_at
   );
 
-  const TaskCard = ({ task }: { task: typeof tasksData[0] }) => {
+  const TaskCard = ({ task }: { task: any }) => {
     const overdue = isOverdue(task.due_date, task.completed_at, task.skipped ? 1 : 0);
     const completed = task.completed_at !== null && task.completed_at !== undefined;
     const skipped = task.skipped && !completed;
@@ -138,7 +137,7 @@ export const TaskListView = ({
             OVERDUE ({overdueTasks.length})
           </div>
           <div className={styles.tasksListContainer}>
-            {overdueTasks.map(task => <TaskCard key={task.id} task={task} />)}
+            {overdueTasks.map((task: any) => <TaskCard key={task.id} task={task} />)}
           </div>
         </div>
       )}
@@ -149,7 +148,7 @@ export const TaskListView = ({
             UPCOMING ({upcomingTasks.length})
           </div>
           <div className={styles.tasksListContainer}>
-            {upcomingTasks.map(task => <TaskCard key={task.id} task={task} />)}
+            {upcomingTasks.map((task: any) => <TaskCard key={task.id} task={task} />)}
           </div>
         </div>
       )}
@@ -160,7 +159,7 @@ export const TaskListView = ({
             COMPLETED ({completedTasks.length})
           </div>
           <div className={styles.tasksListContainer}>
-            {completedTasks.map(task => <TaskCard key={task.id} task={task} />)}
+            {completedTasks.map((task: any) => <TaskCard key={task.id} task={task} />)}
           </div>
         </div>
       )}
@@ -171,7 +170,7 @@ export const TaskListView = ({
             SKIPPED ({skippedTasks.length})
           </div>
           <div className={styles.tasksListContainer}>
-            {skippedTasks.map(task => <TaskCard key={task.id} task={task} />)}
+            {skippedTasks.map((task: any) => <TaskCard key={task.id} task={task} />)}
           </div>
         </div>
       )}

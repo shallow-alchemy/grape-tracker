@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { Modal } from '../Modal';
 import { useZero } from '../../contexts/ZeroContext';
+import { myWinesByVintage, myStageHistoryByEntity, myMeasurementsByEntity, myTasksByEntity } from '../../queries';
 import styles from '../../App.module.css';
 
 type DeleteVintageConfirmModalProps = {
@@ -26,46 +27,28 @@ export const DeleteVintageConfirmModal = ({
 
   const zero = useZero();
 
-  const [winesData] = useQuery(zero.query.wine.where('vintage_id', vintage.id));
+  const [winesData] = useQuery(myWinesByVintage(vintage.id) as any) as any;
 
   const [stageHistoryData] = useQuery(
-    zero.query.stage_history
-      .where('entity_type', 'vintage')
-      .where('entity_id', vintage.id)
-  );
+    myStageHistoryByEntity('vintage', vintage.id)
+  ) as any;
 
   const [measurementsData] = useQuery(
-    zero.query.measurement
-      .where('entity_type', 'vintage')
-      .where('entity_id', vintage.id)
-  );
+    myMeasurementsByEntity('vintage', vintage.id)
+  ) as any;
 
   const [tasksData] = useQuery(
-    zero.query.task
-      .where('entity_type', 'vintage')
-      .where('entity_id', vintage.id)
-  );
+    myTasksByEntity('vintage', vintage.id)
+  ) as any;
 
-  const [allWineTasksData] = useQuery(
-    winesData.length > 0
-      ? zero.query.task.where('entity_type', 'wine')
-      : zero.query.task.where('id', 'none')
-  );
-  const wineTasksData = allWineTasksData.filter(t => winesData.some(w => w.id === t.entity_id));
+  const [allWineTasksData] = useQuery(myTasksByEntity('wine', winesData[0]?.id || 'none') as any) as any;
+  const wineTasksData = allWineTasksData.filter((t: any) => winesData.some((w: any) => w.id === t.entity_id));
 
-  const [allWineMeasurementsData] = useQuery(
-    winesData.length > 0
-      ? zero.query.measurement.where('entity_type', 'wine')
-      : zero.query.measurement.where('id', 'none')
-  );
-  const wineMeasurementsData = allWineMeasurementsData.filter(m => winesData.some(w => w.id === m.entity_id));
+  const [allWineMeasurementsData] = useQuery(myMeasurementsByEntity('wine', winesData[0]?.id || 'none') as any) as any;
+  const wineMeasurementsData = allWineMeasurementsData.filter((m: any) => winesData.some((w: any) => w.id === m.entity_id));
 
-  const [allWineStageHistoryData] = useQuery(
-    winesData.length > 0
-      ? zero.query.stage_history.where('entity_type', 'wine')
-      : zero.query.stage_history.where('id', 'none')
-  );
-  const wineStageHistoryData = allWineStageHistoryData.filter(s => winesData.some(w => w.id === s.entity_id));
+  const [allWineStageHistoryData] = useQuery(myStageHistoryByEntity('wine', winesData[0]?.id || 'none') as any) as any;
+  const wineStageHistoryData = allWineStageHistoryData.filter((s: any) => winesData.some((w: any) => w.id === s.entity_id));
 
   const handleDelete = async () => {
     setIsDeleting(true);

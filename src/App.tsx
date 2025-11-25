@@ -25,24 +25,24 @@ const AppContent = () => {
       <Route path="/" component={DashboardView} />
       <Route path="/tasks" component={AllTasksView} />
       <Route path="/vineyard/vine/:id">
-        {(params) => <VineyardView initialVineId={params.id} />}
+        {(params) => <VineyardView initialVineId={params?.id} />}
       </Route>
       <Route path="/vineyard/block/:id">
-        {(params) => <VineyardView initialBlockId={params.id} />}
+        {(params) => <VineyardView initialBlockId={params?.id} />}
       </Route>
       <Route path="/vineyard">{() => <VineyardView />}</Route>
       <Route path="/winery/vintages/:id/tasks">
-        {(params) => <WineryView initialVintageTasksId={params.id} />}
+        {(params) => <WineryView initialVintageTasksId={params?.id} />}
       </Route>
       <Route path="/winery/vintages/:id">
-        {(params) => <WineryView initialVintageId={params.id} />}
+        {(params) => <WineryView initialVintageId={params?.id} />}
       </Route>
       <Route path="/winery/vintages">{() => <WineryView />}</Route>
       <Route path="/winery/wines/:id/tasks">
-        {(params) => <WineryView initialWineTasksId={params.id} />}
+        {(params) => <WineryView initialWineTasksId={params?.id} />}
       </Route>
       <Route path="/winery/wines/:id">
-        {(params) => <WineryView initialWineId={params.id} />}
+        {(params) => <WineryView initialWineId={params?.id} />}
       </Route>
       <Route path="/winery/wines">{() => <WineryView />}</Route>
       <Route path="/winery">{() => <WineryView />}</Route>

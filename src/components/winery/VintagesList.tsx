@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useZero } from '../../contexts/ZeroContext';
+import { myVintages, myWines, myMeasurements, myTasks } from '../../queries';
 import { CreateTaskModal } from './CreateTaskModal';
 import { WarningBadge } from '../WarningBadge';
 import styles from '../../App.module.css';
@@ -18,29 +19,26 @@ type VintagesListProps = {
 
 export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: VintagesListProps) => {
   const zero = useZero();
-  const [vintagesData] = useQuery(zero.query.vintage);
-  const vintages = [...vintagesData].sort((a, b) => b.vintage_year - a.vintage_year);
+  const [vintagesData] = useQuery(myVintages() as any) as any;
+  const vintages = [...vintagesData].sort((a: any, b: any) => b.vintage_year - a.vintage_year);
 
-  const [winesData] = useQuery(zero.query.wine);
+  const [winesData] = useQuery(myWines() as any) as any;
 
-  const [measurementsData] = useQuery(
-    zero.query.measurement
-      .where('entity_type', 'vintage')
-      .where('stage', 'harvest')
-  );
+  const [allMeasurementsData] = useQuery(myMeasurements() as any) as any;
+  const measurementsData = allMeasurementsData.filter((m: any) => m.entity_type === 'vintage' && m.stage === 'harvest');
 
-  const [tasksData] = useQuery(zero.query.task);
+  const [tasksData] = useQuery(myTasks() as any) as any;
 
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [taskModalVintageId, setTaskModalVintageId] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const harvestMeasurements = new Map(
-    measurementsData.map(m => [m.entity_id, m])
+  const harvestMeasurements: any = new Map(
+    measurementsData.map((m: any) => [m.entity_id, m])
   );
 
   const getWineCount = (vintageId: string): number => {
-    return winesData.filter(wine => {
+    return winesData.filter((wine: any) => {
       if (wine.vintage_id === vintageId) {
         return true;
       }
@@ -53,7 +51,8 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
     }).length;
   };
 
-  const formatStage = (stage: string): string => {
+  const formatStage = (stage: string | null | undefined): string => {
+    if (!stage) return 'UNKNOWN';
     return stage
       .split('_')
       .map(word => word.toUpperCase())
@@ -183,7 +182,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
               <div className={styles.winesSectionHeader}>
                 <div className={styles.featuredBlockLabel}>
                   WINES ({(() => {
-                    const count = winesData.filter(wine => {
+                    const count = winesData.filter((wine: any) => {
                       if (wine.vintage_id === featuredVintage.id) return true;
                       if (wine.blend_components && Array.isArray(wine.blend_components)) {
                         return wine.blend_components.some((component: any) => component.vintage_id === featuredVintage.id);
@@ -206,7 +205,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
               </div>
 
               {(() => {
-                const vintageWines = winesData.filter(wine => {
+                const vintageWines = winesData.filter((wine: any) => {
                   if (wine.vintage_id === featuredVintage.id) {
                     return true;
                   }
@@ -214,11 +213,11 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                     return wine.blend_components.some((component: any) => component.vintage_id === featuredVintage.id);
                   }
                   return false;
-                }).sort((a, b) => a.name.localeCompare(b.name));
+                }).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
                 return vintageWines.length > 0 ? (
                   <div className={styles.winesContainer}>
-                    {vintageWines.map((wine) => {
+                    {vintageWines.map((wine: any) => {
                       const isBlend = wine.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
                       return (
                         <div
@@ -269,8 +268,8 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
 
             {(() => {
               const vintageTasks = tasksData
-                .filter(task => task.entity_type === 'vintage' && task.entity_id === featuredVintage.id)
-                .sort((a, b) => {
+                .filter((task: any) => task.entity_type === 'vintage' && task.entity_id === featuredVintage.id)
+                .sort((a: any, b: any) => {
                   const aCompleted = a.completed_at !== null && a.completed_at !== undefined;
                   const bCompleted = b.completed_at !== null && b.completed_at !== undefined;
                   if (aCompleted && !bCompleted) return 1;
@@ -283,7 +282,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                   <div className={styles.tasksContainerInner}>
                     <div className={styles.winesSectionHeader}>
                       <div className={styles.featuredMetricLabel}>
-                        TASKS ({vintageTasks.filter(t => !t.completed_at).length})
+                        TASKS ({vintageTasks.filter((t: any) => !t.completed_at).length})
                       </div>
                       <button
                         type="button"
@@ -298,7 +297,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                       </button>
                     </div>
                   <div className={styles.tasksList}>
-                    {vintageTasks.map(task => {
+                    {vintageTasks.map((task: any) => {
                       const isCompleted = task.completed_at !== null && task.completed_at !== undefined;
                       const hasDueDate = task.due_date && task.due_date > 946684800000;
                       return (

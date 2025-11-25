@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useZero } from '../../contexts/ZeroContext';
+import { myStageHistoryByEntity, taskTemplates } from '../../queries';
 import type { EntityType } from './stages';
 import { calculateDueDate } from './taskHelpers';
 
@@ -32,13 +33,10 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
     try {
       const now = Date.now();
 
-      const allStageHistory = await zero.query.stage_history
-        .where('entity_type', entityType)
-        .where('entity_id', entityId)
-        .where('stage', currentStage)
-        .run();
+      const allStageHistory = await myStageHistoryByEntity(entityType, entityId).run();
+      const stageHistory = allStageHistory.filter((s: any) => s.stage === currentStage);
 
-      const currentEntry = allStageHistory.find(s => !s.completed_at);
+      const currentEntry = stageHistory.find((s: any) => !s.completed_at);
       if (currentEntry) {
         await zero.mutate.stage_history.update({
           id: currentEntry.id,
@@ -77,9 +75,9 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
         });
       }
 
-      const allTemplates = await zero.query.task_template.run();
+      const allTemplates = await taskTemplates().run();
 
-      const relevantTemplates = allTemplates.filter(template => {
+      const relevantTemplates = allTemplates.filter((template: any) => {
         const stageMatch = template.stage === data.toStage;
         const entityMatch = template.entity_type === entityType;
         const wineTypeMatch = !wineType || !template.wine_type || template.wine_type === wineType;

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useLocation } from 'wouter';
 import { useZero } from '../contexts/ZeroContext';
+import { myTasks } from '../queries';
 import { fetchWeather, getWeatherIcon, WeatherData } from '../utils/weather';
 import { Alerts } from './Alerts';
 import { WeatherAlertSettingsModal } from './weather/WeatherAlertSettingsModal';
@@ -20,11 +21,11 @@ export const Weather = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  const [tasksData] = useQuery(zero.query.task);
+  const [tasksData] = useQuery(myTasks() as any) as any;
 
   const nextTask = tasksData
-    .filter(t => !t.completed_at && !t.skipped)
-    .sort((a, b) => a.due_date - b.due_date)
+    .filter((t: any) => !t.completed_at && !t.skipped)
+    .sort((a: any, b: any) => a.due_date - b.due_date)
     .slice(0, 1);
 
   useEffect(() => {

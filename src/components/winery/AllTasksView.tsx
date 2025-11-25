@@ -1,21 +1,20 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useLocation } from 'wouter';
-import { useZero } from '../../contexts/ZeroContext';
+import { myTasks } from '../../queries';
 import { formatDueDate, isOverdue } from './taskHelpers';
 import styles from '../../App.module.css';
 
 const TASKS_PER_PAGE = 20;
 
 export const AllTasksView = () => {
-  const zero = useZero();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
 
-  const [tasksData] = useQuery(zero.query.task);
+  const [tasksData] = useQuery(myTasks() as any) as any;
 
-  const filteredTasks = tasksData.filter(task => {
+  const filteredTasks = tasksData.filter((task: any) => {
     if (!searchQuery) return true;
     return task.name.toLowerCase().includes(searchQuery.toLowerCase());
   });

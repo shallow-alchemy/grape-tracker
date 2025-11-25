@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { Modal } from '../Modal';
 import { useZero } from '../../contexts/ZeroContext';
+import { myWines, myVintages, myStageHistoryByEntity, myMeasurementsByEntity, myTasksByEntity } from '../../queries';
 import styles from '../../App.module.css';
 
 type DeleteWineConfirmModalProps = {
@@ -21,31 +22,23 @@ export const DeleteWineConfirmModal = ({
   const [error, setError] = useState<string | null>(null);
 
   const zero = useZero();
-  const [winesData] = useQuery(zero.query.wine.where('id', wineId));
-  const wine = winesData[0];
+  const [allWinesData] = useQuery(myWines() as any) as any;
+  const wine = allWinesData.find((w: any) => w.id === wineId);
 
-  const [vintagesData] = useQuery(
-    wine ? zero.query.vintage.where('id', wine.vintage_id) : zero.query.vintage.where('id', 'none')
-  );
-  const vintage = vintagesData[0];
+  const [allVintagesData] = useQuery(myVintages() as any) as any;
+  const vintage = allVintagesData.find((v: any) => v.id === wine?.vintage_id);
 
   const [stageHistoryData] = useQuery(
-    zero.query.stage_history
-      .where('entity_type', 'wine')
-      .where('entity_id', wineId)
-  );
+    myStageHistoryByEntity('wine', wineId)
+  ) as any;
 
   const [measurementsData] = useQuery(
-    zero.query.measurement
-      .where('entity_type', 'wine')
-      .where('entity_id', wineId)
-  );
+    myMeasurementsByEntity('wine', wineId)
+  ) as any;
 
   const [tasksData] = useQuery(
-    zero.query.task
-      .where('entity_type', 'wine')
-      .where('entity_id', wineId)
-  );
+    myTasksByEntity('wine', wineId)
+  ) as any;
 
   const handleDelete = async () => {
     if (!wine) return;
