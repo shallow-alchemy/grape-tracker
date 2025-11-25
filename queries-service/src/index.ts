@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { withValidation } from '@rocicorp/zero';
 import { handleGetQueriesRequest } from '@rocicorp/zero/server';
-import { schema } from '../../schema.js';
+import { schema } from '../schema.js';
 import { activeWines } from './queries.js';
 
 const app = new Hono();
@@ -82,7 +82,7 @@ app.post('/get-queries', async (c) => {
 // Health check endpoint
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
-const port = 3002;
+const port = parseInt(process.env.PORT || '3002', 10);
 
 serve({ fetch: app.fetch, port }, (info) => {
   console.log(`[queries-service] Listening on http://localhost:${info.port}`);

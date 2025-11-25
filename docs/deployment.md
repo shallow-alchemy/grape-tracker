@@ -12,28 +12,30 @@ yarn dev  # Runs zero-cache, backend, and frontend concurrently
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────┐
-│ Railway Project                                 │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│  PostgreSQL (wal_level=logical)                │
-│      ↑           ↑                              │
-│      │           │                              │
-│  zero-cache   axum-backend                     │
-│   (port 4848)  (port 3001)                     │
-│      ↑           ↑                              │
-└──────┼───────────┼──────────────────────────────┘
-       │           │
-       │           │
-   ┌───┴───────────┴────┐
-   │   Netlify Frontend │
-   │   - Zero sync      │
-   │   - STL generation │
-   └────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ Railway Project                                              │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  PostgreSQL (wal_level=logical)                             │
+│      ↑           ↑                                           │
+│      │           │                                           │
+│  zero-cache   axum-backend   queries-service                │
+│  (port 4848)  (port 3001)    (port 3002)                    │
+│      ↑           ↑              ↑                            │
+│      │           │              │ (synced queries)           │
+│      └───────────┼──────────────┘                            │
+│                  │                                           │
+└──────────────────┼───────────────────────────────────────────┘
+                   │
+               ┌───┴────┐
+               │ Netlify │
+               │ Frontend│
+               └─────────┘
 ```
 
 **Data Flow:**
 - **Domain Data:** Frontend ↔ Zero Cache ↔ PostgreSQL
+- **Synced Queries:** Zero Cache → Queries Service (user-filtered data)
 - **Migrations:** Backend (sqlx) → PostgreSQL
 - **STL Files:** Generated client-side in browser
 
@@ -152,34 +154,91 @@ You should see: `vineyard`, `block`, `vine`, `_sqlx_migrations`
 
 ---
 
-## Step 3: Railway Zero-Cache Deployment
+## Step 3: Railway Queries Service Deployment
 
-### 3.1 Add Zero-Cache Service
+The queries service handles synced queries with user authentication for multi-tenant data isolation.
+
+### 3.1 Add Queries Service
+
+1. In Railway project, click "New" → "GitHub Repo"
+2. Select your `grape-tracker` repository
+3. Set root directory to `/queries-service`
+
+### 3.2 Configure Service Settings
+
+**Settings → General:**
+- Root Directory: `queries-service`
+
+Railway will auto-detect Node.js and use Nixpacks to build.
+
+**Watch Paths** (in railway.toml):
+```
+queries-service/**
+schema.ts
+```
+
+**Note:** The `schema.ts` file is copied into queries-service. If you update the root schema.ts, run `yarn sync-schema` in queries-service and commit the change.
+
+### 3.3 Environment Variables
+
+Variables tab, add:
+```bash
+PORT=3002
+NODE_ENV=production
+```
+
+### 3.4 Generate Public URL
+
+1. Settings → Networking → Generate Domain
+2. Copy URL (e.g., `https://queries-service.up.railway.app`)
+3. **Save this URL** - you'll need it for zero-cache configuration
+
+### 3.5 Verify Deployment
+
+Test the health endpoint:
+```bash
+curl https://your-queries-service.up.railway.app/health
+```
+
+Expected response:
+```json
+{"status":"ok"}
+```
+
+---
+
+## Step 4: Railway Zero-Cache Deployment
+
+### 4.1 Add Zero-Cache Service
 
 1. New → GitHub Repo → Connect `grape-tracker`
 2. Railway auto-detects and deploys
 
-### 3.2 Environment Variables
+### 4.2 Environment Variables
 
 Variables tab, add:
 ```bash
 ZERO_UPSTREAM_DB=${{Postgres.DATABASE_URL}}
 ZERO_REPLICA_FILE=/tmp/sync-replica.db
 ZERO_AUTH_SECRET=<generate-strong-secret>
+ZERO_GET_QUERIES_URL=https://your-queries-service.up.railway.app/get-queries
+ZERO_AUTH_JWKS_URL=https://your-clerk-domain.clerk.accounts.dev/.well-known/jwks.json
 PORT=4848
 ```
+
+**Important:** Replace `your-queries-service.up.railway.app` with the actual URL from Step 3.4.
 
 Generate auth secret:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-### 3.3 Generate Public URL
+### 4.3 Generate Public URL
 
 1. Settings → Networking → Generate Domain
 2. Copy URL (e.g., `https://zero-cache.up.railway.app`)
 
-### 3.4 Verify Deployment
+### 4.4 Verify Deployment
 
 Visit `https://your-zero-cache.up.railway.app/health`
 
@@ -187,9 +246,9 @@ Should see: `{"status":"ok","timestamp":"..."}`
 
 ---
 
-## Step 4: Netlify Frontend Deployment
+## Step 5: Netlify Frontend Deployment
 
-### 4.1 Connect Repository
+### 5.1 Connect Repository
 
 1. Add new site → Import existing project
 2. Choose GitHub → Select `grape-tracker`
@@ -197,7 +256,7 @@ Should see: `{"status":"ok","timestamp":"..."}`
    - Build command: `yarn build`
    - Publish directory: `dist`
 
-### 4.2 Environment Variables
+### 5.2 Environment Variables
 
 Site configuration → Environment variables:
 ```bash
@@ -210,13 +269,13 @@ VITE_BACKEND_URL=https://your-backend.up.railway.app
 - Go to each Railway service → Settings → Domains
 - Copy the generated domain
 
-### 4.3 Deploy
+### 5.3 Deploy
 
 Click "Deploy site" and wait for build to complete.
 
 ---
 
-## Step 5: Clerk Configuration
+## Step 6: Clerk Configuration
 
 1. [Clerk Dashboard](https://dashboard.clerk.com)
 2. Select your application
@@ -233,9 +292,16 @@ Click "Deploy site" and wait for build to complete.
 - [ ] Migrations ran successfully (check logs)
 - [ ] Database has vineyard, block, vine tables
 
+**Railway Queries Service:**
+- [ ] Health endpoint returns `{"status":"ok"}`
+- [ ] Logs show JWT decoding (when requests come in)
+- [ ] Domain is publicly accessible
+
 **Railway Zero-Cache:**
 - [ ] Health check returns OK
 - [ ] Connected to PostgreSQL with `wal_level=logical`
+- [ ] `ZERO_GET_QUERIES_URL` points to queries service
+- [ ] `ZERO_AUTH_JWKS_URL` points to Clerk JWKS
 
 **Netlify Frontend:**
 - [ ] Build succeeded
@@ -243,6 +309,7 @@ Click "Deploy site" and wait for build to complete.
 - [ ] Can sign in with Clerk
 - [ ] Can create vines
 - [ ] Data syncs between devices
+- [ ] Synced queries filter by user (test with 2 accounts)
 
 ---
 
@@ -317,6 +384,20 @@ ORDER BY installed_on DESC;
 - Railway assigns ports automatically
 - Ensure you're using `$PORT` environment variable
 
+### Queries Service Issues
+
+**"Unknown query: myQuery"**
+- Query not registered in `validatedQueries` in `queries-service/src/index.ts`
+- Add query: `[myQuery.queryName]: withValidation(myQuery)`
+
+**"No Authorization header"**
+- Zero-cache not forwarding JWT to queries service
+- Check `ZERO_AUTH_JWKS_URL` is set correctly
+
+**Query returns 0 results**
+- Client passing `null` instead of `user?.id`
+- Check component is passing user ID to query
+
 ### Zero-Cache Connection Issues
 
 **"Cannot connect to database"**
@@ -326,6 +407,11 @@ ORDER BY installed_on DESC;
 **"Schema not found"**
 - Ensure migrations have run (backend creates tables)
 - Verify zero-cache can read from PostgreSQL
+
+**Synced queries not working**
+- Verify `ZERO_GET_QUERIES_URL` environment variable is set
+- Check queries service is running and accessible
+- Check zero-cache logs for query resolution errors
 
 ### Frontend Sync Issues
 
@@ -378,6 +464,7 @@ Railway runs new migration on next backend deploy.
   - PostgreSQL: ~$2/month
   - Zero-cache: ~$1/month
   - Backend: ~$1/month
+  - Queries service: ~$0.50/month
 - **Netlify:** 100GB bandwidth/month (plenty for MVP)
 - **Clerk:** 10,000 MAUs free
 
@@ -389,7 +476,7 @@ Railway runs new migration on next backend deploy.
 ```bash
 yarn dev
 ```
-Runs zero-cache, backend, and frontend concurrently.
+Runs zero-cache, backend, frontend, and queries-service concurrently.
 
 **Option B: Individual services**
 ```bash
@@ -401,12 +488,18 @@ yarn dev:backend
 
 # Terminal 3: Frontend dev server
 yarn dev:frontend
+
+# Terminal 4: Queries service dev server
+yarn dev:queries
 ```
 
 **Requirements:**
 - Local PostgreSQL with `wal_level = logical`
-- `.env` configured (see `backend/.env.example`)
+- `.env` configured with:
+  - `DATABASE_URL` for PostgreSQL
+  - `ZERO_GET_QUERIES_URL=http://localhost:3002/get-queries`
+  - `ZERO_AUTH_JWKS_URL` for Clerk JWKS
 
 ---
 
-**Last Updated:** Nov 11, 2025
+**Last Updated:** Nov 24, 2025

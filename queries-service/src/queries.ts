@@ -1,6 +1,6 @@
 import { syncedQueryWithContext } from '@rocicorp/zero';
 import { z } from 'zod';
-import { builder } from '../../schema.js';
+import { builder } from '../schema.js';
 
 // Admin user ID from Clerk
 const ADMIN_USER_ID = 'user_34zvb6YsnjkI4IFo9qDJyUXGQfK';
