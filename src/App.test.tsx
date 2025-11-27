@@ -68,7 +68,7 @@ describe('App', () => {
   test('renders App component', () => {
     render(<App />);
 
-    expect(screen.getByTestId('zero-provider')).toBeInTheDocument();
+    expect(screen.getByTestId('auth-guard')).toBeInTheDocument();
   });
 
   test('renders header with app title', () => {
@@ -117,15 +117,15 @@ describe('App', () => {
     expect(wineryLink).toHaveAttribute('href', '/winery/vintages');
   });
 
-  test('wraps content in ZeroProvider', () => {
+  test('wraps content in AuthGuard', () => {
     render(<App />);
 
-    const zeroProvider = screen.getByTestId('zero-provider');
-    expect(zeroProvider).toBeInTheDocument();
+    const authGuard = screen.getByTestId('auth-guard');
+    expect(authGuard).toBeInTheDocument();
 
-    // Check that app content is inside ZeroProvider
+    // Check that app content is inside AuthGuard
     const appTitle = screen.getByText('GILBERT');
-    expect(zeroProvider).toContainElement(appTitle);
+    expect(authGuard).toContainElement(appTitle);
   });
 
   test('renders header navigation structure', () => {
