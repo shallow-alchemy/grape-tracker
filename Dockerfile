@@ -14,4 +14,4 @@ RUN npm install @rocicorp/zero
 EXPOSE 4848
 
 # Deploy permissions then start zero-cache (zero-cache reads permissions from database)
-CMD ["sh", "-c", "zero-deploy-permissions --schema-path /app/schema.cjs --upstream-db \"$ZERO_UPSTREAM_DB\" && zero-cache"]
+CMD ["sh", "-c", "echo 'Starting...' && echo \"DB: $ZERO_UPSTREAM_DB\" && zero-deploy-permissions --schema-path /app/schema.cjs --upstream-db \"$ZERO_UPSTREAM_DB\" && echo 'Permissions deployed, starting zero-cache...' && zero-cache"]
