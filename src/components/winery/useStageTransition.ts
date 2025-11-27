@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useZero } from '../../contexts/ZeroContext';
 import { myStageHistoryByEntity, taskTemplates } from '../../shared/queries';
@@ -23,6 +24,10 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Use reactive queries following the known working pattern
+  const [stageHistoryData] = useQuery(myStageHistoryByEntity(user?.id, entityType, entityId) as any) as any;
+  const [templatesData] = useQuery(taskTemplates(user?.id) as any) as any;
+
   const advanceStage = async (
     currentStage: string,
     data: StageTransitionData
@@ -33,8 +38,8 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
     try {
       const now = Date.now();
 
-      const allStageHistory = await myStageHistoryByEntity(user?.id, entityType, entityId).run();
-      const stageHistory = allStageHistory.filter((s: any) => s.stage === currentStage);
+      // Use already-fetched reactive data instead of imperative .run()
+      const stageHistory = (stageHistoryData || []).filter((s: any) => s.stage === currentStage);
 
       const currentEntry = stageHistory.find((s: any) => !s.completed_at);
       if (currentEntry) {
@@ -75,7 +80,8 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
         });
       }
 
-      const allTemplates = await taskTemplates(user?.id).run();
+      // Use already-fetched reactive data instead of imperative .run()
+      const allTemplates = templatesData || [];
 
       const relevantTemplates = allTemplates.filter((template: any) => {
         const stageMatch = template.stage === data.toStage;

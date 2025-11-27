@@ -3,13 +3,15 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { useStageTransition } from './useStageTransition';
 
 // Mock dependencies
-const mockStageHistoryRun = rs.fn();
 const mockStageHistoryUpdate = rs.fn().mockResolvedValue(undefined);
 const mockStageHistoryInsert = rs.fn().mockResolvedValue(undefined);
 const mockWineUpdate = rs.fn().mockResolvedValue(undefined);
 const mockVintageUpdate = rs.fn().mockResolvedValue(undefined);
-const mockTaskTemplateRun = rs.fn();
 const mockTaskInsert = rs.fn().mockResolvedValue(undefined);
+
+// Mock data that will be returned by useQuery
+let mockStageHistoryData: any[] = [];
+let mockTemplatesData: any[] = [];
 
 rs.mock('@clerk/clerk-react', () => ({
   useUser: () => ({
@@ -23,10 +25,24 @@ rs.mock('./taskHelpers', () => ({
   calculateDueDate: (baseTime: number) => baseTime + 86400000, // Add 1 day
 }));
 
-// Mock the queries module to return objects with .run() methods
+// Mock queries to return objects with customQueryID for useQuery pattern
 rs.mock('../../shared/queries', () => ({
-  myStageHistoryByEntity: () => ({ run: mockStageHistoryRun }),
-  taskTemplates: () => ({ run: mockTaskTemplateRun }),
+  myStageHistoryByEntity: () => ({ customQueryID: { name: 'myStageHistoryByEntity' } }),
+  taskTemplates: () => ({ customQueryID: { name: 'taskTemplates' } }),
+}));
+
+// Mock useQuery to return reactive data based on query name
+rs.mock('@rocicorp/zero/react', () => ({
+  useQuery: (query: any) => {
+    const queryName = query?.customQueryID?.name;
+    if (queryName === 'myStageHistoryByEntity') {
+      return [mockStageHistoryData];
+    }
+    if (queryName === 'taskTemplates') {
+      return [mockTemplatesData];
+    }
+    return [[]];
+  },
 }));
 
 rs.mock('../../contexts/ZeroContext', () => ({
@@ -51,12 +67,12 @@ rs.mock('../../contexts/ZeroContext', () => ({
 
 describe('useStageTransition', () => {
   afterEach(() => {
-    mockStageHistoryRun.mockClear();
+    mockStageHistoryData = [];
+    mockTemplatesData = [];
     mockStageHistoryUpdate.mockClear();
     mockStageHistoryInsert.mockClear();
     mockWineUpdate.mockClear();
     mockVintageUpdate.mockClear();
-    mockTaskTemplateRun.mockClear();
     mockTaskInsert.mockClear();
   });
 
@@ -72,7 +88,7 @@ describe('useStageTransition', () => {
 
   describe('advanceStage for wine', () => {
     test('completes current stage and creates new stage', async () => {
-      const currentStageHistory = [
+      mockStageHistoryData = [
         {
           id: 'history-1',
           entity_type: 'wine',
@@ -83,9 +99,7 @@ describe('useStageTransition', () => {
           skipped: false,
         },
       ];
-
-      mockStageHistoryRun.mockResolvedValue(currentStageHistory);
-      mockTaskTemplateRun.mockResolvedValue([]);
+      mockTemplatesData = [];
 
       const { result } = renderHook(() => useStageTransition('wine', 'wine-1'));
 
@@ -121,7 +135,7 @@ describe('useStageTransition', () => {
     });
 
     test('marks stage as skipped when skipCurrentStage is true', async () => {
-      const currentStageHistory = [
+      mockStageHistoryData = [
         {
           id: 'history-1',
           entity_type: 'wine',
@@ -132,9 +146,7 @@ describe('useStageTransition', () => {
           skipped: false,
         },
       ];
-
-      mockStageHistoryRun.mockResolvedValue(currentStageHistory);
-      mockTaskTemplateRun.mockResolvedValue([]);
+      mockTemplatesData = [];
 
       const { result } = renderHook(() => useStageTransition('wine', 'wine-1'));
 
@@ -152,8 +164,8 @@ describe('useStageTransition', () => {
     });
 
     test('handles case where no current stage history exists', async () => {
-      mockStageHistoryRun.mockResolvedValue([]);
-      mockTaskTemplateRun.mockResolvedValue([]);
+      mockStageHistoryData = [];
+      mockTemplatesData = [];
 
       const { result } = renderHook(() => useStageTransition('wine', 'wine-1'));
 
@@ -171,8 +183,8 @@ describe('useStageTransition', () => {
 
   describe('advanceStage for vintage', () => {
     test('updates vintage current_stage instead of wine', async () => {
-      mockStageHistoryRun.mockResolvedValue([]);
-      mockTaskTemplateRun.mockResolvedValue([]);
+      mockStageHistoryData = [];
+      mockTemplatesData = [];
 
       const { result } = renderHook(() => useStageTransition('vintage', 'vintage-1'));
 
@@ -194,8 +206,8 @@ describe('useStageTransition', () => {
 
   describe('task creation from templates', () => {
     test('creates tasks from matching templates', async () => {
-      mockStageHistoryRun.mockResolvedValue([]);
-      const templates = [
+      mockStageHistoryData = [];
+      mockTemplatesData = [
         {
           id: 'template-1',
           stage: 'primary_fermentation',
@@ -219,7 +231,6 @@ describe('useStageTransition', () => {
           default_enabled: true,
         },
       ];
-      mockTaskTemplateRun.mockResolvedValue(templates);
 
       const { result } = renderHook(() => useStageTransition('wine', 'wine-1'));
 
@@ -234,8 +245,8 @@ describe('useStageTransition', () => {
     });
 
     test('filters templates by entity type', async () => {
-      mockStageHistoryRun.mockResolvedValue([]);
-      const templates = [
+      mockStageHistoryData = [];
+      mockTemplatesData = [
         {
           id: 'template-1',
           stage: 'primary_fermentation',
@@ -259,7 +270,6 @@ describe('useStageTransition', () => {
           default_enabled: true,
         },
       ];
-      mockTaskTemplateRun.mockResolvedValue(templates);
 
       const { result } = renderHook(() => useStageTransition('wine', 'wine-1'));
 
@@ -278,8 +288,8 @@ describe('useStageTransition', () => {
     });
 
     test('filters templates by wine type when provided', async () => {
-      mockStageHistoryRun.mockResolvedValue([]);
-      const templates = [
+      mockStageHistoryData = [];
+      mockTemplatesData = [
         {
           id: 'template-1',
           stage: 'primary_fermentation',
@@ -303,7 +313,6 @@ describe('useStageTransition', () => {
           default_enabled: true,
         },
       ];
-      mockTaskTemplateRun.mockResolvedValue(templates);
 
       const { result } = renderHook(() => useStageTransition('wine', 'wine-1', 'red'));
 
@@ -322,8 +331,8 @@ describe('useStageTransition', () => {
     });
 
     test('skips disabled templates', async () => {
-      mockStageHistoryRun.mockResolvedValue([]);
-      const templates = [
+      mockStageHistoryData = [];
+      mockTemplatesData = [
         {
           id: 'template-1',
           stage: 'primary_fermentation',
@@ -347,7 +356,6 @@ describe('useStageTransition', () => {
           default_enabled: false,
         },
       ];
-      mockTaskTemplateRun.mockResolvedValue(templates);
 
       const { result } = renderHook(() => useStageTransition('wine', 'wine-1'));
 
@@ -362,8 +370,10 @@ describe('useStageTransition', () => {
   });
 
   describe('error handling', () => {
-    test('returns error result when stage history update fails', async () => {
-      mockStageHistoryRun.mockRejectedValue(new Error('Database error'));
+    test('returns error result when mutation fails', async () => {
+      mockStageHistoryData = [];
+      mockTemplatesData = [];
+      mockStageHistoryInsert.mockRejectedValueOnce(new Error('Database error'));
 
       const { result } = renderHook(() => useStageTransition('wine', 'wine-1'));
 
@@ -378,7 +388,9 @@ describe('useStageTransition', () => {
     });
 
     test('sets error state when operation fails', async () => {
-      mockStageHistoryRun.mockRejectedValue(new Error('Network error'));
+      mockStageHistoryData = [];
+      mockTemplatesData = [];
+      mockStageHistoryInsert.mockRejectedValueOnce(new Error('Network error'));
 
       const { result } = renderHook(() => useStageTransition('wine', 'wine-1'));
 
@@ -394,11 +406,14 @@ describe('useStageTransition', () => {
     });
 
     test('sets loading state during operation', async () => {
-      let resolveStageHistory: (value: any) => void;
-      const stageHistoryPromise = new Promise((resolve) => {
-        resolveStageHistory = resolve;
+      mockStageHistoryData = [];
+      mockTemplatesData = [];
+
+      let resolveInsert: () => void;
+      const insertPromise = new Promise<void>((resolve) => {
+        resolveInsert = resolve;
       });
-      mockStageHistoryRun.mockReturnValue(stageHistoryPromise);
+      mockStageHistoryInsert.mockReturnValueOnce(insertPromise);
 
       const { result } = renderHook(() => useStageTransition('wine', 'wine-1'));
 
@@ -414,8 +429,7 @@ describe('useStageTransition', () => {
       });
 
       // Resolve the promise
-      resolveStageHistory!([]);
-      mockTaskTemplateRun.mockResolvedValue([]);
+      resolveInsert!();
       await promise;
 
       // Should not be loading after completion
