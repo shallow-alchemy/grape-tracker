@@ -38,7 +38,8 @@
     "@types/three": "^0.181.0",
     "concurrently": "^9.2.1",
     "jsdom": "^27.2.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.53.4",

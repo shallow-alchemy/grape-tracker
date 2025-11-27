@@ -1,4 +1,4 @@
-import { test, describe, expect, rs, afterEach } from '@rstest/core';
+import { test, describe, expect, rs, afterEach, beforeEach } from '@rstest/core';
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DeleteVintageConfirmModal } from './DeleteVintageConfirmModal';
@@ -352,6 +352,17 @@ describe('DeleteVintageConfirmModal', () => {
   });
 
   describe('error handling', () => {
+    let originalConsoleError: typeof console.error;
+
+    beforeEach(() => {
+      originalConsoleError = console.error;
+      console.error = rs.fn();
+    });
+
+    afterEach(() => {
+      console.error = originalConsoleError;
+    });
+
     test('displays error message when deletion fails', async () => {
       const user = userEvent.setup();
       mockVintageDelete.mockRejectedValue(new Error('Network error'));

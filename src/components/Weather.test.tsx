@@ -139,6 +139,17 @@ describe('Weather', () => {
   });
 
   describe('when weather fails to load', () => {
+    let originalConsoleError: typeof console.error;
+
+    beforeEach(() => {
+      originalConsoleError = console.error;
+      console.error = rs.fn();
+    });
+
+    afterEach(() => {
+      console.error = originalConsoleError;
+    });
+
     test('displays error message to user', async () => {
       const { fetchWeather } = require('../utils/weather');
       fetchWeather.mockRejectedValue(new Error('Network error'));

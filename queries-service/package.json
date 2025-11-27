@@ -4,7 +4,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    "sync-schema": "cp ../schema.ts ./schema.ts"
+    "sync-schema": "cp ../schema.ts ./schema.ts",
+    "test": "npx vitest run",
+    "test:watch": "npx vitest"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",

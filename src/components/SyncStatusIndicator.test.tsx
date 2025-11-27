@@ -177,13 +177,24 @@ describe('SyncStatusIndicator', () => {
 
   describe('error state', () => {
     let originalConsoleError: typeof console.error;
+    let mockConsoleError: ReturnType<typeof rs.fn>;
+    let errorCallback: ((message: string) => void) | null = null;
 
     beforeEach(() => {
       originalConsoleError = console.error;
+      // Create a mock that captures the error but doesn't print to console
+      mockConsoleError = rs.fn().mockImplementation((message: string) => {
+        // Trigger any error listeners the component may have set up
+        if (errorCallback) {
+          errorCallback(message);
+        }
+      });
+      console.error = mockConsoleError;
     });
 
     afterEach(() => {
       console.error = originalConsoleError;
+      errorCallback = null;
     });
 
     test('shows error state when console.error contains WebSocket message', async () => {
@@ -196,7 +207,6 @@ describe('SyncStatusIndicator', () => {
       });
 
       unmount();
-      console.error = originalConsoleError;
     });
 
     test('shows error warning icon', async () => {
@@ -209,7 +219,6 @@ describe('SyncStatusIndicator', () => {
       });
 
       unmount();
-      console.error = originalConsoleError;
     });
 
     test('shows error details with retry button', async () => {
@@ -229,7 +238,6 @@ describe('SyncStatusIndicator', () => {
       expect(screen.getByText('Refresh to retry')).toBeInTheDocument();
 
       unmount();
-      console.error = originalConsoleError;
     });
   });
 

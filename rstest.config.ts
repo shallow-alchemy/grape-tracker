@@ -5,4 +5,6 @@ export default defineConfig({
   plugins: [pluginReact()],
   testEnvironment: 'jsdom',
   setupFiles: ['./rstest.setup.ts'],
+  exclude: ['**/node_modules/**', '**/queries-service/**'],
+  isolate: true,
 });

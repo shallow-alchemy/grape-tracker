@@ -275,10 +275,10 @@ describe('AddVineModal', () => {
         })
       );
 
-      // Should call success with single vine message
+      // Should call success with single vine message (message uses sequence number for display, but passes UUID)
       expect(onSuccess).toHaveBeenCalledWith(
         expect.stringContaining('Vine block-1-001 created successfully'),
-        '001'
+        expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
       );
       expect(onClose).toHaveBeenCalled();
     });
@@ -357,21 +357,25 @@ describe('AddVineModal', () => {
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Check sequence numbers
+      // Check sequence numbers (id is UUID, sequence_number is for display)
       expect(mockVineInsert).toHaveBeenNthCalledWith(1,
         expect.objectContaining({
-          id: '001',
           sequence_number: 1,
           block: 'block-2',
         })
       );
       expect(mockVineInsert).toHaveBeenNthCalledWith(2,
         expect.objectContaining({
-          id: '002',
           sequence_number: 2,
           block: 'block-2',
         })
       );
+      // Verify IDs are UUIDs
+      const firstCall = mockVineInsert.mock.calls[0][0];
+      const secondCall = mockVineInsert.mock.calls[1][0];
+      expect(firstCall.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+      expect(secondCall.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+      expect(firstCall.id).not.toBe(secondCall.id);
     });
   });
 

@@ -14,8 +14,38 @@
 8. **Capture callbacks in constructors** - Use plain functions to capture callbacks passed to class constructors
 9. **Clear captured state** - Reset callback captures and mock data in `beforeEach`
 10. **Test error paths** - Use `mockRejectedValueOnce` to test promise rejection handling
+11. **Suppress expected console.error** - Mock `console.error` in error handling tests to reduce noise
+12. **Use test isolation** - `isolate: true` in rstest.config.ts prevents timeout flakiness
 
 **Quick reference:** See example test files at bottom of this guide for working implementations.
+
+---
+
+## Critical Configuration: Test Isolation
+
+**The rstest config MUST have `isolate: true` to prevent timeout flakiness.**
+
+```typescript
+// rstest.config.ts
+export default defineConfig({
+  plugins: [pluginReact()],
+  testEnvironment: 'jsdom',
+  setupFiles: ['./rstest.setup.ts'],
+  exclude: ['**/node_modules/**', '**/queries-service/**'],
+  isolate: true,  // ⚠️ CRITICAL: Prevents test pollution and timeouts
+});
+```
+
+**Why this matters:**
+- Without isolation, tests share the same environment and pollute each other
+- This causes random timeout failures (tests pass individually but fail together)
+- Tests that take 3-4 seconds individually can timeout at 5+ seconds when run together
+- The `isolate: true` setting runs each test file in a fresh environment
+
+**Symptoms of missing isolation:**
+- Tests pass when run individually (`yarn test Modal.test.tsx`) but fail in full suite
+- Random timeout errors that vary between runs
+- Tests that worked before suddenly fail without code changes
 
 ---
 
@@ -435,6 +465,53 @@ test('shows error when camera denied', async () => {
 
 **Note:** Use `mockRejectedValueOnce` for single-test overrides, preserving the default resolved value for other tests.
 
+## Suppressing Console Errors in Error Handling Tests
+
+**When testing error handling paths, mock `console.error` to prevent noisy output.**
+
+Components often log errors to the console when things fail. This is correct production behavior, but creates noisy test output. Mock `console.error` in error handling test blocks to keep the output clean.
+
+```typescript
+// ❌ BAD: Error logs clutter test output
+describe('error handling', () => {
+  test('shows error message when deletion fails', async () => {
+    mockDelete.mockRejectedValue(new Error('Network error'));
+    // Test runs but prints: "Error deleting: Error: Network error" to console
+    render(<MyComponent />);
+    // ...
+  });
+});
+
+// ✅ GOOD: Mock console.error to suppress expected errors
+describe('error handling', () => {
+  let originalConsoleError: typeof console.error;
+
+  beforeEach(() => {
+    originalConsoleError = console.error;
+    console.error = rs.fn();  // Suppress error output
+  });
+
+  afterEach(() => {
+    console.error = originalConsoleError;  // Restore for other tests
+  });
+
+  test('shows error message when deletion fails', async () => {
+    mockDelete.mockRejectedValue(new Error('Network error'));
+    // No console noise - error is captured by mock
+    render(<MyComponent />);
+    // ...
+  });
+});
+```
+
+**When to use this pattern:**
+- Tests that deliberately trigger errors (`mockRejectedValue`)
+- Tests for error UI states (error messages, retry buttons)
+- Tests that trigger console.error via component error boundaries
+- Tests for sync error detection (like WebSocket failures in SyncStatusIndicator)
+
+**Important:** Always restore `console.error` in `afterEach` to prevent masking real errors in other tests.
+
 ## Library API Verification
 
 **Before writing tests, verify which library the component actually uses. Mock the correct library with the correct API.**
@@ -465,3 +542,6 @@ For reference implementations of these testing patterns, see:
 - **`src/components/vineyard-hooks.test.ts`** - Custom hook testing with ZeroContext mocking
 - **`src/components/VineDetailsView.test.tsx`** - CommonJS library mocking, DOM method mocking, callback capture
 - **`src/components/QRScanner.test.tsx`** - Constructor mocking, callback capture, promise rejection testing
+- **`src/components/SyncStatusIndicator.test.tsx`** - Console.error mocking for error state tests
+- **`src/components/Weather.test.tsx`** - Console.error suppression for network error tests
+- **`src/components/winery/DeleteVintageConfirmModal.test.tsx`** - Error handling with console.error mock

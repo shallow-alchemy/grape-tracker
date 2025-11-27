@@ -10,6 +10,7 @@ rs.mock('@clerk/clerk-react', () => ({
 const mockVine = {
   id: 'vine-1',
   block: 'North Block',
+  sequence_number: 1,
   variety: 'Cabernet Sauvignon',
   planting_date: new Date('2022-04-15'),
   age: '2 years',

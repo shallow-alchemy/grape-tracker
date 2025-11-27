@@ -1,42 +1,43 @@
 # Gilbert - Development Roadmap
 
-**Last Updated:** Jan 19, 2025
+**Last Updated:** Nov 27, 2025
 **Priorities Established:** Jan 19, 2025
 
 This roadmap organizes features by topic area rather than timeline. Within each category, features are listed in priority order (Priority 1 = next to implement). Features are marked as ✅ Complete, 🔄 In Progress, or 🔲 Not Started.
 
 ---
 
-## INFRASTRUCTURE & TOOLING (BLOCKING)
+## INFRASTRUCTURE & TOOLING
 
-### Priority 0: zero-query Rust Crate
-**Status:** 🔄 In Progress (Planning Phase)
-**Timeline:** 2-3 weeks
-**Blocks:** User-specific data isolation for all features
+### ✅ COMPLETED: User Data Isolation via Custom Mutators
+**Status:** ✅ Complete
+**Completed:** Nov 27, 2025
 
-**Detailed Plan:** See [`docs/zero-query-crate-plan.md`](../zero-query-crate-plan.md)
+User-specific data isolation is now enforced via Zero custom mutators.
 
-A Rust query builder for Zero synced queries, enabling user-specific data without Node.js microservice.
+**What was built:**
+1. ✅ Server-side mutators (`queries-service/src/mutators.ts`) with auth enforcement
+2. ✅ Client-side mutators (`src/mutators.ts`) for optimistic updates
+3. ✅ Push endpoint (`/push`) for mutation processing
+4. ✅ JWT extraction from Clerk tokens for user identification
+5. ✅ Comprehensive test coverage (12 server tests, 11 client tests)
+6. ✅ Deployed to Railway (queries-service + zero-cache configured)
 
-**Phases:**
-1. ✅ Planning & architecture documented
-2. 🔲 TypeScript reference implementation (validation baseline)
-3. 🔲 Rust crate development (AST types → query builder → expressions)
-4. 🔲 Cross-validation (Rust output matches TypeScript byte-for-byte)
-5. 🔲 Publish to crates.io as `zero-query`
-6. 🔲 Integrate with Gilbert backend
+**How it works:**
+- All mutations flow through `ZERO_MUTATE_URL` to queries-service
+- Server validates JWT and extracts `user_id`
+- Mutations enforce: users can only modify their own data
+- Inserts automatically set `user_id` from auth token
+- Updates/deletes verify ownership before allowing operation
 
-**Why This Matters:**
-- Currently: ANYONE_CAN permissions (no user isolation!)
-- After: Proper multi-user data isolation with synced queries
-- Bonus: Community contribution to Rust/Zero ecosystem
+**Previous approach (abandoned):**
+The original plan was to build a Rust `zero-query` crate to match Zero's query AST format. This was deprioritized in favor of the simpler custom mutators approach using the official Zero SDK, which provides equivalent security with less complexity.
 
-**Validation Strategy:**
-- Build TypeScript Node.js service first (official Zero SDK)
-- Deploy to Gilbert, verify user isolation works
-- Build Rust crate to match TypeScript behavior exactly
-- Compare AST JSON outputs (must be byte-identical)
-- Only publish/use Rust version after validation passes
+**Related files:**
+- `queries-service/src/mutators.ts` - Server-side auth enforcement
+- `queries-service/src/index.ts` - Push endpoint
+- `src/mutators.ts` - Client-side mutators
+- `src/contexts/ZeroContext.tsx` - Zero provider with custom mutators
 
 ---
 
@@ -68,6 +69,7 @@ Similar to block deletion, add guardrails when removing varieties:
 - ✅ Form validation and UX improvements
 - ✅ Block management (create, edit, delete, filter)
 - ✅ Batch vine creation (up to 100 vines at once)
+- ✅ UUID-based vine IDs with human-readable sequence numbers
 
 ### QR Code & Field Operations
 - ✅ QR code generation (SVG format)
@@ -80,6 +82,16 @@ Similar to block deletion, add guardrails when removing varieties:
 - ✅ Railway deployment (PostgreSQL + zero-cache + backend)
 - ✅ Netlify frontend deployment
 - ✅ Health endpoints and CORS configuration
+- ✅ Custom mutators for user data isolation (queries-service)
+- ✅ JWT-based auth enforcement on all mutations
+
+### Testing Infrastructure
+- ✅ RSTest + React Testing Library setup
+- ✅ Test isolation (`isolate: true`) for reliable test runs
+- ✅ Console error suppression patterns for clean output
+- ✅ Server-side mutator tests (auth enforcement, ownership)
+- ✅ Client-side mutator tests
+- ✅ 659 passing tests (frontend) + 12 passing tests (backend)
 
 ### Weather & Alerts
 - ✅ Weather API integration (Open-Meteo)

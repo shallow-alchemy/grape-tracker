@@ -168,75 +168,93 @@ describe('vineyard-utils', () => {
   });
 
   describe('generateVineId', () => {
-    test('generates first vine ID as 001 when no vines exist', () => {
+    test('generates UUID and sequence number 1 when no vines exist', () => {
       const result = generateVineId('block-1', []);
 
-      expect(result.id).toBe('001');
+      // ID should be a valid UUID format
+      expect(result.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
       expect(result.sequenceNumber).toBe(1);
     });
 
-    test('generates next vine ID based on existing vines', () => {
+    test('generates next sequence number based on existing vines', () => {
       const existingVines: VineDataRaw[] = [
-        { id: '001', sequence_number: 1 } as VineDataRaw,
-        { id: '002', sequence_number: 2 } as VineDataRaw,
+        { id: 'uuid-1', sequence_number: 1 } as VineDataRaw,
+        { id: 'uuid-2', sequence_number: 2 } as VineDataRaw,
       ];
 
       const result = generateVineId('block-1', existingVines);
 
-      expect(result.id).toBe('003');
+      expect(result.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
       expect(result.sequenceNumber).toBe(3);
     });
 
-    test('pads vine ID with leading zeros', () => {
+    test('generates unique UUID each time', () => {
       const existingVines: VineDataRaw[] = [
-        { id: '001', sequence_number: 1 } as VineDataRaw,
+        { id: 'uuid-1', sequence_number: 1 } as VineDataRaw,
       ];
 
-      const result = generateVineId('block-1', existingVines);
+      const result1 = generateVineId('block-1', existingVines);
+      const result2 = generateVineId('block-1', existingVines);
 
-      expect(result.id).toBe('002');
+      expect(result1.id).not.toBe(result2.id);
     });
 
     test('handles large sequence numbers correctly', () => {
       const existingVines: VineDataRaw[] = [
-        { id: '099', sequence_number: 99 } as VineDataRaw,
+        { id: 'uuid-99', sequence_number: 99 } as VineDataRaw,
       ];
 
       const result = generateVineId('block-1', existingVines);
 
-      expect(result.id).toBe('100');
+      expect(result.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
       expect(result.sequenceNumber).toBe(100);
     });
   });
 
   describe('generateBatchVineIds', () => {
-    test('generates multiple vine IDs starting from 001', () => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+    test('generates multiple vine IDs with UUIDs starting from sequence 1', () => {
       const result = generateBatchVineIds('block-1', [], 3);
 
       expect(result.length).toBe(3);
-      expect(result[0]).toEqual({ id: '001', sequenceNumber: 1 });
-      expect(result[1]).toEqual({ id: '002', sequenceNumber: 2 });
-      expect(result[2]).toEqual({ id: '003', sequenceNumber: 3 });
+      expect(result[0].id).toMatch(uuidRegex);
+      expect(result[0].sequenceNumber).toBe(1);
+      expect(result[1].id).toMatch(uuidRegex);
+      expect(result[1].sequenceNumber).toBe(2);
+      expect(result[2].id).toMatch(uuidRegex);
+      expect(result[2].sequenceNumber).toBe(3);
+    });
+
+    test('generates unique UUIDs for each vine in batch', () => {
+      const result = generateBatchVineIds('block-1', [], 3);
+
+      const ids = result.map((r) => r.id);
+      const uniqueIds = new Set(ids);
+      expect(uniqueIds.size).toBe(3);
     });
 
     test('generates batch IDs continuing from existing sequence', () => {
       const existingVines: VineDataRaw[] = [
-        { id: '001', sequence_number: 1 } as VineDataRaw,
-        { id: '002', sequence_number: 2 } as VineDataRaw,
+        { id: 'uuid-1', sequence_number: 1 } as VineDataRaw,
+        { id: 'uuid-2', sequence_number: 2 } as VineDataRaw,
       ];
 
       const result = generateBatchVineIds('block-1', existingVines, 2);
 
       expect(result.length).toBe(2);
-      expect(result[0]).toEqual({ id: '003', sequenceNumber: 3 });
-      expect(result[1]).toEqual({ id: '004', sequenceNumber: 4 });
+      expect(result[0].id).toMatch(uuidRegex);
+      expect(result[0].sequenceNumber).toBe(3);
+      expect(result[1].id).toMatch(uuidRegex);
+      expect(result[1].sequenceNumber).toBe(4);
     });
 
     test('handles quantity of 1', () => {
       const result = generateBatchVineIds('block-1', [], 1);
 
       expect(result.length).toBe(1);
-      expect(result[0]).toEqual({ id: '001', sequenceNumber: 1 });
+      expect(result[0].id).toMatch(uuidRegex);
+      expect(result[0].sequenceNumber).toBe(1);
     });
 
     test('handles quantity of 0', () => {
