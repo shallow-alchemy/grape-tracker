@@ -7,8 +7,11 @@ COPY schema.cjs /app/schema.cjs
 # Set working directory
 WORKDIR /app
 
+# Install @rocicorp/zero so zero-deploy-permissions can load the schema
+RUN npm install @rocicorp/zero
+
 # Zero runs on port 4848
 EXPOSE 4848
 
-# Start zero-cache - it will auto-detect env vars
-CMD ["zero-cache", "--schema-path", "/app/schema.cjs"]
+# Deploy permissions then start zero-cache
+CMD ["sh", "-c", "zero-deploy-permissions --schema-path /app/schema.cjs --upstream-db \"$ZERO_UPSTREAM_DB\" && zero-cache --schema-path /app/schema.cjs"]
