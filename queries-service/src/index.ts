@@ -5,6 +5,7 @@ import { withValidation } from '@rocicorp/zero';
 import { handleGetQueriesRequest } from '@rocicorp/zero/server';
 import { schema } from '../schema.js';
 import {
+  myUser,
   myVineyards,
   myBlocks,
   myVines,
@@ -35,6 +36,7 @@ app.use('/*', cors());
 
 // Register all synced queries with validation
 const validatedQueries = {
+  [myUser.queryName]: withValidation(myUser),
   [myVineyards.queryName]: withValidation(myVineyards),
   [myBlocks.queryName]: withValidation(myBlocks),
   [myVines.queryName]: withValidation(myVines),

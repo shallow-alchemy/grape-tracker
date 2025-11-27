@@ -48,6 +48,12 @@ rs.mock('./components/winery/AllTasksView', () => ({
   AllTasksView: () => <div data-testid="all-tasks-view">All Tasks View</div>,
 }));
 
+rs.mock('./components/auth/AuthGuard', () => ({
+  AuthGuard: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="auth-guard">{children}</div>
+  ),
+}));
+
 describe('App', () => {
   afterEach(() => {
     cleanup();

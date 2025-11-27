@@ -14,6 +14,16 @@ const ACTIVE_STAGES = [
   'aging',
 ];
 
+// User query - uses Clerk ID as primary key
+export const myUser = syncedQueryWithContext(
+  'myUser',
+  z.tuple([]),
+  (userID: string | undefined) => {
+    if (!userID) return builder.user.where('id', '___never_match___');
+    return builder.user.where('id', userID);
+  }
+);
+
 export const activeWines = syncedQueryWithContext(
   'activeWines',
   z.tuple([]),

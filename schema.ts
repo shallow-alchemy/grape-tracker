@@ -1,5 +1,18 @@
 import { createSchema, createBuilder, table, string, number, json, boolean, ANYONE_CAN, definePermissions } from '@rocicorp/zero';
 
+const userTable = table('user')
+  .columns({
+    id: string(),           // Clerk ID as primary key
+    email: string(),
+    display_name: string(),
+    vineyard_id: string().optional(),
+    role: string(),         // 'owner' | 'member'
+    onboarding_completed: boolean(),
+    created_at: number(),
+    updated_at: number(),
+  })
+  .primaryKey('id');
+
 const vineyardTable = table('vineyard')
   .columns({
     id: string(),
@@ -173,6 +186,7 @@ const measurementRangeTable = table('measurement_range')
 
 export const schema = createSchema({
   tables: [
+    userTable,
     vineyardTable,
     blockTable,
     vineTable,
@@ -198,6 +212,17 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
   schema,
   () => {
     return {
+      user: {
+        row: {
+          select: ANYONE_CAN,
+          insert: ANYONE_CAN,
+          update: {
+            preMutation: ANYONE_CAN,
+            postMutation: ANYONE_CAN,
+          },
+          delete: ANYONE_CAN,
+        },
+      },
       vineyard: {
         row: {
           select: ANYONE_CAN,
