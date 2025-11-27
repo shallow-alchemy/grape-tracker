@@ -81,9 +81,12 @@ export const AddVineModal = ({
 
             onClose();
             if (quantity === 1) {
-              onSuccess(`Vine ${vineData.block}-${vineIds[0].id} created successfully`, vineIds[0].id);
+              const displayId = vineIds[0].sequenceNumber.toString().padStart(3, '0');
+              onSuccess(`Vine ${vineData.block}-${displayId} created successfully`, vineIds[0].id);
             } else {
-              onSuccess(`${quantity} vines created successfully (${vineData.block}-${vineIds[0].id} - ${vineData.block}-${vineIds[vineIds.length - 1].id})`);
+              const firstDisplayId = vineIds[0].sequenceNumber.toString().padStart(3, '0');
+              const lastDisplayId = vineIds[vineIds.length - 1].sequenceNumber.toString().padStart(3, '0');
+              onSuccess(`${quantity} vines created successfully (${vineData.block}-${firstDisplayId} - ${vineData.block}-${lastDisplayId})`);
             }
           } catch (error) {
             setFormErrors({ submit: 'Failed to create vine. Please try again.' });

@@ -36,8 +36,7 @@ export const generateVineId = (_block: string, vinesData: VineDataRaw[]): { id: 
     ? Math.max(...vinesData.map(v => v.sequence_number))
     : 0;
   const nextNumber = maxNumber + 1;
-  const vineId = nextNumber.toString().padStart(3, '0');
-  return { id: vineId, sequenceNumber: nextNumber };
+  return { id: crypto.randomUUID(), sequenceNumber: nextNumber };
 };
 
 export const generateBatchVineIds = (_block: string, vinesData: VineDataRaw[], quantity: number): Array<{ id: string; sequenceNumber: number }> => {
@@ -47,8 +46,7 @@ export const generateBatchVineIds = (_block: string, vinesData: VineDataRaw[], q
 
   return Array.from({ length: quantity }, (_, i) => {
     const sequenceNumber = maxNumber + i + 1;
-    const id = sequenceNumber.toString().padStart(3, '0');
-    return { id, sequenceNumber };
+    return { id: crypto.randomUUID(), sequenceNumber };
   });
 };
 
