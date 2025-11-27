@@ -11,8 +11,6 @@ export const SyncStatusIndicator = () => {
   const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
-    let statusCheckInterval: number;
-
     const originalConsoleError = console.error;
     console.error = (...args: any[]) => {
       const message = args.join(' ');
@@ -24,24 +22,6 @@ export const SyncStatusIndicator = () => {
       }
       originalConsoleError.apply(console, args);
     };
-
-    const checkConnectionStatus = () => {
-      try {
-        if (zero) {
-          if (status !== 'error') {
-            setStatus('connected');
-          }
-        } else {
-          setStatus('offline');
-        }
-      } catch (error) {
-        console.error('Zero connection check failed:', error);
-        setStatus('error');
-        setErrorMessage(error instanceof Error ? error.message : 'Connection check failed');
-      }
-    };
-
-    statusCheckInterval = window.setInterval(checkConnectionStatus, 5000);
 
     const handleOnline = () => {
       setStatus('syncing');
@@ -57,18 +37,20 @@ export const SyncStatusIndicator = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // Set initial status based on connection
     if (!navigator.onLine) {
       setStatus('offline');
       setErrorMessage('No internet connection');
+    } else if (zero) {
+      setStatus('connected');
     }
 
     return () => {
-      if (statusCheckInterval) clearInterval(statusCheckInterval);
       console.error = originalConsoleError;
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [zero, status]);
+  }, [zero]);
 
   const getStatusColorClass = (): string => {
     switch (status) {

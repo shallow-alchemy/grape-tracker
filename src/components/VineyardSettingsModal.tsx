@@ -54,7 +54,7 @@ export const VineyardSettingsModal = ({
               const now = Date.now();
 
               await zero.mutate.vineyard.update({
-                id: 'default',
+                id: vineyardData.id,
                 name: vineyardFormData.name,
                 location: vineyardFormData.location,
                 varieties: vineyardFormData.varieties,

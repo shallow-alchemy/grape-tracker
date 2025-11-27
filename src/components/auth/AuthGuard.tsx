@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useRef } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useLocation } from 'wouter';
@@ -14,38 +14,40 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   const [, setLocation] = useLocation();
   const [userData] = useQuery(myUser(user?.id) as any) as any;
   const [isVerified, setIsVerified] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
+  // Track if we've ever verified - once verified, stay verified
+  const hasVerifiedRef = useRef(false);
+  const [hasWaited, setHasWaited] = useState(false);
+
+  // Give Zero time to sync before making decisions
+  useEffect(() => {
+    const timer = setTimeout(() => setHasWaited(true), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
-    if (isLoaded && user && userData !== undefined) {
-      const userRecord = userData?.[0];
+    // Once verified, stay verified
+    if (hasVerifiedRef.current) return;
 
-      if (!userRecord || !userRecord.onboarding_completed) {
-        // No valid user record - redirect to sign-up to complete onboarding
-        setLocation('/sign-up');
-      } else {
-        // User has valid record - allow access
-        setIsVerified(true);
-        setIsChecking(false);
-      }
+    const userRecord = userData?.[0];
+
+    if (userRecord?.onboarding_completed) {
+      // User found with completed onboarding - verify immediately
+      hasVerifiedRef.current = true;
+      setIsVerified(true);
+    } else if (hasWaited && isLoaded && user) {
+      // Waited for Zero to sync and still no valid user - redirect
+      setLocation('/sign-up');
     }
-  }, [isLoaded, user, userData, setLocation]);
+  }, [isLoaded, user, userData, hasWaited, setLocation]);
 
-  if (!isLoaded || isChecking) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.loadingText}>LOADING...</div>
-      </div>
-    );
+  // Already verified - render children immediately
+  if (hasVerifiedRef.current || isVerified) {
+    return <>{children}</>;
   }
 
-  if (!isVerified) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.loadingText}>REDIRECTING...</div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  return (
+    <div className={styles.loading}>
+      <div className={styles.loadingText}>LOADING...</div>
+    </div>
+  );
 };

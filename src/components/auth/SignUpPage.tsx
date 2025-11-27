@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { SignUp, useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { useQuery } from '@rocicorp/zero/react';
@@ -11,23 +12,24 @@ export const SignUpPageAuthenticated = () => {
   const [, setLocation] = useLocation();
   const [userData] = useQuery(myUser(user!.id) as any) as any;
 
-  console.log('[SignUpPageAuthenticated] user:', user?.id, 'userData:', userData);
-
   const handleOnboardingComplete = () => {
-    console.log('[SignUpPageAuthenticated] Onboarding complete, navigating to /');
     setLocation('/');
   };
 
   const userRecord = userData?.[0];
 
+  // Redirect in useEffect to avoid "setState during render" error
+  useEffect(() => {
+    if (userRecord?.onboarding_completed) {
+      setLocation('/');
+    }
+  }, [userRecord, setLocation]);
+
   if (userRecord?.onboarding_completed) {
-    console.log('[SignUpPageAuthenticated] User completed onboarding, redirecting');
-    setLocation('/');
     return <div className={styles.loading}>Redirecting...</div>;
   }
 
   // No user record or onboarding not completed - show onboarding modal
-  console.log('[SignUpPageAuthenticated] Showing OnboardingModal');
   return (
     <div className={styles.container}>
       <OnboardingModal isOpen={true} onComplete={handleOnboardingComplete} />

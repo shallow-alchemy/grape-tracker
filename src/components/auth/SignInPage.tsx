@@ -12,25 +12,32 @@ export const SignInPageAuthenticated = () => {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
+  const [hasWaited, setHasWaited] = useState(false);
   const [userData] = useQuery(myUser(user!.id) as any) as any;
 
+  // Give Zero time to sync before deciding user doesn't exist
   useEffect(() => {
-    if (userData !== undefined) {
-      const userRecord = userData?.[0];
-      if (!userRecord) {
-        // No user record exists - block access
-        setError('No account found. Please sign up first.');
-        setChecking(false);
-        signOut();
-      } else if (!userRecord.onboarding_completed) {
-        // User exists but didn't complete onboarding - redirect to sign-up
+    const timer = setTimeout(() => setHasWaited(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const userRecord = userData?.[0];
+
+    if (userRecord) {
+      // User found - check onboarding status
+      if (!userRecord.onboarding_completed) {
         setLocation('/sign-up');
       } else {
-        // Valid user - redirect to dashboard
         setLocation('/');
       }
+    } else if (hasWaited && userData !== undefined) {
+      // Waited long enough and still no user - they don't have an account
+      setError('No account found. Please sign up first.');
+      setChecking(false);
+      signOut();
     }
-  }, [userData, signOut, setLocation]);
+  }, [userData, hasWaited, signOut, setLocation]);
 
   if (checking && !error) {
     return <div className={styles.loading}>Verifying account...</div>;
