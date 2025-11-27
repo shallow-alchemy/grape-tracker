@@ -176,29 +176,45 @@ describe('SyncStatusIndicator', () => {
   });
 
   describe('error state', () => {
+    let originalConsoleError: typeof console.error;
+
+    beforeEach(() => {
+      originalConsoleError = console.error;
+    });
+
+    afterEach(() => {
+      console.error = originalConsoleError;
+    });
+
     test('shows error state when console.error contains WebSocket message', async () => {
-      render(<SyncStatusIndicator />);
+      const { unmount } = render(<SyncStatusIndicator />);
 
       console.error('WebSocket connection failed');
 
       await waitFor(() => {
         expect(screen.getByText('Sync Error')).toBeInTheDocument();
       });
+
+      unmount();
+      console.error = originalConsoleError;
     });
 
     test('shows error warning icon', async () => {
-      render(<SyncStatusIndicator />);
+      const { unmount } = render(<SyncStatusIndicator />);
 
       console.error('Failed to connect to server');
 
       await waitFor(() => {
         expect(screen.getByText('⚠')).toBeInTheDocument();
       });
+
+      unmount();
+      console.error = originalConsoleError;
     });
 
     test('shows error details with retry button', async () => {
       const user = userEvent.setup();
-      render(<SyncStatusIndicator />);
+      const { unmount } = render(<SyncStatusIndicator />);
 
       console.error('Connect timed out');
 
@@ -211,6 +227,9 @@ describe('SyncStatusIndicator', () => {
 
       expect(screen.getByText(/sync error detected/i)).toBeInTheDocument();
       expect(screen.getByText('Refresh to retry')).toBeInTheDocument();
+
+      unmount();
+      console.error = originalConsoleError;
     });
   });
 
