@@ -1,44 +1,94 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
-import { myTasks } from '../../shared/queries';
+import { myTasks, myVintages, myWines } from '../../shared/queries';
 import { formatDueDate, isOverdue } from './taskHelpers';
+import { useZero } from '../../contexts/ZeroContext';
 import styles from '../../App.module.css';
 
-const TASKS_PER_PAGE = 20;
+type FilterTab = 'active' | 'completed' | 'skipped' | 'all';
 
 export const AllTasksView = () => {
   const { user } = useUser();
+  const zero = useZero();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
+  const [activeFilter, setActiveFilter] = useState<FilterTab>('active');
 
   const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
+  const [vintagesData] = useQuery(myVintages(user?.id) as any) as any;
+  const [winesData] = useQuery(myWines(user?.id) as any) as any;
 
-  const filteredTasks = tasksData.filter((task: any) => {
+  const getVintageName = (vintageId: string) => {
+    const vintage = vintagesData?.find((v: any) => v.id === vintageId);
+    return vintage ? `${vintage.vintage_year} ${vintage.variety}` : 'Unknown Vintage';
+  };
+
+  const getWineName = (wineId: string) => {
+    const wine = winesData?.find((w: any) => w.id === wineId);
+    return wine?.name || 'Unknown Wine';
+  };
+
+  const filteredBySearch = (tasksData || []).filter((task: any) => {
     if (!searchQuery) return true;
     return task.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  const sortedTasks = [...filteredTasks].sort((a, b) => {
-    const aDone = (a.completed_at !== null && a.completed_at !== undefined) || a.skipped;
-    const bDone = (b.completed_at !== null && b.completed_at !== undefined) || b.skipped;
+  const filteredTasks = filteredBySearch.filter((task: any) => {
+    const completed = task.completed_at !== null && task.completed_at !== undefined;
+    const skipped = !!task.skipped;
 
-    if (aDone !== bDone) {
-      return aDone ? 1 : -1;
+    switch (activeFilter) {
+      case 'active':
+        return !completed && !skipped;
+      case 'completed':
+        return completed;
+      case 'skipped':
+        return skipped && !completed;
+      case 'all':
+      default:
+        return true;
     }
-
-    return a.due_date - b.due_date;
   });
 
-  const totalPages = Math.ceil(sortedTasks.length / TASKS_PER_PAGE);
-  const startIndex = currentPage * TASKS_PER_PAGE;
-  const paginatedTasks = sortedTasks.slice(startIndex, startIndex + TASKS_PER_PAGE);
+  const groupedTasks = () => {
+    if (activeFilter !== 'active') {
+      return { ungrouped: [...filteredTasks].sort((a, b) => b.due_date - a.due_date) };
+    }
+
+    const vintageTasksMap: Record<string, any[]> = {};
+    const wineTasksMap: Record<string, any[]> = {};
+
+    filteredTasks.forEach((task: any) => {
+      if (task.entity_type === 'vintage') {
+        const name = getVintageName(task.entity_id);
+        if (!vintageTasksMap[name]) vintageTasksMap[name] = [];
+        vintageTasksMap[name].push(task);
+      } else {
+        const name = getWineName(task.entity_id);
+        if (!wineTasksMap[name]) wineTasksMap[name] = [];
+        wineTasksMap[name].push(task);
+      }
+    });
+
+    Object.values(vintageTasksMap).forEach(tasks => tasks.sort((a, b) => a.due_date - b.due_date));
+    Object.values(wineTasksMap).forEach(tasks => tasks.sort((a, b) => a.due_date - b.due_date));
+
+    return { vintages: vintageTasksMap, wines: wineTasksMap };
+  };
+
+  const groups = groupedTasks();
+
+  const counts = {
+    active: filteredBySearch.filter((t: any) => !t.completed_at && !t.skipped).length,
+    completed: filteredBySearch.filter((t: any) => t.completed_at).length,
+    skipped: filteredBySearch.filter((t: any) => t.skipped && !t.completed_at).length,
+    all: filteredBySearch.length,
+  };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(0);
   };
 
   const navigateToTask = (task: typeof tasksData[0]) => {
@@ -48,6 +98,112 @@ export const AllTasksView = () => {
     setLocation(route);
   };
 
+  const handleToggleComplete = (e: React.MouseEvent, task: any) => {
+    e.stopPropagation();
+    const completed = task.completed_at !== null && task.completed_at !== undefined;
+    zero.mutate.task.update({
+      id: task.id,
+      completed_at: completed ? undefined : Date.now(),
+      updated_at: Date.now(),
+    });
+  };
+
+  const renderTaskCard = (task: any) => {
+    const overdue = isOverdue(task.due_date, task.completed_at, task.skipped ? 1 : 0);
+    const completed = task.completed_at !== null && task.completed_at !== undefined;
+    const skipped = task.skipped && !completed;
+
+    return (
+      <div
+        key={task.id}
+        onClick={() => navigateToTask(task)}
+        className={`${styles.allTaskCard} ${overdue ? styles.allTaskCardOverdue : ''} ${completed || skipped ? styles.allTaskCardDone : ''}`}
+      >
+        <div className={styles.allTaskCardMain}>
+          {activeFilter === 'active' && (
+            <input
+              type="checkbox"
+              checked={completed}
+              onClick={(e) => handleToggleComplete(e, task)}
+              onChange={() => {}}
+              className={styles.allTaskCheckbox}
+            />
+          )}
+          <div className={styles.allTaskCardContent}>
+            <div className={styles.allTaskCardHeader}>
+              <span className={`${styles.allTaskCardName} ${completed || skipped ? styles.allTaskCardNameDone : ''}`}>
+                {task.name}
+              </span>
+              {overdue && !completed && !skipped && (
+                <span className={styles.allTaskBadgeOverdue}>OVERDUE</span>
+              )}
+              {completed && (
+                <span className={styles.allTaskBadgeCompleted}>COMPLETED</span>
+              )}
+              {skipped && (
+                <span className={styles.allTaskBadgeSkipped}>SKIPPED</span>
+              )}
+            </div>
+            {task.description && (
+              <div className={styles.allTaskCardDescription}>{task.description}</div>
+            )}
+            <div className={styles.allTaskCardMeta}>
+              <span className={overdue && !completed && !skipped ? styles.allTaskMetaOverdue : ''}>
+                {formatDueDate(task.due_date)}
+              </span>
+              <span className={styles.allTaskMetaSeparator}>•</span>
+              <span className={styles.allTaskMetaStage}>{task.stage?.replace(/_/g, ' ').toUpperCase()}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderGroupedTasks = () => {
+    if ('ungrouped' in groups && groups.ungrouped) {
+      return groups.ungrouped.map(renderTaskCard);
+    }
+
+    const sections: React.ReactNode[] = [];
+
+    if (groups.vintages && Object.keys(groups.vintages).length > 0) {
+      Object.entries(groups.vintages).forEach(([name, tasks]) => {
+        sections.push(
+          <div key={`vintage-${name}`} className={styles.allTaskGroup}>
+            <div className={styles.allTaskGroupHeader}>
+              <span className={styles.allTaskGroupType}>VINTAGE</span>
+              <span className={styles.allTaskGroupName}>{name}</span>
+            </div>
+            <div className={styles.allTaskGroupList}>
+              {tasks.map(renderTaskCard)}
+            </div>
+          </div>
+        );
+      });
+    }
+
+    if (groups.wines && Object.keys(groups.wines).length > 0) {
+      Object.entries(groups.wines).forEach(([name, tasks]) => {
+        sections.push(
+          <div key={`wine-${name}`} className={styles.allTaskGroup}>
+            <div className={styles.allTaskGroupHeader}>
+              <span className={styles.allTaskGroupType}>WINE</span>
+              <span className={styles.allTaskGroupName}>{name}</span>
+            </div>
+            <div className={styles.allTaskGroupList}>
+              {tasks.map(renderTaskCard)}
+            </div>
+          </div>
+        );
+      });
+    }
+
+    return sections.length > 0 ? sections : (
+      <div className={styles.tasksEmptyState}>No tasks found.</div>
+    );
+  };
+
   return (
     <div className={styles.vineyardContainer}>
       <div className={styles.vineyardHeader}>
@@ -55,6 +211,33 @@ export const AllTasksView = () => {
           ← BACK TO DASHBOARD
         </button>
         <div className={styles.vineyardTitle}>ALL TASKS</div>
+      </div>
+
+      <div className={styles.allTaskFilters}>
+        <button
+          className={`${styles.allTaskFilterTab} ${activeFilter === 'active' ? styles.allTaskFilterTabActive : ''}`}
+          onClick={() => setActiveFilter('active')}
+        >
+          ACTIVE ({counts.active})
+        </button>
+        <button
+          className={`${styles.allTaskFilterTab} ${activeFilter === 'completed' ? styles.allTaskFilterTabActive : ''}`}
+          onClick={() => setActiveFilter('completed')}
+        >
+          COMPLETED ({counts.completed})
+        </button>
+        <button
+          className={`${styles.allTaskFilterTab} ${activeFilter === 'skipped' ? styles.allTaskFilterTabActive : ''}`}
+          onClick={() => setActiveFilter('skipped')}
+        >
+          SKIPPED ({counts.skipped})
+        </button>
+        <button
+          className={`${styles.allTaskFilterTab} ${activeFilter === 'all' ? styles.allTaskFilterTabActive : ''}`}
+          onClick={() => setActiveFilter('all')}
+        >
+          ALL ({counts.all})
+        </button>
       </div>
 
       <div className={styles.detailSection}>
@@ -67,91 +250,13 @@ export const AllTasksView = () => {
         />
       </div>
 
-      <div className={styles.detailSection}>
-        <div className={styles.tasksResultCount}>
-          {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''} found
-          {totalPages > 1 && ` (Page ${currentPage + 1} of ${totalPages})`}
-        </div>
-      </div>
-
-      <div className={styles.detailSection}>
-        <div className={styles.tasksListContainer}>
-          {paginatedTasks.length > 0 ? (
-            paginatedTasks.map((task) => {
-              const overdue = isOverdue(task.due_date, task.completed_at, task.skipped ? 1 : 0);
-              const completed = task.completed_at !== null && task.completed_at !== undefined;
-              const skipped = task.skipped && !completed;
-
-              return (
-                <div
-                  key={task.id}
-                  onClick={() => navigateToTask(task)}
-                  className={`${styles.taskCard} ${overdue ? styles.taskCardOverdue : ''} ${completed || skipped ? styles.taskCardCompleted : ''}`}
-                >
-                  <div className={styles.taskCardHeader}>
-                    <div className={`${styles.taskCardTitle} ${completed || skipped ? styles.taskCardTitleMuted : ''}`}>
-                      {task.name}
-                    </div>
-                    {overdue && (
-                      <div className={`${styles.taskStatusBadge} ${styles.taskStatusOverdue}`}>
-                        OVERDUE
-                      </div>
-                    )}
-                    {completed && (
-                      <div className={`${styles.taskStatusBadge} ${styles.taskStatusCompleted}`}>
-                        COMPLETED
-                      </div>
-                    )}
-                    {skipped && (
-                      <div className={`${styles.taskStatusBadge} ${styles.taskStatusSkipped}`}>
-                        SKIPPED
-                      </div>
-                    )}
-                  </div>
-
-                  {task.description && (
-                    <div className={styles.taskCardDescription}>
-                      {task.description}
-                    </div>
-                  )}
-
-                  <div className={`${styles.taskCardDueDate} ${overdue ? styles.taskCardDueDateOverdue : ''}`}>
-                    Due: {formatDueDate(task.due_date)} • {task.entity_type === 'vintage' ? 'Vintage' : 'Wine'}
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className={styles.tasksEmptyState}>
-              {searchQuery ? 'No tasks found matching your search.' : 'No tasks yet.'}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {totalPages > 1 && (
-        <div className={styles.detailSection}>
-          <div className={styles.paginationControls}>
-            <button
-              className={`${styles.actionButton} ${currentPage === 0 ? styles.paginationButtonDisabled : ''}`}
-              onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-              disabled={currentPage === 0}
-            >
-              ← PREVIOUS
-            </button>
-            <div className={styles.paginationInfo}>
-              Page {currentPage + 1} of {totalPages}
-            </div>
-            <button
-              className={`${styles.actionButton} ${currentPage === totalPages - 1 ? styles.paginationButtonDisabled : ''}`}
-              onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
-              disabled={currentPage === totalPages - 1}
-            >
-              NEXT →
-            </button>
+      <div className={styles.allTasksList}>
+        {filteredTasks.length > 0 ? renderGroupedTasks() : (
+          <div className={styles.tasksEmptyState}>
+            {searchQuery ? 'No tasks found matching your search.' : `No ${activeFilter} tasks.`}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

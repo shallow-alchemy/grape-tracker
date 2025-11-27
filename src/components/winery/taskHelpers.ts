@@ -26,16 +26,27 @@ export const calculateDueDate = (
   }
 };
 
+const MIN_VALID_DATE = 946684800000; // Jan 1, 2000
+
+const getStartOfDay = (date: Date): Date => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
 export const isOverdue = (dueDate: number, completedAt: number | null, skipped: number): boolean => {
-  return dueDate < Date.now() && !completedAt && skipped === 0;
+  if (!dueDate || dueDate < MIN_VALID_DATE) return false;
+  if (completedAt || skipped !== 0) return false;
+
+  const today = getStartOfDay(new Date());
+  const dueDay = getStartOfDay(new Date(dueDate));
+
+  return dueDay < today;
 };
 
 export const formatDueDate = (dueDate: number): string => {
-  const now = Date.now();
-  const diff = dueDate - now;
-
-  if (diff < 0) {
-    return 'OVERDUE';
+  if (!dueDate || dueDate < MIN_VALID_DATE) {
+    return 'No due date';
   }
 
   const date = new Date(dueDate);
@@ -46,18 +57,21 @@ export const formatDueDate = (dueDate: number): string => {
   const isToday = date.toDateString() === today.toDateString();
   const isTomorrow = date.toDateString() === tomorrow.toDateString();
 
+  const todayStart = getStartOfDay(today);
+  const dueDayStart = getStartOfDay(date);
+  const isPast = dueDayStart < todayStart;
+
+  if (isPast) {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
   if (isToday) {
-    return `Today ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+    return 'Due today';
   }
 
   if (isTomorrow) {
-    return `Tomorrow ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+    return 'Due tomorrow';
   }
 
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };

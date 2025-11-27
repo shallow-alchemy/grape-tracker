@@ -3180,6 +3180,199 @@
   font-family: var(--font-mono);
 }
 
+.taskCardMeta {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.taskCardWine {
+  color: var(--color-primary);
+}
+
+.allTaskFilters {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.allTaskFilterTab {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.allTaskFilterTab:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.allTaskFilterTabActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-bg);
+}
+
+.allTasksList {
+  padding: 0 var(--spacing-md) var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.allTaskGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.allTaskGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.allTaskGroupType {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.allTaskGroupName {
+  font-size: var(--font-size-md);
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.allTaskGroupList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.allTaskCard {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.allTaskCard:hover {
+  border-color: var(--color-primary);
+}
+
+.allTaskCardOverdue {
+  border-left: 3px solid var(--color-error);
+}
+
+.allTaskCardDone {
+  opacity: 0.6;
+}
+
+.allTaskCardMain {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.allTaskCheckbox {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.allTaskCardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.allTaskCardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.allTaskCardName {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+}
+
+.allTaskCardNameDone {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.allTaskBadgeOverdue {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  background: var(--color-error);
+  color: var(--color-bg);
+  font-family: var(--font-mono);
+}
+
+.allTaskBadgeCompleted {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  background: var(--color-primary);
+  color: var(--color-bg);
+  font-family: var(--font-mono);
+}
+
+.allTaskBadgeSkipped {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  background: var(--color-text-muted);
+  color: var(--color-bg);
+  font-family: var(--font-mono);
+}
+
+.allTaskCardDescription {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  line-height: 1.4;
+}
+
+.allTaskCardMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.allTaskMetaOverdue {
+  color: var(--color-error);
+}
+
+.allTaskMetaSeparator {
+  color: var(--color-border);
+}
+
+.allTaskMetaStage {
+  color: var(--color-text-muted);
+}
+
 .vintageCardHeader {
   display: flex;
   justify-content: space-between;

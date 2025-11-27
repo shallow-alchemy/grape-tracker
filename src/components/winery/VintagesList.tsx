@@ -266,8 +266,23 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
             </div>
 
             {(() => {
+              const vintageWineIds = winesData
+                .filter((wine: any) => {
+                  if (wine.vintage_id === featuredVintage.id) return true;
+                  if (wine.blend_components && Array.isArray(wine.blend_components)) {
+                    return wine.blend_components.some((component: any) => component.vintage_id === featuredVintage.id);
+                  }
+                  return false;
+                })
+                .map((wine: any) => wine.id);
+
               const vintageTasks = tasksData
-                .filter((task: any) => task.entity_type === 'vintage' && task.entity_id === featuredVintage.id)
+                .filter((task: any) => {
+                  if (task.skipped) return false;
+                  if (task.entity_type === 'vintage' && task.entity_id === featuredVintage.id) return true;
+                  if (task.entity_type === 'wine' && vintageWineIds.includes(task.entity_id)) return true;
+                  return false;
+                })
                 .sort((a: any, b: any) => {
                   const aCompleted = a.completed_at !== null && a.completed_at !== undefined;
                   const bCompleted = b.completed_at !== null && b.completed_at !== undefined;
@@ -299,6 +314,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                     {vintageTasks.map((task: any) => {
                       const isCompleted = task.completed_at !== null && task.completed_at !== undefined;
                       const hasDueDate = task.due_date && task.due_date > 946684800000;
+                      const wine = task.entity_type === 'wine' ? winesData.find((w: any) => w.id === task.entity_id) : null;
                       return (
                         <div
                           key={task.id}
@@ -317,14 +333,17 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                             className={styles.taskCheckbox}
                           />
                           <div className={styles.taskCardContent}>
-                            <div className={`${hasDueDate ? styles.taskCardText : ''} ${isCompleted ? styles.taskCardTextCompleted : ''}`}>
+                            <div className={`${hasDueDate || wine ? styles.taskCardText : ''} ${isCompleted ? styles.taskCardTextCompleted : ''}`}>
                               {task.name || task.description}
                             </div>
-                            {hasDueDate && (
-                              <div className={styles.taskCardDate}>
-                                {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </div>
-                            )}
+                            <div className={styles.taskCardMeta}>
+                              {wine && <span className={styles.taskCardWine}>{wine.name}</span>}
+                              {hasDueDate && (
+                                <span className={styles.taskCardDate}>
+                                  {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useZero } from '../../contexts/ZeroContext';
-import { myStageHistoryByEntity, taskTemplates } from '../../shared/queries';
+import { myStageHistoryByEntity, myTasksByEntity, taskTemplates } from '../../shared/queries';
 import type { EntityType } from './stages';
 import { calculateDueDate } from './taskHelpers';
 
@@ -24,9 +24,9 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Use reactive queries following the known working pattern
   const [stageHistoryData] = useQuery(myStageHistoryByEntity(user?.id, entityType, entityId) as any) as any;
   const [templatesData] = useQuery(taskTemplates(user?.id) as any) as any;
+  const [tasksData] = useQuery(myTasksByEntity(user?.id, entityType, entityId) as any) as any;
 
   const advanceStage = async (
     currentStage: string,
@@ -80,15 +80,22 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
         });
       }
 
-      // Use already-fetched reactive data instead of imperative .run()
+      const incompleteTasks = (tasksData || []).filter(
+        (task: any) => task.stage === currentStage && !task.completed_at && !task.skipped
+      );
+      for (const task of incompleteTasks) {
+        await zero.mutate.task.update({
+          id: task.id,
+          skipped: true,
+          updated_at: now,
+        });
+      }
       const allTemplates = templatesData || [];
-
       const relevantTemplates = allTemplates.filter((template: any) => {
         const stageMatch = template.stage === data.toStage;
         const entityMatch = template.entity_type === entityType;
         const wineTypeMatch = !wineType || !template.wine_type || template.wine_type === wineType;
-        const enabled = template.default_enabled === true;
-
+        const enabled = !!template.default_enabled;
         return stageMatch && entityMatch && wineTypeMatch && enabled;
       });
 
