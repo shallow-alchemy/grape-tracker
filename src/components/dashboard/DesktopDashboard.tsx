@@ -1,8 +1,9 @@
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation, Link } from 'wouter';
-import { myTasks } from '../../shared/queries';
+import { myTasks, myVintages, myMeasurements } from '../../shared/queries';
 import { formatDueDate } from '../winery/taskHelpers';
+import { formatStage } from '../winery/stages';
 import styles from '../../App.module.css';
 
 export const RecentActivity = () => {
@@ -28,35 +29,116 @@ export const RecentActivity = () => {
 };
 
 export const CurrentVintage = () => {
+  const { user } = useUser();
+  const [, setLocation] = useLocation();
+  const [vintagesData] = useQuery(myVintages(user?.id) as any) as any;
+  const [measurementsData] = useQuery(myMeasurements(user?.id) as any) as any;
+
+  const currentYear = new Date().getFullYear();
+  const currentYearVintages = (vintagesData || [])
+    .filter((v: any) => v.vintage_year === currentYear)
+    .sort((a: any, b: any) => (b.harvest_date || 0) - (a.harvest_date || 0));
+
+  const latestVintage = currentYearVintages.length > 0
+    ? currentYearVintages[0]
+    : (vintagesData || []).sort((a: any, b: any) => b.vintage_year - a.vintage_year)[0];
+
+  const getHarvestMeasurement = (vintageId: string) => {
+    return (measurementsData || []).find(
+      (m: any) => m.entity_type === 'vintage' && m.entity_id === vintageId && m.stage === 'harvest'
+    );
+  };
+
+  if (!latestVintage) {
+    return (
+      <div className={styles.desktopPanel}>
+        <div className={styles.panelTitleRow}>
+          <h2 className={styles.panelTitle}>CURRENT VINTAGE</h2>
+          <Link href="/winery/vintages" className={styles.panelLink}>VIEW ALL VINTAGES</Link>
+        </div>
+        <div className={styles.emptyPanelText}>No vintages yet. Add your first harvest to get started.</div>
+      </div>
+    );
+  }
+
+  if (currentYearVintages.length > 1) {
+    return (
+      <div className={styles.desktopPanel}>
+        <div className={styles.panelTitleRow}>
+          <h2 className={styles.panelTitle}>{currentYear} VINTAGES</h2>
+          <Link href="/winery/vintages" className={styles.panelLink}>VIEW ALL</Link>
+        </div>
+        <div className={styles.vintageList}>
+          {currentYearVintages.map((vintage: any) => {
+            const measurement = getHarvestMeasurement(vintage.id);
+            return (
+              <div
+                key={vintage.id}
+                className={styles.vintageListItem}
+                onClick={() => setLocation(`/winery/vintages/${vintage.id}`)}
+              >
+                <div className={styles.vintageListName}>{vintage.variety}</div>
+                <div className={styles.vintageListMeta}>
+                  <span>{formatStage(vintage.current_stage)}</span>
+                  {measurement?.brix && <span>{measurement.brix}° BRIX</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const measurement = getHarvestMeasurement(latestVintage.id);
+
   return (
     <div className={styles.desktopPanel}>
       <div className={styles.panelTitleRow}>
         <h2 className={styles.panelTitle}>CURRENT VINTAGE</h2>
-        <a href="#vintages" className={styles.panelLink}>VIEW ALL VINTAGES</a>
+        <Link href="/winery/vintages" className={styles.panelLink}>VIEW ALL VINTAGES</Link>
       </div>
-      <div className={styles.vintageName}>2024 CABERNET SAUVIGNON</div>
-      <div className={styles.vintageMetrics}>
-        <div className={styles.metricItem}>
-          <span className={styles.metricLabel}>HARVEST BRIX</span>
-          <span className={styles.metricValue}>24.5</span>
-        </div>
-        <div className={styles.metricItem}>
-          <span className={styles.metricLabel}>TA</span>
-          <span className={styles.metricValue}>6.2 g/L</span>
-        </div>
-        <div className={styles.metricItem}>
-          <span className={styles.metricLabel}>PH</span>
-          <span className={styles.metricValue}>3.65</span>
-        </div>
-        <div className={styles.metricItem}>
-          <span className={styles.metricLabel}>OAK TIME</span>
-          <span className={styles.metricValue}>8 MONTHS</span>
-        </div>
+      <div
+        className={`${styles.vintageName} ${styles.clickableActivityText}`}
+        onClick={() => setLocation(`/winery/vintages/${latestVintage.id}`)}
+      >
+        {latestVintage.vintage_year} {latestVintage.variety}
       </div>
-      <div className={styles.tastingNote}>
-        <div className={styles.tastingHeader}>LATEST TASTING (NOV 1)</div>
-        <div className={styles.tastingText}>DEVELOPING WELL. BERRY FORWARD WITH SOFT TANNINS. HINTS OF VANILLA FROM OAK.</div>
-      </div>
+      <div className={styles.vintageStageLabel}>{formatStage(latestVintage.current_stage)}</div>
+      {(measurement?.brix || measurement?.ta || measurement?.ph || latestVintage.harvest_weight_lbs) && (
+        <div className={styles.vintageMetrics}>
+          {measurement?.brix && (
+            <div className={styles.metricItem}>
+              <span className={styles.metricLabel}>BRIX</span>
+              <span className={styles.metricValue}>{measurement.brix}°</span>
+            </div>
+          )}
+          {measurement?.ph && (
+            <div className={styles.metricItem}>
+              <span className={styles.metricLabel}>PH</span>
+              <span className={styles.metricValue}>{measurement.ph}</span>
+            </div>
+          )}
+          {measurement?.ta && (
+            <div className={styles.metricItem}>
+              <span className={styles.metricLabel}>TA</span>
+              <span className={styles.metricValue}>{measurement.ta} g/L</span>
+            </div>
+          )}
+          {latestVintage.harvest_weight_lbs && (
+            <div className={styles.metricItem}>
+              <span className={styles.metricLabel}>WEIGHT</span>
+              <span className={styles.metricValue}>{latestVintage.harvest_weight_lbs} LBS</span>
+            </div>
+          )}
+        </div>
+      )}
+      {latestVintage.notes && (
+        <div className={styles.tastingNote}>
+          <div className={styles.tastingHeader}>NOTES</div>
+          <div className={styles.tastingText}>{latestVintage.notes}</div>
+        </div>
+      )}
     </div>
   );
 };
