@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
-import { myWines, myVintages, myStageHistoryByEntity, myMeasurementsByEntity } from '../../shared/queries';
+import { myStageHistoryByEntity, myMeasurementsByEntity } from '../../shared/queries';
+import { useWines, useVintages } from '../vineyard-hooks';
 import { EditWineModal } from './EditWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
 import { AddMeasurementModal } from './AddMeasurementModal';
@@ -23,10 +24,10 @@ type WineDetailsViewProps = {
 export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const { user } = useUser();
   const [, setLocation] = useLocation();
-  const [allWinesData] = useQuery(myWines(user?.id) as any) as any;
+  const allWinesData = useWines();
   const wine = allWinesData.find((w: any) => w.id === wineId);
 
-  const [allVintagesData] = useQuery(myVintages(user?.id) as any) as any;
+  const allVintagesData = useVintages();
   const vintage = allVintagesData.find((v: any) => v.id === wine?.vintage_id);
 
   const isBlend = wine?.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
@@ -34,15 +35,29 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const [stageHistoryData] = useQuery(
     myStageHistoryByEntity(user?.id, 'wine', wineId)
   ) as any;
+  const lastStageHistoryRef = useRef<any[]>([]);
+  if (stageHistoryData && stageHistoryData.length > 0) {
+    lastStageHistoryRef.current = stageHistoryData;
+  }
+  const cachedStageHistory = stageHistoryData && stageHistoryData.length > 0
+    ? stageHistoryData
+    : lastStageHistoryRef.current;
 
-  const stageHistory = [...stageHistoryData].sort((a, b) => b.started_at - a.started_at);
+  const stageHistory = [...cachedStageHistory].sort((a, b) => b.started_at - a.started_at);
   const currentStageHistory = stageHistory.find(s => !s.completed_at);
 
   const [measurementsData] = useQuery(
     myMeasurementsByEntity(user?.id, 'wine', wineId)
   ) as any;
+  const lastMeasurementsRef = useRef<any[]>([]);
+  if (measurementsData && measurementsData.length > 0) {
+    lastMeasurementsRef.current = measurementsData;
+  }
+  const cachedMeasurements = measurementsData && measurementsData.length > 0
+    ? measurementsData
+    : lastMeasurementsRef.current;
 
-  const measurements = [...measurementsData].sort((a, b) => b.date - a.date);
+  const measurements = [...cachedMeasurements].sort((a, b) => b.date - a.date);
   const latestMeasurement = measurements[0];
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);

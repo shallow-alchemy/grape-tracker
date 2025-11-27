@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@rocicorp/zero/react';
-import { useUser } from '@clerk/clerk-react';
 import { useZero } from '../../contexts/ZeroContext';
-import { myVintages, myWines, myMeasurements, myTasks } from '../../shared/queries';
+import { useVintages, useWines, useMeasurements, useTasks } from '../vineyard-hooks';
 import { CreateTaskModal } from './CreateTaskModal';
 import { WarningBadge } from '../WarningBadge';
 import styles from '../../App.module.css';
@@ -19,17 +17,16 @@ type VintagesListProps = {
 };
 
 export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: VintagesListProps) => {
-  const { user } = useUser();
   const zero = useZero();
-  const [vintagesData] = useQuery(myVintages(user?.id) as any) as any;
+  const vintagesData = useVintages();
   const vintages = [...vintagesData].sort((a: any, b: any) => b.vintage_year - a.vintage_year);
 
-  const [winesData] = useQuery(myWines(user?.id) as any) as any;
+  const winesData = useWines();
 
-  const [allMeasurementsData] = useQuery(myMeasurements(user?.id) as any) as any;
+  const allMeasurementsData = useMeasurements();
   const measurementsData = allMeasurementsData.filter((m: any) => m.entity_type === 'vintage' && m.stage === 'harvest');
 
-  const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
+  const tasksData = useTasks();
 
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [taskModalVintageId, setTaskModalVintageId] = useState<string>('');

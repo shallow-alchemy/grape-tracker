@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useQuery } from '@rocicorp/zero/react';
-import { useUser } from '@clerk/clerk-react';
-import { activeWines, myVintages, myWines } from '../../shared/queries';
+import { useActiveWines, useVintages, useWines } from '../vineyard-hooks';
 import { AddVintageModal } from './AddVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { VintagesList } from './VintagesList';
@@ -28,8 +26,9 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   const [wineModalInitialVintageId, setWineModalInitialVintageId] = useState<string | undefined>(undefined);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const { user } = useUser();
-  const [activeWinesData] = useQuery(activeWines(user?.id));
+  const activeWinesData = useActiveWines();
+  const allVintagesData = useVintages();
+  const allWinesData = useWines();
   const activeWineCount = activeWinesData.length;
 
   const activeTab: ActiveTab = location.includes('/winery/wines') ? 'wines' : 'vintages';
@@ -70,7 +69,6 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   };
 
   if (initialVintageTasksId) {
-    const [allVintagesData] = useQuery(myVintages(user?.id) as any) as any;
     const vintage = allVintagesData.find((v: any) => v.id === initialVintageTasksId);
 
     if (!vintage) {
@@ -96,7 +94,6 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   }
 
   if (initialWineTasksId) {
-    const [allWinesData] = useQuery(myWines(user?.id) as any) as any;
     const wine = allWinesData.find((w: any) => w.id === initialWineTasksId);
 
     if (!wine) {

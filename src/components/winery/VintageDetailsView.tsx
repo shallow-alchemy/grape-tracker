@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
-import { myVintages, myWines, myMeasurementsByEntity, myStageHistoryByEntity } from '../../shared/queries';
+import { myMeasurementsByEntity, myStageHistoryByEntity } from '../../shared/queries';
+import { useVintages, useWines } from '../vineyard-hooks';
 import { EditVintageModal } from './EditVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
@@ -24,10 +25,10 @@ type VintageDetailsViewProps = {
 export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDetailsViewProps) => {
   const { user } = useUser();
   const [, setLocation] = useLocation();
-  const [allVintagesData] = useQuery(myVintages(user?.id) as any) as any;
+  const allVintagesData = useVintages();
   const vintage = allVintagesData.find((v: any) => v.id === vintageId);
 
-  const [allWinesData] = useQuery(myWines(user?.id) as any) as any;
+  const allWinesData = useWines();
 
   const wines = allWinesData.filter((wine: any) => {
     if (wine.vintage_id === vintageId) {
@@ -44,14 +45,28 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
   const [allMeasurementsData] = useQuery(
     myMeasurementsByEntity(user?.id, 'vintage', vintageId)
   ) as any;
-  const measurementsData = allMeasurementsData.filter((m: any) => m.stage === 'harvest');
+  const lastMeasurementsRef = useRef<any[]>([]);
+  if (allMeasurementsData && allMeasurementsData.length > 0) {
+    lastMeasurementsRef.current = allMeasurementsData;
+  }
+  const cachedMeasurements = allMeasurementsData && allMeasurementsData.length > 0
+    ? allMeasurementsData
+    : lastMeasurementsRef.current;
+  const measurementsData = cachedMeasurements.filter((m: any) => m.stage === 'harvest');
   const harvestMeasurement = measurementsData[0];
 
   const [stageHistoryData] = useQuery(
     myStageHistoryByEntity(user?.id, 'vintage', vintageId)
   ) as any;
+  const lastStageHistoryRef = useRef<any[]>([]);
+  if (stageHistoryData && stageHistoryData.length > 0) {
+    lastStageHistoryRef.current = stageHistoryData;
+  }
+  const cachedStageHistory = stageHistoryData && stageHistoryData.length > 0
+    ? stageHistoryData
+    : lastStageHistoryRef.current;
 
-  const stageHistory = [...stageHistoryData].sort((a, b) => b.started_at - a.started_at);
+  const stageHistory = [...cachedStageHistory].sort((a, b) => b.started_at - a.started_at);
 
   type ExpandedStageHistoryEntry = {
     id: string;
