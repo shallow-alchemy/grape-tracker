@@ -43,22 +43,30 @@ The original plan was to build a Rust `zero-query` crate to match Zero's query A
 
 ## HIGH PRIORITY BUG FIXES
 
-### Priority 0: Variety Removal Guardrails
-**Status:** 🔲 Not Started
-**Severity:** High - causes page errors for affected vines
+### ✅ COMPLETED: Variety Removal Guardrails
+**Status:** ✅ Complete
+**Completed:** Nov 27, 2025
 
-**Issue:**
-When a grape variety is removed from vineyard settings, vines that have that variety assigned error out when viewing their individual vine page. The block list view works, but clicking on a single vine with a removed variety fails.
+When removing grape varieties from vineyard settings, the system now protects against orphaned vines.
 
-**Solution:**
-Similar to block deletion, add guardrails when removing varieties:
-- Detect which vines use varieties being removed
-- Offer options: migrate affected vines to another variety OR delete affected vines
-- Prevent accidental data orphaning
+**What was built:**
+1. ✅ `RemoveVarietyConfirmModal.tsx` - Confirmation modal for variety removal
+2. ✅ Updated `VineyardSettingsModal.tsx` - Detects when removed varieties affect vines
+3. ✅ Migrate or delete options - Same UX pattern as block deletion
+4. ✅ Comprehensive test coverage (19 modal tests, 11 integration tests)
 
-**Pattern to follow:**
-- See `DeleteBlockConfirmModal.tsx` for the migrate/delete pattern
-- Apply same UX pattern in `VineyardSettingsModal.tsx` for variety changes
+**How it works:**
+- When saving vineyard settings, the system checks if any removed varieties are used by vines
+- If affected vines exist, shows confirmation modal with options:
+  - Migrate affected vines to a remaining variety
+  - Delete all affected vines
+- If no vines are affected, saves directly without confirmation
+
+**Related files:**
+- `src/components/RemoveVarietyConfirmModal.tsx` - Confirmation modal
+- `src/components/VineyardSettingsModal.tsx` - Updated to detect variety removal
+- `src/components/RemoveVarietyConfirmModal.test.tsx` - Modal tests
+- `src/components/VineyardSettingsModal.test.tsx` - Integration tests
 
 ---
 
@@ -91,7 +99,7 @@ Similar to block deletion, add guardrails when removing varieties:
 - ✅ Console error suppression patterns for clean output
 - ✅ Server-side mutator tests (auth enforcement, ownership)
 - ✅ Client-side mutator tests
-- ✅ 659 passing tests (frontend) + 12 passing tests (backend)
+- ✅ 689 passing tests (frontend) + 12 passing tests (backend)
 
 ### Weather & Alerts
 - ✅ Weather API integration (Open-Meteo)

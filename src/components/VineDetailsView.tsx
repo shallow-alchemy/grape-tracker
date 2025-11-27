@@ -33,8 +33,8 @@ export const VineDetailsView = ({
   const blocks = blocksData.map(transformBlockData);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const vineUrl = vine ? `${window.location.origin}/vineyard/vine/${vine.id}` : '';
-  const vineDisplayId = vine ? vine.sequence_number.toString().padStart(3, '0') : '';
+  const vineUrl = vine?.id ? `${window.location.origin}/vineyard/vine/${vine.id}` : '';
+  const vineDisplayId = vine?.sequence_number != null ? vine.sequence_number.toString().padStart(3, '0') : '';
 
   useEffect(() => {
     if (showQRModal && canvasRef.current && vineUrl) {
@@ -49,7 +49,7 @@ export const VineDetailsView = ({
     }
   }, [showQRModal, vineUrl]);
 
-  if (!vine) {
+  if (!vine || vine.sequence_number == null) {
     return (
       <div className={styles.vineDetails}>
         <button className={styles.backButton} onClick={navigateBack} aria-label="back">

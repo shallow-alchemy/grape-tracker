@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Modal } from './Modal';
-import { type VineyardFormData } from './vineyard-types';
+import { RemoveVarietyConfirmModal } from './RemoveVarietyConfirmModal';
+import { type VineyardFormData, type VineDataRaw } from './vineyard-types';
 import { useZero } from '../contexts/ZeroContext';
-import { useVineyard } from './vineyard-hooks';
+import { useVineyard, useVines } from './vineyard-hooks';
 import styles from '../App.module.css';
 
 type VineyardSettingsModalProps = {
@@ -18,10 +19,16 @@ export const VineyardSettingsModal = ({
 }: VineyardSettingsModalProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRemoveVarietyConfirm, setShowRemoveVarietyConfirm] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<VineyardFormData | null>(null);
+  const [removedVarieties, setRemovedVarieties] = useState<string[]>([]);
+  const [affectedVines, setAffectedVines] = useState<VineDataRaw[]>([]);
 
   const zero = useZero();
   const vineyardData = useVineyard();
+  const vinesData = useVines();
   return (
+    <>
     <Modal
       isOpen={isOpen}
       onClose={onClose}
@@ -40,7 +47,7 @@ export const VineyardSettingsModal = ({
             try {
               const formData = new FormData(e.currentTarget);
               const varietiesInput = formData.get('varieties') as string;
-              const varieties = varietiesInput
+              const newVarieties = varietiesInput
                 .split(',')
                 .map(v => v.trim().toUpperCase())
                 .filter(v => v.length > 0);
@@ -48,8 +55,26 @@ export const VineyardSettingsModal = ({
               const vineyardFormData: VineyardFormData = {
                 name: formData.get('name') as string,
                 location: formData.get('location') as string,
-                varieties,
+                varieties: newVarieties,
               };
+
+              const currentVarieties = vineyardData.varieties || [];
+              const removed = currentVarieties.filter(
+                (v: string) => !newVarieties.includes(v)
+              );
+
+              const vinesUsingRemovedVarieties = vinesData.filter((vine) =>
+                removed.includes(vine.variety)
+              );
+
+              if (vinesUsingRemovedVarieties.length > 0) {
+                setPendingFormData(vineyardFormData);
+                setRemovedVarieties(removed);
+                setAffectedVines(vinesUsingRemovedVarieties);
+                setShowRemoveVarietyConfirm(true);
+                setIsSubmitting(false);
+                return;
+              }
 
               const now = Date.now();
 
@@ -154,5 +179,32 @@ export const VineyardSettingsModal = ({
         </form>
       )}
     </Modal>
+
+      <RemoveVarietyConfirmModal
+        isOpen={showRemoveVarietyConfirm}
+        onClose={() => {
+          setShowRemoveVarietyConfirm(false);
+          setPendingFormData(null);
+          setRemovedVarieties([]);
+          setAffectedVines([]);
+        }}
+        removedVarieties={removedVarieties}
+        affectedVines={affectedVines}
+        remainingVarieties={pendingFormData?.varieties || []}
+        onConfirm={async () => {
+          if (!pendingFormData || !vineyardData) return;
+          const now = Date.now();
+          await zero.mutate.vineyard.update({
+            id: vineyardData.id,
+            name: pendingFormData.name,
+            location: pendingFormData.location,
+            varieties: pendingFormData.varieties,
+            updated_at: now,
+          });
+          onClose();
+          onSuccess('Vineyard settings updated successfully');
+        }}
+      />
+    </>
   );
 };

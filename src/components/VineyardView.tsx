@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import styles from '../App.module.css';
-import { transformVineData } from './vineyard-utils';
 import { useVines } from './vineyard-hooks';
 import { VineDetailsView } from './VineDetailsView';
 import { VineyardViewHeader } from './VineyardViewHeader';
@@ -68,7 +67,6 @@ export const VineyardView = ({
   };
 
   const foundVine = selectedVine ? vinesData.find((v) => v.id === selectedVine) : null;
-  const selectedVineData = foundVine ? transformVineData(foundVine) : null;
 
   const showSuccessMessage = (message: string) => {
     setSuccessMessage(message);
@@ -83,7 +81,7 @@ export const VineyardView = ({
   if (selectedVine) {
     return (
       <VineDetailsView
-        vine={selectedVineData}
+        vine={foundVine}
         onUpdateSuccess={showSuccessMessage}
         onDeleteSuccess={showSuccessMessage}
         navigateBack={navigateBack}
