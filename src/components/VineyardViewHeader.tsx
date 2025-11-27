@@ -64,7 +64,7 @@ export const VineyardViewHeader = ({
 
         const block = blocks.find(b => b.id === vine.block);
         const blockName = block?.name || vine.block;
-        const filename = `${vineyardName}-${blockName}-${vine.id}.stl`;
+        const filename = `${vineyardName}-${blockName}-${vine.sequenceNumber.toString().padStart(3, '0')}.stl`;
 
         zip.file(filename, stlBlob);
 

@@ -1,5 +1,6 @@
 export type VineData = {
   id: string;
+  sequenceNumber: number;
   block: string;
   variety: string;
   plantingDate: Date;

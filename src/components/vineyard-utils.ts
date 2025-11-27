@@ -61,6 +61,7 @@ export const prepareBlockDeletionState = (blockId: string, allBlocks: BlockData[
 
 export const transformVineData = (vine: VineDataRaw): VineData => ({
   id: vine.id,
+  sequenceNumber: vine.sequence_number,
   block: vine.block,
   variety: vine.variety,
   plantingDate: new Date(vine.planting_date),

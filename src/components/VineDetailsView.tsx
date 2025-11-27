@@ -34,6 +34,7 @@ export const VineDetailsView = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const vineUrl = vine ? `${window.location.origin}/vineyard/vine/${vine.id}` : '';
+  const vineDisplayId = vine ? vine.sequence_number.toString().padStart(3, '0') : '';
 
   useEffect(() => {
     if (showQRModal && canvasRef.current && vineUrl) {
@@ -74,7 +75,7 @@ export const VineDetailsView = ({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `vine-${vine?.block}-${vine?.id}.svg`;
+      link.download = `vine-${vine?.block}-${vineDisplayId}.svg`;
       link.click();
       URL.revokeObjectURL(url);
 
@@ -99,7 +100,7 @@ export const VineDetailsView = ({
       const vineyardName = vineyardData?.name || 'Vineyard';
       const block = blocks.find(b => b.id === vine.block);
       const blockName = block?.name || vine.block;
-      link.download = `${vineyardName}-${blockName}-${vine.id}.stl`;
+      link.download = `${vineyardName}-${blockName}-${vineDisplayId}.stl`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -122,7 +123,7 @@ export const VineDetailsView = ({
         {'<'} BACK TO VINES
       </button>
       <div className={styles.vineDetailsHeader}>
-        <h1 className={styles.vineDetailsTitle}>VINE {vine?.block}-{vine?.id}</h1>
+        <h1 className={styles.vineDetailsTitle}>VINE {vine?.block}-{vineDisplayId}</h1>
         <div className={styles.actionButtonGroup}>
           <button className={styles.actionButton} onClick={() => setShowQRModal(true)}>
             GENERATE TAG
@@ -182,12 +183,12 @@ export const VineDetailsView = ({
       <Modal
         isOpen={showQRModal}
         onClose={() => setShowQRModal(false)}
-        title={`VINE TAG - ${vine?.block}-${vine?.id}`}
+        title={`VINE TAG - ${vine?.block}-${vineDisplayId}`}
       >
         <div className={styles.qrContainer}>
               <canvas ref={canvasRef} className={styles.qrCanvas} role="img" aria-label="qr code" />
               <div className={styles.qrInfo}>
-                <div className={styles.qrVineId}>{vine?.block}-{vine?.id}</div>
+                <div className={styles.qrVineId}>{vine?.block}-{vineDisplayId}</div>
                 <div className={styles.qrVariety}>{vine?.variety}</div>
                 <div className={styles.qrBlock}>BLOCK {vine?.block}</div>
               </div>
@@ -356,7 +357,7 @@ export const VineDetailsView = ({
         {vine && (
           <div>
             <p className={styles.deleteConfirmText}>
-              Are you sure you want to delete <strong className={styles.deleteConfirmTextAccent}>vine {vine.block}-{vine.id}</strong>? This action cannot be undone.
+              Are you sure you want to delete <strong className={styles.deleteConfirmTextAccent}>vine {vine.block}-{vineDisplayId}</strong>? This action cannot be undone.
             </p>
 
             {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
@@ -386,7 +387,7 @@ export const VineDetailsView = ({
                     setShowDeleteVineConfirmModal(false);
                     setShowVineSettingsModal(false);
                     navigateBack();
-                    onDeleteSuccess(`Vine ${vine.block}-${vine.id} deleted successfully`);
+                    onDeleteSuccess(`Vine ${vine.block}-${vineDisplayId} deleted successfully`);
                   } catch (error) {
                     setFormErrors({ submit: `Failed to delete vine: ${error}` });
                   } finally {

@@ -18,7 +18,7 @@ export const VineyardViewVineList = ({ selectedBlock, navigateToVine }: Vineyard
       {vines.map((vine) => (
         <ListItem
           key={vine.id}
-          id={`${vine.block}-${vine.id}`}
+          id={`${vine.block}-${vine.sequenceNumber.toString().padStart(3, '0')}`}
           primaryInfo={vine.variety}
           secondaryInfo={`BLOCK ${vine.block} • ${vine.age}`}
           status={vine.health}
