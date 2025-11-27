@@ -3,6 +3,10 @@ import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { Weather } from './Weather';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 rs.mock('../utils/weather', () => ({
   fetchWeather: rs.fn(),
   getWeatherIcon: rs.fn(() => () => null),

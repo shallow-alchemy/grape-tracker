@@ -3,6 +3,10 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { VintagesList } from './VintagesList';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 // Mock data arrays
 const mockVintagesData: any[] = [];
 const mockWinesData: any[] = [];

@@ -3,6 +3,10 @@ import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { WinesList } from './WinesList';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 const mockWinesData = [
   {
     id: 'wine-1',

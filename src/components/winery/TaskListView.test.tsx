@@ -3,6 +3,10 @@ import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TaskListView } from './TaskListView';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 const now = Date.now();
 const mockTasksData = [
   {

@@ -37,12 +37,9 @@ rs.mock('../../contexts/ZeroContext', () => ({
   useZero: () => mockZero,
 }));
 
-rs.mock('../../queries', () => ({
+rs.mock('../../shared/queries', () => ({
   myVintages: () => ({ customQueryID: { name: 'myVintages' } }),
   myWines: () => ({ customQueryID: { name: 'myWines' } }),
-}));
-
-rs.mock('../../shared/queries', () => ({
   activeWines: () => ({ customQueryID: { name: 'activeWines' } }),
 }));
 

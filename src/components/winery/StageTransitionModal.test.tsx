@@ -3,6 +3,10 @@ import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StageTransitionModal } from './StageTransitionModal';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 // Mock dependencies
 const mockStageHistoryUpdate = rs.fn().mockResolvedValue(undefined);
 const mockStageHistoryInsert = rs.fn().mockResolvedValue(undefined);

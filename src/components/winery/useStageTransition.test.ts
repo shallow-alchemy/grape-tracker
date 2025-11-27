@@ -24,7 +24,7 @@ rs.mock('./taskHelpers', () => ({
 }));
 
 // Mock the queries module to return objects with .run() methods
-rs.mock('../../queries', () => ({
+rs.mock('../../shared/queries', () => ({
   myStageHistoryByEntity: () => ({ run: mockStageHistoryRun }),
   taskTemplates: () => ({ run: mockTaskTemplateRun }),
 }));

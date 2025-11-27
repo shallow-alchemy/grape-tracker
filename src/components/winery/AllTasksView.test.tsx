@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { AllTasksView } from './AllTasksView';
 import styles from '../../App.module.css';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 const now = Date.now();
 const oneDayMs = 86400000;
 

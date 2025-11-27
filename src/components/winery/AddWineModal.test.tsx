@@ -57,7 +57,7 @@ rs.mock('../../contexts/ZeroContext', () => ({
   }),
 }));
 
-rs.mock('../../queries', () => ({
+rs.mock('../../shared/queries', () => ({
   myVintages: () => ({ customQueryID: { name: 'myVintages' } }),
 }));
 

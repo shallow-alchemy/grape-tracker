@@ -3,6 +3,10 @@ import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditWineModal } from './EditWineModal';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 const mockWine = {
   id: 'wine-1',
   name: 'CABERNET BARREL 1',

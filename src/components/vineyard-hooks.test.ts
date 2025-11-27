@@ -2,6 +2,10 @@ import { test, describe, expect, rs, afterEach } from '@rstest/core';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useVines, useBlocks, useVineyard } from './vineyard-hooks';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 const mockVineData = [
   {
     id: 'vine-1',

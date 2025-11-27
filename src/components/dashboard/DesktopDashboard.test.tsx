@@ -8,6 +8,10 @@ import {
   TaskManagement,
 } from './DesktopDashboard';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 rs.mock('../../contexts/ZeroContext', () => ({
   useZero: () => ({
     query: {

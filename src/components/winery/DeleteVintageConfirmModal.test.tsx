@@ -3,6 +3,10 @@ import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DeleteVintageConfirmModal } from './DeleteVintageConfirmModal';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 // Mock dependencies
 const mockStageHistoryDelete = rs.fn().mockResolvedValue(undefined);
 const mockMeasurementDelete = rs.fn().mockResolvedValue(undefined);

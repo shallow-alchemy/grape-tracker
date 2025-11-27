@@ -3,6 +3,10 @@ import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { VineDetailsView } from './VineDetailsView';
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 const mockVine = {
   id: 'vine-1',
   block: 'North Block',
