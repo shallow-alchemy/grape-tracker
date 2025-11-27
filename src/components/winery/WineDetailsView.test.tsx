@@ -95,44 +95,31 @@ type MockWine = {
   blend_components: null | { vintage_id: string; percentage: number }[];
 };
 
-let queryCallCount = 0;
 let mockWineData: MockWine[] = [mockWine];
-let mockVintageData = [mockVintage];
 let mockAllVintagesData = [mockVintage, mockVintage2];
 let mockStageHistoryData = mockStageHistory;
 let mockMeasurementsData = mockMeasurements;
 
 rs.mock('../../contexts/ZeroContext', () => ({
-  useZero: () => ({
-    query: {
-      wine: {
-        where: rs.fn().mockReturnThis(),
-      },
-      vintage: {
-        where: rs.fn().mockReturnThis(),
-      },
-      stage_history: {
-        where: rs.fn().mockReturnThis(),
-      },
-      measurement: {
-        where: rs.fn().mockReturnThis(),
-      },
-    },
-  }),
+  useZero: () => ({}),
 }));
 
 rs.mock('@rocicorp/zero/react', () => ({
-  useQuery: () => {
-    const calls = [
-      mockWineData,           // 1st call: wine data
-      mockVintageData,        // 2nd call: vintage data
-      mockAllVintagesData,    // 3rd call: all vintages
-      mockStageHistoryData,   // 4th call: stage history
-      mockMeasurementsData,   // 5th call: measurements
-    ];
-    const result = calls[queryCallCount % calls.length] || [[]];
-    queryCallCount++;
-    return [result];
+  useQuery: (query: any) => {
+    const queryName = query?.customQueryID?.name;
+    if (queryName === 'myWines') {
+      return [mockWineData];
+    }
+    if (queryName === 'myVintages') {
+      return [mockAllVintagesData];
+    }
+    if (queryName === 'myStageHistoryByEntity') {
+      return [mockStageHistoryData];
+    }
+    if (queryName === 'myMeasurementsByEntity') {
+      return [mockMeasurementsData];
+    }
+    return [[]];
   },
 }));
 
@@ -178,9 +165,7 @@ rs.mock('react-icons/fi', () => ({
 describe('WineDetailsView', () => {
   afterEach(() => {
     cleanup();
-    queryCallCount = 0;
     mockWineData = [mockWine];
-    mockVintageData = [mockVintage];
     mockAllVintagesData = [mockVintage, mockVintage2];
     mockStageHistoryData = mockStageHistory;
     mockMeasurementsData = mockMeasurements;
@@ -189,8 +174,6 @@ describe('WineDetailsView', () => {
   describe('wine not found', () => {
     test('displays error message when wine does not exist', () => {
       mockWineData = [];
-      queryCallCount = 0;
-
       render(<WineDetailsView wineId="nonexistent" onBack={() => {}} />);
 
       expect(screen.getByText('WINE NOT FOUND')).toBeInTheDocument();
@@ -198,8 +181,6 @@ describe('WineDetailsView', () => {
 
     test('shows back button when wine not found', () => {
       mockWineData = [];
-      queryCallCount = 0;
-
       render(<WineDetailsView wineId="nonexistent" onBack={() => {}} />);
 
       expect(screen.getByText('BACK TO LIST')).toBeInTheDocument();
@@ -209,8 +190,6 @@ describe('WineDetailsView', () => {
       const user = userEvent.setup();
       const mockOnBack = rs.fn();
       mockWineData = [];
-      queryCallCount = 0;
-
       render(<WineDetailsView wineId="nonexistent" onBack={mockOnBack} />);
 
       const backButton = screen.getByText('BACK TO LIST');
@@ -269,8 +248,6 @@ describe('WineDetailsView', () => {
   describe('blend information', () => {
     test('shows blend varieties for blend wines', () => {
       mockWineData = [mockBlendWine];
-      queryCallCount = 0;
-
       render(<WineDetailsView wineId="wine-2" onBack={() => {}} />);
 
       expect(screen.getByText(/Multi-Vintage Blend/)).toBeInTheDocument();
@@ -278,8 +255,6 @@ describe('WineDetailsView', () => {
 
     test('displays blend component percentages', () => {
       mockWineData = [mockBlendWine];
-      queryCallCount = 0;
-
       render(<WineDetailsView wineId="wine-2" onBack={() => {}} />);
 
       expect(screen.getByText(/60%/)).toBeInTheDocument();
@@ -375,8 +350,6 @@ describe('WineDetailsView', () => {
         ...mockWine,
         current_stage: 'oak_aging',
       }];
-      queryCallCount = 0;
-
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
       expect(screen.getByText('OAK AGING')).toBeInTheDocument();
@@ -387,8 +360,6 @@ describe('WineDetailsView', () => {
         ...mockWine,
         current_stage: 'bottled',
       }];
-      queryCallCount = 0;
-
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
       expect(screen.getByText('BOTTLED')).toBeInTheDocument();
@@ -405,8 +376,6 @@ describe('WineDetailsView', () => {
         started_at: now - 86400000, // 1 day ago
         completed_at: null,
       }];
-      queryCallCount = 0;
-
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
       expect(screen.getByText(/\(1 day\)/)).toBeInTheDocument();

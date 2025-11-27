@@ -23,17 +23,14 @@ rs.mock('./taskHelpers', () => ({
   calculateDueDate: (baseTime: number) => baseTime + 86400000, // Add 1 day
 }));
 
+// Mock the queries module to return objects with .run() methods
+rs.mock('../../queries', () => ({
+  myStageHistoryByEntity: () => ({ run: mockStageHistoryRun }),
+  taskTemplates: () => ({ run: mockTaskTemplateRun }),
+}));
+
 rs.mock('../../contexts/ZeroContext', () => ({
   useZero: () => ({
-    query: {
-      stage_history: {
-        where: rs.fn().mockReturnThis(),
-        run: mockStageHistoryRun,
-      },
-      task_template: {
-        run: mockTaskTemplateRun,
-      },
-    },
     mutate: {
       stage_history: {
         update: mockStageHistoryUpdate,

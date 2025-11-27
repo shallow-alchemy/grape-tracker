@@ -4,15 +4,21 @@ import { userEvent } from '@testing-library/user-event';
 import { WineryView } from './WineryView';
 
 const mockVintagesData: any[] = [];
+const mockWinesData: any[] = [];
+const mockActiveWinesData: any[] = [];
+
+const mockSetLocation = rs.fn();
+let mockLocation = '/winery/vintages';
 
 const mockZero = {
   query: {
     vintage: { data: mockVintagesData },
+    wine: { data: mockWinesData },
   },
 };
 
 rs.mock('wouter', () => ({
-  useLocation: () => ['/winery/vintages', rs.fn()],
+  useLocation: () => [mockLocation, mockSetLocation],
 }));
 
 rs.mock('../../App.module.css', () => ({
@@ -31,11 +37,21 @@ rs.mock('../../contexts/ZeroContext', () => ({
   useZero: () => mockZero,
 }));
 
+rs.mock('../../queries', () => ({
+  myVintages: () => ({ customQueryID: { name: 'myVintages' } }),
+  myWines: () => ({ customQueryID: { name: 'myWines' } }),
+}));
+
+rs.mock('../../shared/queries', () => ({
+  activeWines: () => ({ customQueryID: { name: 'activeWines' } }),
+}));
+
 rs.mock('@rocicorp/zero/react', () => ({
   useQuery: (query: any) => {
-    if (query === mockZero.query.vintage) {
-      return [query.data];
-    }
+    const queryName = query?.customQueryID?.name;
+    if (queryName === 'myVintages') return [mockVintagesData];
+    if (queryName === 'myWines') return [mockWinesData];
+    if (queryName === 'activeWines') return [mockActiveWinesData];
     return [[]];
   },
 }));
@@ -108,12 +124,15 @@ rs.mock('./TaskListView', () => ({
 describe('WineryView', () => {
   beforeEach(() => {
     rs.clearAllMocks();
+    mockLocation = '/winery/vintages';
+    mockVintagesData.length = 0;
+    mockWinesData.length = 0;
+    mockActiveWinesData.length = 0;
   });
 
   afterEach(() => {
     cleanup();
     rs.useRealTimers();
-    mockVintagesData.length = 0;
   });
 
   describe('header', () => {
@@ -127,9 +146,17 @@ describe('WineryView', () => {
       expect(screen.getByText('ADD VINTAGE')).toBeInTheDocument();
     });
 
-    test.todo('displays add wine button');
-    test.todo('displays manage inventory button');
-    test.todo('displays settings gear icon');
+    test('displays active wines count badge', () => {
+      mockActiveWinesData.push({ id: 'wine-1' }, { id: 'wine-2' });
+      render(<WineryView />);
+      expect(screen.getByText('2 ACTIVE WINES')).toBeInTheDocument();
+    });
+
+    test('displays singular wine when count is 1', () => {
+      mockActiveWinesData.push({ id: 'wine-1' });
+      render(<WineryView />);
+      expect(screen.getByText('1 ACTIVE WINE')).toBeInTheDocument();
+    });
   });
 
   describe('button actions', () => {
@@ -189,9 +216,42 @@ describe('WineryView', () => {
       expect(screen.queryByText('Vintage added!')).not.toBeInTheDocument();
     });
 
-    test.todo('opens add wine modal when button clicked');
-    test.todo('opens inventory modal when button clicked');
-    test.todo('opens settings modal when gear clicked');
+  });
+
+  describe('tab navigation', () => {
+    test('displays vintages and wines tabs', () => {
+      render(<WineryView />);
+      expect(screen.getByText('VINTAGES')).toBeInTheDocument();
+      expect(screen.getByText('WINES')).toBeInTheDocument();
+    });
+
+    test('clicking wines tab calls setLocation', async () => {
+      const user = userEvent.setup();
+      render(<WineryView />);
+
+      await user.click(screen.getByText('WINES'));
+      expect(mockSetLocation).toHaveBeenCalledWith('/winery/wines');
+    });
+
+    test('clicking vintages tab calls setLocation', async () => {
+      const user = userEvent.setup();
+      mockLocation = '/winery/wines';
+      render(<WineryView />);
+
+      await user.click(screen.getByText('VINTAGES'));
+      expect(mockSetLocation).toHaveBeenCalledWith('/winery/vintages');
+    });
+
+    test('shows wines list when on wines tab', () => {
+      mockLocation = '/winery/wines';
+      render(<WineryView />);
+      expect(screen.getByTestId('wines-list')).toBeInTheDocument();
+    });
+
+    test('shows vintages list when on vintages tab', () => {
+      render(<WineryView />);
+      expect(screen.getByTestId('vintages-list')).toBeInTheDocument();
+    });
   });
 
   describe('content display', () => {
@@ -261,64 +321,71 @@ describe('WineryView', () => {
     });
   });
 
-  describe('wine sections', () => {
-    test.todo('displays active wines section');
-    test.todo('displays aging wines section');
-    test.todo('displays bottled wines section');
-    test.todo('shows count badge on section headers');
+  describe('detail views', () => {
+    test('renders vintage details when initialVintageId provided', () => {
+      render(<WineryView initialVintageId="vintage-123" />);
+      expect(screen.getByTestId('vintage-details')).toBeInTheDocument();
+      expect(screen.getByText('Vintage Details: vintage-123')).toBeInTheDocument();
+    });
+
+    test('renders wine details when initialWineId provided', () => {
+      render(<WineryView initialWineId="wine-456" />);
+      expect(screen.getByTestId('wine-details')).toBeInTheDocument();
+      expect(screen.getByText('Wine Details: wine-456')).toBeInTheDocument();
+    });
+
+    test('renders task list for vintage when initialVintageTasksId provided', () => {
+      mockVintagesData.push({
+        id: 'vintage-tasks-123',
+        variety: 'Cabernet',
+        vintage_year: 2024,
+        current_stage: 'fermentation',
+        grape_source: 'own_vineyard',
+      });
+      render(<WineryView initialVintageTasksId="vintage-tasks-123" />);
+      expect(screen.getByTestId('task-list')).toBeInTheDocument();
+      expect(screen.getByText(/Task List: vintage/)).toBeInTheDocument();
+    });
+
+    test('renders task list for wine when initialWineTasksId provided', () => {
+      mockWinesData.push({
+        id: 'wine-tasks-456',
+        name: 'Reserve',
+        current_stage: 'aging',
+      });
+      render(<WineryView initialWineTasksId="wine-tasks-456" />);
+      expect(screen.getByTestId('task-list')).toBeInTheDocument();
+      expect(screen.getByText(/Task List: wine/)).toBeInTheDocument();
+    });
+
+    test('shows error when vintage not found for tasks', () => {
+      render(<WineryView initialVintageTasksId="non-existent" />);
+      expect(screen.getByText('VINTAGE NOT FOUND')).toBeInTheDocument();
+    });
+
+    test('shows error when wine not found for tasks', () => {
+      render(<WineryView initialWineTasksId="non-existent" />);
+      expect(screen.getByText('WINE NOT FOUND')).toBeInTheDocument();
+    });
   });
 
-  describe('wine card display', () => {
-    test.todo('shows wine name and vintage info');
-    test.todo('shows current stage');
-    test.todo('shows days in stage');
-    test.todo('shows latest measurements');
-    test.todo('shows current volume');
-    test.todo('shows next pending task');
-  });
+  describe('add wine button on wines tab', () => {
+    test('shows add wine button when on wines tab', () => {
+      mockLocation = '/winery/wines';
+      render(<WineryView />);
+      expect(screen.getByText('ADD WINE')).toBeInTheDocument();
+    });
 
-  describe('wine card interactions', () => {
-    test.todo('navigates to wine detail when card clicked');
-    test.todo('shows wine detail with stage history');
-    test.todo('shows wine detail with task list');
-    test.todo('shows wine detail with measurement history');
-  });
+    test('opens add wine modal when button clicked on wines tab', async () => {
+      const user = userEvent.setup();
+      mockLocation = '/winery/wines';
+      render(<WineryView />);
 
-  describe('section collapsing', () => {
-    test.todo('collapses section when header clicked');
-    test.todo('expands section when clicked again');
-    test.todo('active wines expanded by default');
-    test.todo('bottled wines collapsed by default');
-  });
+      expect(screen.queryByTestId('add-wine-modal')).not.toBeInTheDocument();
 
-  describe('empty states', () => {
-    test.todo('shows empty message when no wines exist');
-    test.todo('shows helpful cta for creating first vintage');
-    test.todo('shows empty state per section');
+      await user.click(screen.getByText('ADD WINE'));
+      expect(screen.getByTestId('add-wine-modal')).toBeInTheDocument();
+    });
   });
-
-  describe('wine sorting', () => {
-    test.todo('sorts wines by updated date descending');
-    test.todo('groups by status correctly');
-  });
-
-  describe('vintage display', () => {
-    test.todo('shows vintages when no wines created yet');
-    test.todo('shows vintage stage');
-    test.todo('navigates to vintage detail when clicked');
-  });
-
-  describe('overdue task indicators', () => {
-    test.todo('highlights wines with overdue tasks');
-    test.todo('shows urgent indicator for critical tasks');
-    test.todo('shows count of overdue tasks');
-  });
-
-  describe('data loading', () => {
-    test.todo('shows loading state initially');
-    test.todo('shows content when data loaded');
-    test.todo('refreshes when new wine created');
-  });
-
 });
 

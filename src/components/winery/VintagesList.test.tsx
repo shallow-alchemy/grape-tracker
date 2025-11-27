@@ -3,41 +3,30 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { VintagesList } from './VintagesList';
 
-// Mock Zero context
+// Mock data arrays
 const mockVintagesData: any[] = [];
-const mockBlocksData: any[] = [];
-const mockMeasurementsData: any[] = [];
 const mockWinesData: any[] = [];
-
-const mockZero = {
-  query: {
-    vintage: { data: mockVintagesData },
-    block: { data: mockBlocksData },
-    measurement: {
-      data: mockMeasurementsData,
-      where: rs.fn().mockReturnThis(),
-    },
-    wine: { data: mockWinesData },
-  },
-};
+const mockMeasurementsData: any[] = [];
+const mockTasksData: any[] = [];
 
 rs.mock('../../contexts/ZeroContext', () => ({
-  useZero: () => mockZero,
+  useZero: () => ({}),
 }));
 
 rs.mock('@rocicorp/zero/react', () => ({
   useQuery: (query: any) => {
-    if (query === mockZero.query.vintage) {
-      return [query.data];
+    const queryName = query?.customQueryID?.name;
+    if (queryName === 'myVintages') {
+      return [mockVintagesData];
     }
-    if (query === mockZero.query.block) {
-      return [query.data];
+    if (queryName === 'myWines') {
+      return [mockWinesData];
     }
-    if (query === mockZero.query.measurement || query?.data === mockMeasurementsData) {
+    if (queryName === 'myMeasurements') {
       return [mockMeasurementsData];
     }
-    if (query === mockZero.query.wine) {
-      return [query.data];
+    if (queryName === 'myTasks') {
+      return [mockTasksData];
     }
     return [[]];
   },
@@ -47,9 +36,9 @@ describe('VintagesList - Integration Tests', () => {
   afterEach(() => {
     cleanup();
     mockVintagesData.length = 0;
-    mockBlocksData.length = 0;
-    mockMeasurementsData.length = 0;
     mockWinesData.length = 0;
+    mockMeasurementsData.length = 0;
+    mockTasksData.length = 0;
   });
 
   describe('Empty State', () => {
@@ -441,31 +430,6 @@ describe('VintagesList - Integration Tests', () => {
 
   describe('Block Display', () => {
     test('shows block count when blocks are associated', () => {
-      mockBlocksData.push(
-        {
-          id: 'block-1',
-          name: 'North Block',
-          vineyard_id: 'v1',
-          location: '',
-          size_acres: 0,
-          soil_type: '',
-          notes: '',
-          created_at: Date.now(),
-          updated_at: Date.now(),
-        },
-        {
-          id: 'block-2',
-          name: 'South Block',
-          vineyard_id: 'v1',
-          location: '',
-          size_acres: 0,
-          soil_type: '',
-          notes: '',
-          created_at: Date.now(),
-          updated_at: Date.now(),
-        }
-      );
-
       mockVintagesData.push({
         id: '2024-cab',
         vintage_year: 2024,
@@ -483,18 +447,6 @@ describe('VintagesList - Integration Tests', () => {
     });
 
     test('handles single block correctly', () => {
-      mockBlocksData.push({
-        id: 'block-1',
-        name: 'North Block',
-        vineyard_id: 'v1',
-        location: '',
-        size_acres: 0,
-        soil_type: '',
-        notes: '',
-        created_at: Date.now(),
-        updated_at: Date.now(),
-      });
-
       mockVintagesData.push({
         id: '2024-cab',
         vintage_year: 2024,

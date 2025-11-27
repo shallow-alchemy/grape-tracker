@@ -41,27 +41,21 @@ const mockVineyardData = [
   },
 ];
 
-const mockZero = {
-  query: {
-    vine: {},
-    block: {},
-    vineyard: {},
-  },
-};
-
 rs.mock('../contexts/ZeroContext', () => ({
-  useZero: rs.fn(() => mockZero),
+  useZero: rs.fn(() => ({})),
 }));
 
+// Mock useQuery to return data based on the customQueryID set by createClientQuery
 rs.mock('@rocicorp/zero/react', () => ({
-  useQuery: rs.fn((query) => {
-    if (query === mockZero.query.vine) {
+  useQuery: rs.fn((query: any) => {
+    const queryName = query?.customQueryID?.name;
+    if (queryName === 'myVines') {
       return [mockVineData];
     }
-    if (query === mockZero.query.block) {
+    if (queryName === 'myBlocks') {
       return [mockBlockData];
     }
-    if (query === mockZero.query.vineyard) {
+    if (queryName === 'myVineyards') {
       return [mockVineyardData];
     }
     return [[]];

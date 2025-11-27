@@ -43,6 +43,10 @@ describe('Weather', () => {
   const originalGeolocation = global.navigator.geolocation;
 
   beforeEach(() => {
+    const { fetchWeather } = require('../utils/weather');
+    fetchWeather.mockReset();
+    fetchWeather.mockResolvedValue(mockWeatherData);
+
     global.localStorage = {
       getItem: rs.fn(() => 'true'),
       setItem: rs.fn(),

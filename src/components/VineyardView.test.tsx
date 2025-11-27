@@ -32,12 +32,13 @@ const mockVinesData = [
 
 const mockSetLocation = rs.fn();
 
+const mockData = {
+  vines: mockVinesData as any[],
+  blocks: [] as any[],
+  vineyards: [] as any[],
+};
+
 const mockZero = {
-  query: {
-    vine: { data: mockVinesData },
-    block: { data: [] as any },
-    vineyard: { data: [] as any },
-  },
   mutate: {
     vine: {
       insert: rs.fn().mockResolvedValue(undefined),
@@ -51,14 +52,15 @@ rs.mock('../contexts/ZeroContext', () => ({
 
 rs.mock('@rocicorp/zero/react', () => ({
   useQuery: (query: any) => {
-    if (query === mockZero.query.vine) {
-      return [query.data];
+    const queryName = query?.customQueryID?.name;
+    if (queryName === 'myVines') {
+      return [mockData.vines];
     }
-    if (query === mockZero.query.block) {
-      return [query.data];
+    if (queryName === 'myBlocks') {
+      return [mockData.blocks];
     }
-    if (query === mockZero.query.vineyard) {
-      return [query.data];
+    if (queryName === 'myVineyards') {
+      return [mockData.vineyards];
     }
     return [[]];
   },
@@ -149,11 +151,11 @@ describe('VineyardView', () => {
 
   describe('when no vines exist', () => {
     beforeEach(() => {
-      mockZero.query.vine.data = [];
+      mockData.vines = [];
     });
 
     afterEach(() => {
-      mockZero.query.vine.data = mockVinesData;
+      mockData.vines = mockVinesData;
     });
 
     test('shows empty vine list when no vines exist', async () => {
@@ -225,11 +227,11 @@ describe('VineyardView', () => {
     ];
 
     beforeEach(() => {
-      mockZero.query.block.data = mockBlockData;
+      mockData.blocks = mockBlockData;
     });
 
     afterEach(() => {
-      mockZero.query.block.data = [];
+      mockData.blocks = [];
     });
 
     test('user can select a block filter via dropdown', async () => {

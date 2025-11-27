@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useQuery } from '@rocicorp/zero/react';
+import { useUser } from '@clerk/clerk-react';
 import { myVintages, myWines } from '../../queries';
+import { activeWines } from '../../shared/queries';
 import { AddVintageModal } from './AddVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { VintagesList } from './VintagesList';
@@ -26,6 +28,10 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   const [showAddWineModal, setShowAddWineModal] = useState(false);
   const [wineModalInitialVintageId, setWineModalInitialVintageId] = useState<string | undefined>(undefined);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const { user } = useUser();
+  const [activeWinesData] = useQuery(activeWines(user?.id));
+  const activeWineCount = activeWinesData.length;
 
   const activeTab: ActiveTab = location.includes('/winery/wines') ? 'wines' : 'vintages';
 
@@ -127,7 +133,12 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   return (
     <div className={styles.vineyardContainer}>
       <div className={styles.vineyardHeader}>
-        <div className={styles.vineyardTitle}>WINERY</div>
+        <div className={styles.titleWithBadge}>
+          <div className={styles.vineyardTitle}>WINERY</div>
+          <span className={styles.activeWinesBadge}>
+            {activeWineCount} ACTIVE {activeWineCount === 1 ? 'WINE' : 'WINES'}
+          </span>
+        </div>
         <button
           className={styles.actionButton}
           onClick={() => {

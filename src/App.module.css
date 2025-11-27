@@ -510,6 +510,19 @@
   opacity: 0.8;
 }
 
+.titleWithBadge {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-md);
+}
+
+.activeWinesBadge {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+}
+
 .blockDropdown {
   position: absolute;
   top: 100%;

@@ -6,6 +6,7 @@ let mockUserValue: any = { user: null };
 
 rs.mock('@clerk/clerk-react', () => ({
   useUser: () => mockUserValue,
+  useAuth: () => ({ getToken: async () => 'mock-token' }),
 }));
 
 rs.mock('@rocicorp/zero/react', () => ({
