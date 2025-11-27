@@ -40,6 +40,27 @@ A Rust query builder for Zero synced queries, enabling user-specific data withou
 
 ---
 
+## HIGH PRIORITY BUG FIXES
+
+### Priority 0: Variety Removal Guardrails
+**Status:** 🔲 Not Started
+**Severity:** High - causes page errors for affected vines
+
+**Issue:**
+When a grape variety is removed from vineyard settings, vines that have that variety assigned error out when viewing their individual vine page. The block list view works, but clicking on a single vine with a removed variety fails.
+
+**Solution:**
+Similar to block deletion, add guardrails when removing varieties:
+- Detect which vines use varieties being removed
+- Offer options: migrate affected vines to another variety OR delete affected vines
+- Prevent accidental data orphaning
+
+**Pattern to follow:**
+- See `DeleteBlockConfirmModal.tsx` for the migrate/delete pattern
+- Apply same UX pattern in `VineyardSettingsModal.tsx` for variety changes
+
+---
+
 ## COMPLETED FEATURES
 
 ### Core Vine Management

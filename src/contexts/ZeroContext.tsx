@@ -2,10 +2,11 @@ import { type ReactNode, useRef } from 'react';
 import { ZeroProvider as ZeroProviderInternal, useZero as useZeroInternal } from '@rocicorp/zero/react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { schema, type Schema } from '../../schema';
+import { createMutators, type Mutators } from '../mutators';
 import type { Zero } from '@rocicorp/zero';
 
-export const useZero = (): Zero<Schema> => {
-  return useZeroInternal<Schema>();
+export const useZero = (): Zero<Schema, Mutators> => {
+  return useZeroInternal<Schema, Mutators>();
 };
 
 export const ZeroProvider = ({ children }: { children: ReactNode }) => {
@@ -39,6 +40,7 @@ export const ZeroProvider = ({ children }: { children: ReactNode }) => {
       server={process.env.PUBLIC_ZERO_SERVER || 'http://localhost:4848'}
       schema={schema}
       auth={authFunction}
+      mutators={createMutators()}
     >
       {children}
     </ZeroProviderInternal>

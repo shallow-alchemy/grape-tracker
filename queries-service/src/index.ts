@@ -1,9 +1,13 @@
+import 'dotenv/config';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import postgres from 'postgres';
 import { withValidation } from '@rocicorp/zero';
-import { handleGetQueriesRequest } from '@rocicorp/zero/server';
+import { handleGetQueriesRequest, PushProcessor } from '@rocicorp/zero/server';
+import { zeroPostgresJS } from '@rocicorp/zero/server/adapters/postgresjs';
 import { schema } from '../schema.js';
+import { createMutators, type AuthData } from './mutators.js';
 import {
   myUser,
   myVineyards,
@@ -33,6 +37,17 @@ const app = new Hono();
 
 // Enable CORS for zero-cache requests
 app.use('/*', cors());
+
+// Database connection for custom mutators
+const databaseUrl = process.env.ZERO_UPSTREAM_DB;
+if (!databaseUrl) {
+  console.warn('[queries-service] ZERO_UPSTREAM_DB not set - mutations will fail');
+}
+
+// Create postgres connection and PushProcessor for custom mutators
+const sql = databaseUrl ? postgres(databaseUrl) : null;
+const zqlDB = sql ? zeroPostgresJS(schema, sql) : null;
+const pushProcessor = zqlDB ? new PushProcessor(zqlDB) : null;
 
 // Register all synced queries with validation
 const validatedQueries = {
@@ -121,6 +136,31 @@ app.post('/get-queries', async (c) => {
   );
 
   return c.json(result);
+});
+
+// POST /push endpoint for custom mutators (zero-cache calls this)
+app.post('/push', async (c) => {
+  console.log('[queries-service] Received /push request');
+
+  if (!pushProcessor) {
+    console.error('[queries-service] PushProcessor not initialized - ZERO_UPSTREAM_DB not set');
+    return c.json({ error: 'Server not configured for mutations' }, 500);
+  }
+
+  // Extract userID from JWT for auth context
+  const userID = extractUserID(c.req.raw);
+  const authData: AuthData = userID ? { userID } : undefined;
+
+  console.log('[queries-service] Processing push with authData:', authData ? 'authenticated' : 'anonymous');
+
+  try {
+    const mutators = createMutators(authData);
+    const result = await pushProcessor.process(mutators, c.req.raw);
+    return c.json(result);
+  } catch (error) {
+    console.error('[queries-service] Push error:', error);
+    return c.json({ error: String(error) }, 500);
+  }
 });
 
 // Health check endpoint
