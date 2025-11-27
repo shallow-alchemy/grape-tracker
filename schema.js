@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.permissions = exports.builder = exports.schema = void 0;
-const zero_1 = require("@rocicorp/zero");
-const userTable = (0, zero_1.table)('user')
+var zero_1 = require("@rocicorp/zero");
+var userTable = (0, zero_1.table)('user')
     .columns({
     id: (0, zero_1.string)(), // Clerk ID as primary key
     email: (0, zero_1.string)(),
@@ -14,7 +14,7 @@ const userTable = (0, zero_1.table)('user')
     updated_at: (0, zero_1.number)(),
 })
     .primaryKey('id');
-const vineyardTable = (0, zero_1.table)('vineyard')
+var vineyardTable = (0, zero_1.table)('vineyard')
     .columns({
     id: (0, zero_1.string)(),
     user_id: (0, zero_1.string)(),
@@ -25,7 +25,7 @@ const vineyardTable = (0, zero_1.table)('vineyard')
     updated_at: (0, zero_1.number)(),
 })
     .primaryKey('id');
-const blockTable = (0, zero_1.table)('block')
+var blockTable = (0, zero_1.table)('block')
     .columns({
     id: (0, zero_1.string)(),
     user_id: (0, zero_1.string)(),
@@ -38,7 +38,7 @@ const blockTable = (0, zero_1.table)('block')
     updated_at: (0, zero_1.number)(),
 })
     .primaryKey('id');
-const vineTable = (0, zero_1.table)('vine')
+var vineTable = (0, zero_1.table)('vine')
     .columns({
     id: (0, zero_1.string)(),
     user_id: (0, zero_1.string)(),
@@ -53,7 +53,7 @@ const vineTable = (0, zero_1.table)('vine')
     updated_at: (0, zero_1.number)(),
 })
     .primaryKey('id');
-const vintageTable = (0, zero_1.table)('vintage')
+var vintageTable = (0, zero_1.table)('vintage')
     .columns({
     id: (0, zero_1.string)(),
     user_id: (0, zero_1.string)(),
@@ -72,7 +72,7 @@ const vintageTable = (0, zero_1.table)('vintage')
     updated_at: (0, zero_1.number)(),
 })
     .primaryKey('id');
-const wineTable = (0, zero_1.table)('wine')
+var wineTable = (0, zero_1.table)('wine')
     .columns({
     id: (0, zero_1.string)(),
     user_id: (0, zero_1.string)(),
@@ -90,7 +90,7 @@ const wineTable = (0, zero_1.table)('wine')
     updated_at: (0, zero_1.number)(),
 })
     .primaryKey('id');
-const stageHistoryTable = (0, zero_1.table)('stage_history')
+var stageHistoryTable = (0, zero_1.table)('stage_history')
     .columns({
     id: (0, zero_1.string)(),
     user_id: (0, zero_1.string)(),
@@ -105,7 +105,7 @@ const stageHistoryTable = (0, zero_1.table)('stage_history')
     updated_at: (0, zero_1.number)(),
 })
     .primaryKey('id');
-const taskTemplateTable = (0, zero_1.table)('task_template')
+var taskTemplateTable = (0, zero_1.table)('task_template')
     .columns({
     id: (0, zero_1.string)(),
     user_id: (0, zero_1.string)(),
@@ -124,7 +124,7 @@ const taskTemplateTable = (0, zero_1.table)('task_template')
     updated_at: (0, zero_1.number)(),
 })
     .primaryKey('id');
-const taskTable = (0, zero_1.table)('task')
+var taskTable = (0, zero_1.table)('task')
     .columns({
     id: (0, zero_1.string)(),
     user_id: (0, zero_1.string)(),
@@ -143,7 +143,7 @@ const taskTable = (0, zero_1.table)('task')
     updated_at: (0, zero_1.number)(),
 })
     .primaryKey('id');
-const measurementTable = (0, zero_1.table)('measurement')
+var measurementTable = (0, zero_1.table)('measurement')
     .columns({
     id: (0, zero_1.string)(),
     user_id: (0, zero_1.string)(),
@@ -161,7 +161,7 @@ const measurementTable = (0, zero_1.table)('measurement')
     updated_at: (0, zero_1.number)(),
 })
     .primaryKey('id');
-const measurementRangeTable = (0, zero_1.table)('measurement_range')
+var measurementRangeTable = (0, zero_1.table)('measurement_range')
     .columns({
     id: (0, zero_1.string)(),
     wine_type: (0, zero_1.string)(),
@@ -195,12 +195,15 @@ exports.builder = (0, zero_1.createBuilder)(exports.schema);
 // NOTE: Temporary ANYONE_CAN permissions until synced queries are fully deployed
 // This allows zero-cache to start but provides NO multi-user isolation
 // TODO: Replace with synced queries (see zero-queries/src/queries.ts)
-exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
+exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () {
     return {
         user: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                insert: {
+                    preMutation: zero_1.ANYONE_CAN,
+                    postMutation: zero_1.ANYONE_CAN,
+                },
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -211,7 +214,10 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
         vineyard: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                insert: {
+                    preMutation: zero_1.ANYONE_CAN,
+                    postMutation: zero_1.ANYONE_CAN,
+                },
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -222,7 +228,10 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
         block: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                insert: {
+                    preMutation: zero_1.ANYONE_CAN,
+                    postMutation: zero_1.ANYONE_CAN,
+                },
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -233,7 +242,10 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
         vine: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                insert: {
+                    preMutation: zero_1.ANYONE_CAN,
+                    postMutation: zero_1.ANYONE_CAN,
+                },
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -244,7 +256,10 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
         vintage: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                insert: {
+                    preMutation: zero_1.ANYONE_CAN,
+                    postMutation: zero_1.ANYONE_CAN,
+                },
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -255,7 +270,10 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
         wine: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                insert: {
+                    preMutation: zero_1.ANYONE_CAN,
+                    postMutation: zero_1.ANYONE_CAN,
+                },
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -266,7 +284,10 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
         stage_history: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                insert: {
+                    preMutation: zero_1.ANYONE_CAN,
+                    postMutation: zero_1.ANYONE_CAN,
+                },
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -277,7 +298,10 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
         task_template: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                insert: {
+                    preMutation: zero_1.ANYONE_CAN,
+                    postMutation: zero_1.ANYONE_CAN,
+                },
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -288,7 +312,10 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
         task: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                insert: {
+                    preMutation: zero_1.ANYONE_CAN,
+                    postMutation: zero_1.ANYONE_CAN,
+                },
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -299,7 +326,10 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
         measurement: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                insert: {
+                    preMutation: zero_1.ANYONE_CAN,
+                    postMutation: zero_1.ANYONE_CAN,
+                },
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
