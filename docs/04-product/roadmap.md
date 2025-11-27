@@ -99,7 +99,15 @@ When removing grape varieties from vineyard settings, the system now protects ag
 - ✅ Console error suppression patterns for clean output
 - ✅ Server-side mutator tests (auth enforcement, ownership)
 - ✅ Client-side mutator tests
-- ✅ 689 passing tests (frontend) + 12 passing tests (backend)
+- ✅ 679 passing tests (frontend) + 12 passing tests (backend)
+- 🔄 E2E testing with Playwright (in progress)
+  - Test user isolation for database management
+  - Clerk auth state persistence
+  - Recording via `playwright codegen`
+  - See: `docs/05-testing/testing-guide.md` → E2E Testing section
+- 🔲 CI/CD pipeline with GitHub Actions (planned)
+  - Docker Compose for isolated test environments
+  - Automated E2E tests on PR
 
 ### Weather & Alerts
 - ✅ Weather API integration (Open-Meteo)

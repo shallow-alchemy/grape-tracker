@@ -84,32 +84,27 @@ describe('taskHelpers', () => {
   });
 
   describe('formatDueDate', () => {
-    test('returns "OVERDUE" for past date', () => {
+    test('returns formatted date for past date', () => {
       const pastDate = Date.now() - 86400000; // 1 day ago
-      expect(formatDueDate(pastDate)).toBe('OVERDUE');
+      const result = formatDueDate(pastDate);
+      // Should return "Nov 26" format (month short + day)
+      expect(result).toMatch(/\w{3} \d{1,2}/);
     });
 
-    test('returns "Today" with time for today', () => {
-      const now = new Date();
+    test('returns "Due today" for today', () => {
       const today = new Date();
-      // Set to a time that's guaranteed to be today but in the future
-      // If it's before 10 PM, set to 11:30 PM today, otherwise set to 1 hour from now
-      if (now.getHours() < 22) {
-        today.setHours(23, 30, 0, 0);
-      } else {
-        // If it's 10 PM or later, just add 30 minutes
-        today.setTime(now.getTime() + 1800000); // 30 minutes in ms
-      }
+      // Set to a time that's guaranteed to be today
+      today.setHours(12, 0, 0, 0);
       const result = formatDueDate(today.getTime());
-      expect(result).toMatch(/^Today \d{1,2}:\d{2}/);
+      expect(result).toBe('Due today');
     });
 
-    test('returns "Tomorrow" with time for tomorrow', () => {
+    test('returns "Due tomorrow" for tomorrow', () => {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(10, 0, 0, 0); // 10:00 AM
       const result = formatDueDate(tomorrow.getTime());
-      expect(result).toMatch(/^Tomorrow \d{1,2}:\d{2}/);
+      expect(result).toBe('Due tomorrow');
     });
 
     test('returns formatted date for future dates beyond tomorrow', () => {
@@ -118,18 +113,13 @@ describe('taskHelpers', () => {
       futureDate.setHours(14, 0, 0, 0);
       const result = formatDueDate(futureDate.getTime());
 
-      // Should contain month abbreviation and day
-      expect(result).toMatch(/\w{3} \d{1,2}/); // e.g., "Nov 25"
+      // Should contain month abbreviation and day (e.g., "Nov 25")
+      expect(result).toMatch(/\w{3} \d{1,2}/);
     });
 
-    test('formats time correctly in 12-hour format', () => {
-      const date = new Date();
-      date.setDate(date.getDate() + 2); // Day after tomorrow
-      date.setHours(15, 45, 0, 0); // 3:45 PM
-      const result = formatDueDate(date.getTime());
-
-      // Should include time in 12-hour format
-      expect(result).toMatch(/\d{1,2}:\d{2}/);
+    test('returns "No due date" for invalid dates', () => {
+      expect(formatDueDate(0)).toBe('No due date');
+      expect(formatDueDate(100)).toBe('No due date'); // Before year 2000
     });
   });
 });

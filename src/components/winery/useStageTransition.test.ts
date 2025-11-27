@@ -29,6 +29,7 @@ rs.mock('./taskHelpers', () => ({
 rs.mock('../../shared/queries', () => ({
   myStageHistoryByEntity: () => ({ customQueryID: { name: 'myStageHistoryByEntity' } }),
   taskTemplates: () => ({ customQueryID: { name: 'taskTemplates' } }),
+  myTasksByEntity: () => ({ customQueryID: { name: 'myTasksByEntity' } }),
 }));
 
 // Mock useQuery to return reactive data based on query name
@@ -40,6 +41,9 @@ rs.mock('@rocicorp/zero/react', () => ({
     }
     if (queryName === 'taskTemplates') {
       return [mockTemplatesData];
+    }
+    if (queryName === 'myTasksByEntity') {
+      return [[]]; // Return empty tasks array by default
     }
     return [[]];
   },

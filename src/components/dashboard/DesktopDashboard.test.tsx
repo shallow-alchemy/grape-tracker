@@ -29,6 +29,8 @@ const mockTasks = [
     due_date: new Date('2024-12-01').getTime(),
     completed_at: null,
     skipped: false,
+    entity_type: 'vintage',
+    entity_id: 'vintage-1',
   },
   {
     id: 'task-2',
@@ -36,6 +38,8 @@ const mockTasks = [
     due_date: new Date('2024-11-15').getTime(),
     completed_at: null,
     skipped: false,
+    entity_type: 'vintage',
+    entity_id: 'vintage-1',
   },
   {
     id: 'task-3',
@@ -43,6 +47,8 @@ const mockTasks = [
     due_date: new Date('2024-11-20').getTime(),
     completed_at: null,
     skipped: false,
+    entity_type: 'wine',
+    entity_id: 'wine-1',
   },
   {
     id: 'task-4',
@@ -50,15 +56,69 @@ const mockTasks = [
     due_date: new Date('2024-12-10').getTime(),
     completed_at: null,
     skipped: false,
+    entity_type: 'wine',
+    entity_id: 'wine-1',
   },
 ];
 
+const mockVintages = [
+  {
+    id: 'vintage-1',
+    vintage_year: 2024,
+    variety: 'CABERNET SAUVIGNON',
+    current_stage: 'oaking',
+    harvest_date: Date.now() - 30 * 24 * 60 * 60 * 1000,
+    harvest_weight_lbs: 150,
+    notes: 'DEVELOPING WELL. Tannins softening nicely.',
+  },
+];
+
+const mockMeasurements = [
+  {
+    id: 'measurement-1',
+    entity_type: 'vintage',
+    entity_id: 'vintage-1',
+    stage: 'harvest',
+    brix: 24.5,
+    ta: 6.2,
+    ph: 3.65,
+  },
+];
+
+// Mock queries to return objects with customQueryID for useQuery pattern
+rs.mock('../../shared/queries', () => ({
+  myTasks: () => ({ customQueryID: { name: 'myTasks' } }),
+  myVintages: () => ({ customQueryID: { name: 'myVintages' } }),
+  myMeasurements: () => ({ customQueryID: { name: 'myMeasurements' } }),
+}));
+
 rs.mock('@rocicorp/zero/react', () => ({
-  useQuery: () => [mockTasks],
+  useQuery: (query: any) => {
+    const queryName = query?.customQueryID?.name;
+    if (queryName === 'myTasks') {
+      return [mockTasks];
+    }
+    if (queryName === 'myVintages') {
+      return [mockVintages];
+    }
+    if (queryName === 'myMeasurements') {
+      return [mockMeasurements];
+    }
+    return [[]];
+  },
 }));
 
 rs.mock('../winery/taskHelpers', () => ({
   formatDueDate: (timestamp: number) => new Date(timestamp).toLocaleDateString(),
+}));
+
+rs.mock('../winery/stages', () => ({
+  formatStage: (stage: string) => stage ? stage.replace(/_/g, ' ').toUpperCase() : '',
+}));
+
+rs.mock('wouter', () => ({
+  useLocation: () => ['/', rs.fn()],
+  Link: ({ children, href }: any) => <a href={href}>{children}</a>,
 }));
 
 describe('RecentActivity', () => {
@@ -109,20 +169,20 @@ describe('CurrentVintage', () => {
   test('renders metrics', () => {
     render(<CurrentVintage />);
 
-    expect(screen.getByText('HARVEST BRIX')).toBeInTheDocument();
-    expect(screen.getByText('24.5')).toBeInTheDocument();
+    expect(screen.getByText('BRIX')).toBeInTheDocument();
+    expect(screen.getByText('24.5°')).toBeInTheDocument();
     expect(screen.getByText('TA')).toBeInTheDocument();
     expect(screen.getByText('6.2 g/L')).toBeInTheDocument();
     expect(screen.getByText('PH')).toBeInTheDocument();
     expect(screen.getByText('3.65')).toBeInTheDocument();
-    expect(screen.getByText('OAK TIME')).toBeInTheDocument();
-    expect(screen.getByText('8 MONTHS')).toBeInTheDocument();
+    expect(screen.getByText('WEIGHT')).toBeInTheDocument();
+    expect(screen.getByText('150 LBS')).toBeInTheDocument();
   });
 
-  test('renders tasting note', () => {
+  test('renders notes', () => {
     render(<CurrentVintage />);
 
-    expect(screen.getByText('LATEST TASTING (NOV 1)')).toBeInTheDocument();
+    expect(screen.getByText('NOTES')).toBeInTheDocument();
     expect(screen.getByText(/DEVELOPING WELL/)).toBeInTheDocument();
   });
 });

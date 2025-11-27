@@ -2,7 +2,6 @@ import { test, describe, expect, rs, afterEach } from '@rstest/core';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AllTasksView } from './AllTasksView';
-import styles from '../../App.module.css';
 
 rs.mock('@clerk/clerk-react', () => ({
   useUser: () => ({ user: { id: 'test-user-id' } }),
@@ -110,11 +109,15 @@ describe('AllTasksView', () => {
     test('displays task count', () => {
       render(<AllTasksView />);
 
-      expect(screen.getByText(/4 tasks found/)).toBeInTheDocument();
+      expect(screen.getByText(/ALL \(4\)/)).toBeInTheDocument();
     });
 
-    test('displays all tasks', () => {
+    test('displays all tasks when ALL tab is clicked', async () => {
+      const user = userEvent.setup();
       render(<AllTasksView />);
+
+      // Click ALL tab to see all tasks
+      await user.click(screen.getByText(/ALL \(/));
 
       expect(screen.getByText('Completed Task')).toBeInTheDocument();
       expect(screen.getByText('Overdue Task')).toBeInTheDocument();
@@ -124,26 +127,35 @@ describe('AllTasksView', () => {
   });
 
   describe('task states', () => {
-    test('shows completed badge for completed tasks', () => {
+    test('shows completed badge for completed tasks', async () => {
+      const user = userEvent.setup();
       render(<AllTasksView />);
 
+      await user.click(screen.getByText(/COMPLETED \(/));
       expect(screen.getByText('COMPLETED')).toBeInTheDocument();
     });
 
     test('shows overdue badge for overdue tasks', () => {
       render(<AllTasksView />);
 
+      // Overdue tasks show in the active tab
       expect(screen.getByText('OVERDUE')).toBeInTheDocument();
     });
 
-    test('shows skipped badge for skipped tasks', () => {
+    test('shows skipped badge for skipped tasks', async () => {
+      const user = userEvent.setup();
       render(<AllTasksView />);
 
+      await user.click(screen.getByText(/SKIPPED \(/));
       expect(screen.getByText('SKIPPED')).toBeInTheDocument();
     });
 
-    test('displays task descriptions', () => {
+    test('displays task descriptions', async () => {
+      const user = userEvent.setup();
       render(<AllTasksView />);
+
+      // Click ALL tab to see all tasks
+      await user.click(screen.getByText(/ALL \(/));
 
       expect(screen.getByText('This task is done')).toBeInTheDocument();
       expect(screen.getByText('This task is overdue')).toBeInTheDocument();
@@ -179,10 +191,11 @@ describe('AllTasksView', () => {
 
       render(<AllTasksView />);
 
+      // Search for 'overdue' (lowercase) to find 'Overdue Task' which is active
       const searchInput = screen.getByPlaceholderText('Search tasks by title...');
-      await user.type(searchInput, 'completed');
+      await user.type(searchInput, 'overdue');
 
-      expect(screen.getByText('Completed Task')).toBeInTheDocument();
+      expect(screen.getByText('Overdue Task')).toBeInTheDocument();
     });
 
     test('updates task count when filtering', async () => {
@@ -193,27 +206,7 @@ describe('AllTasksView', () => {
       const searchInput = screen.getByPlaceholderText('Search tasks by title...');
       await user.type(searchInput, 'Overdue');
 
-      expect(screen.getByText(/1 task found/)).toBeInTheDocument();
-    });
-
-    test('resets to page 1 when searching', async () => {
-      const user = userEvent.setup();
-      mockTasksData = Array.from({ length: 25 }, (_, i) => ({
-        ...mockUpcomingTask,
-        id: `task-${i}`,
-        name: `Task ${i}`,
-      }));
-
-      render(<AllTasksView />);
-
-      const nextButton = screen.getByText('NEXT →');
-      await user.click(nextButton);
-
-      const searchInput = screen.getByPlaceholderText('Search tasks by title...');
-      await user.type(searchInput, 'Task');
-
-      const pageIndicators = screen.getAllByText(/Page 1 of/);
-      expect(pageIndicators.length).toBeGreaterThan(0);
+      expect(screen.getByText(/ALL \(1\)/)).toBeInTheDocument();
     });
 
     test('shows no results message when search finds nothing', async () => {
@@ -228,136 +221,8 @@ describe('AllTasksView', () => {
     });
   });
 
-  describe('pagination', () => {
-    test('shows pagination controls when more than 20 tasks', () => {
-      mockTasksData = Array.from({ length: 25 }, (_, i) => ({
-        ...mockUpcomingTask,
-        id: `task-${i}`,
-        name: `Task ${i}`,
-      }));
-
-      render(<AllTasksView />);
-
-      expect(screen.getByText('NEXT →')).toBeInTheDocument();
-      expect(screen.getByText('← PREVIOUS')).toBeInTheDocument();
-      const pageIndicators = screen.getAllByText(/Page 1 of 2/);
-      expect(pageIndicators.length).toBeGreaterThan(0);
-    });
-
-    test('does not show pagination when 20 or fewer tasks', () => {
-      render(<AllTasksView />);
-
-      expect(screen.queryByText('NEXT →')).not.toBeInTheDocument();
-      expect(screen.queryByText('← PREVIOUS')).not.toBeInTheDocument();
-    });
-
-    test('navigates to next page', async () => {
-      const user = userEvent.setup();
-      mockTasksData = Array.from({ length: 25 }, (_, i) => ({
-        ...mockUpcomingTask,
-        id: `task-${i}`,
-        name: `Task ${i}`,
-      }));
-
-      render(<AllTasksView />);
-
-      const nextButton = screen.getByText('NEXT →');
-      await user.click(nextButton);
-
-      const pageIndicators = screen.getAllByText(/Page 2 of 2/);
-      expect(pageIndicators.length).toBeGreaterThan(0);
-    });
-
-    test('navigates to previous page', async () => {
-      const user = userEvent.setup();
-      mockTasksData = Array.from({ length: 25 }, (_, i) => ({
-        ...mockUpcomingTask,
-        id: `task-${i}`,
-        name: `Task ${i}`,
-      }));
-
-      render(<AllTasksView />);
-
-      const nextButton = screen.getByText('NEXT →');
-      await user.click(nextButton);
-
-      const prevButton = screen.getByText('← PREVIOUS');
-      await user.click(prevButton);
-
-      const pageIndicators = screen.getAllByText(/Page 1 of 2/);
-      expect(pageIndicators.length).toBeGreaterThan(0);
-    });
-
-    test('disables previous button on first page', () => {
-      mockTasksData = Array.from({ length: 25 }, (_, i) => ({
-        ...mockUpcomingTask,
-        id: `task-${i}`,
-        name: `Task ${i}`,
-      }));
-
-      render(<AllTasksView />);
-
-      const prevButton = screen.getByText('← PREVIOUS');
-      expect(prevButton).toHaveClass(styles.paginationButtonDisabled);
-    });
-
-    test('disables next button on last page', async () => {
-      const user = userEvent.setup();
-      mockTasksData = Array.from({ length: 25 }, (_, i) => ({
-        ...mockUpcomingTask,
-        id: `task-${i}`,
-        name: `Task ${i}`,
-      }));
-
-      render(<AllTasksView />);
-
-      const nextButton = screen.getByText('NEXT →');
-      await user.click(nextButton);
-
-      expect(nextButton).toHaveClass(styles.paginationButtonDisabled);
-    });
-
-    test('shows correct tasks per page', () => {
-      mockTasksData = Array.from({ length: 25 }, (_, i) => ({
-        ...mockUpcomingTask,
-        id: `task-${i}`,
-        name: `Task ${i}`,
-      }));
-
-      render(<AllTasksView />);
-
-      expect(screen.getByText(/25 tasks found/)).toBeInTheDocument();
-      const pageIndicators = screen.getAllByText(/Page 1 of 2/);
-      expect(pageIndicators.length).toBeGreaterThan(0);
-    });
-  });
-
   describe('task sorting', () => {
-    test('shows incomplete tasks before completed tasks', () => {
-      render(<AllTasksView />);
-
-      const taskElements = screen.getAllByText(/Task/);
-      const taskNames = taskElements.map(el => el.textContent);
-
-      const upcomingIndex = taskNames.findIndex(name => name?.includes('Upcoming'));
-      const completedIndex = taskNames.findIndex(name => name?.includes('Completed'));
-
-      expect(upcomingIndex).toBeLessThan(completedIndex);
-    });
-
-    test('shows incomplete tasks before skipped tasks', () => {
-      render(<AllTasksView />);
-
-      const taskElements = screen.getAllByText(/Task/);
-      const taskNames = taskElements.map(el => el.textContent);
-
-      const upcomingIndex = taskNames.findIndex(name => name?.includes('Upcoming'));
-      const skippedIndex = taskNames.findIndex(name => name?.includes('Skipped'));
-
-      expect(upcomingIndex).toBeLessThan(skippedIndex);
-    });
-
-    test('sorts incomplete tasks by due date ascending', () => {
+    test('sorts active tasks by due date ascending', () => {
       mockTasksData = [
         { ...mockUpcomingTask, id: 'task-1', name: 'Task Due Later', due_date: now + oneDayMs * 10 },
         { ...mockUpcomingTask, id: 'task-2', name: 'Task Due Soon', due_date: now + oneDayMs * 2 },
@@ -419,8 +284,8 @@ describe('AllTasksView', () => {
 
       render(<AllTasksView />);
 
-      expect(screen.getByText('No tasks yet.')).toBeInTheDocument();
-      expect(screen.getByText(/0 tasks found/)).toBeInTheDocument();
+      expect(screen.getByText('No active tasks.')).toBeInTheDocument();
+      expect(screen.getByText(/ALL \(0\)/)).toBeInTheDocument();
     });
 
     test('shows no search results message when search returns nothing', async () => {

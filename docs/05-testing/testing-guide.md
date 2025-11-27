@@ -545,3 +545,198 @@ For reference implementations of these testing patterns, see:
 - **`src/components/SyncStatusIndicator.test.tsx`** - Console.error mocking for error state tests
 - **`src/components/Weather.test.tsx`** - Console.error suppression for network error tests
 - **`src/components/winery/DeleteVintageConfirmModal.test.tsx`** - Error handling with console.error mock
+
+---
+
+## E2E Testing with Playwright
+
+### Overview
+
+End-to-end tests use Playwright to test the full application stack including:
+- Real browser interactions
+- Clerk authentication
+- Zero sync with PostgreSQL
+- Full component rendering
+
+### Database Management Strategy
+
+**Current approach: Test User Isolation**
+
+Since Gilbert has user-scoped data via custom mutators, E2E tests use dedicated test accounts with data cleanup between runs.
+
+```
+Test User: e2e-test@example.com (or Clerk test account)
+├── Before test run: Delete all data for test user
+├── Run tests: Create/modify data as test user
+└── After test run: Data persists (cleaned on next run)
+```
+
+**Why this approach:**
+- Uses existing auth infrastructure (Clerk)
+- No separate database to maintain
+- Leverages existing user data isolation
+- Simple setup for local development
+
+**Future: Docker-based isolation for CI/CD**
+
+For continuous integration, we'll use Docker Compose to spin up isolated test environments:
+- Fresh PostgreSQL container per test run
+- Dedicated zero-cache instance
+- Full environment isolation
+- See `docker-compose.test.yml` (planned)
+
+### Database Reset Script
+
+```typescript
+// e2e/utils/db-reset.ts
+import { sql } from '../db-connection';
+
+const TEST_USER_ID = process.env.E2E_TEST_USER_ID;
+
+export const resetTestUserData = async () => {
+  if (!TEST_USER_ID) {
+    throw new Error('E2E_TEST_USER_ID environment variable required');
+  }
+
+  // Delete in order respecting foreign key constraints
+  const tables = [
+    'task',
+    'measurement',
+    'stage_history',
+    'wine',
+    'vintage',
+    'vine',
+    'block',
+    'vineyard',
+  ];
+
+  for (const table of tables) {
+    await sql`DELETE FROM ${sql(table)} WHERE user_id = ${TEST_USER_ID}`;
+  }
+
+  console.log(`✓ Reset data for test user: ${TEST_USER_ID}`);
+};
+```
+
+### Playwright Configuration
+
+```typescript
+// playwright.config.ts
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: false,  // Run sequentially for predictable state
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: 1,  // Single worker for database consistency
+
+  globalSetup: './e2e/global-setup.ts',
+  globalTeardown: './e2e/global-teardown.ts',
+
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
+
+  webServer: {
+    command: 'yarn dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+  },
+});
+```
+
+### Global Setup
+
+```typescript
+// e2e/global-setup.ts
+import { resetTestUserData } from './utils/db-reset';
+
+export default async function globalSetup() {
+  console.log('🧹 Resetting test user data...');
+  await resetTestUserData();
+
+  // Optionally seed baseline data
+  // await seedTestData();
+
+  console.log('✓ E2E setup complete');
+}
+```
+
+### Authentication in Tests
+
+Playwright supports persisting authentication state to avoid logging in for every test:
+
+```typescript
+// e2e/auth.setup.ts
+import { test as setup, expect } from '@playwright/test';
+
+const authFile = 'e2e/.auth/user.json';
+
+setup('authenticate', async ({ page }) => {
+  await page.goto('/sign-in');
+
+  // Fill Clerk sign-in form
+  await page.fill('[name="identifier"]', process.env.E2E_TEST_EMAIL!);
+  await page.click('button[type="submit"]');
+  await page.fill('[name="password"]', process.env.E2E_TEST_PASSWORD!);
+  await page.click('button[type="submit"]');
+
+  // Wait for redirect to dashboard
+  await expect(page).toHaveURL('/');
+
+  // Save signed-in state
+  await page.context().storageState({ path: authFile });
+});
+```
+
+```typescript
+// e2e/example.spec.ts
+import { test, expect } from '@playwright/test';
+
+// Use saved auth state
+test.use({ storageState: 'e2e/.auth/user.json' });
+
+test('can create a vine', async ({ page }) => {
+  await page.goto('/');
+  await page.click('text=Add Vine');
+  // ... test continues with authenticated user
+});
+```
+
+### Environment Variables for E2E
+
+```bash
+# .env.test (not committed)
+E2E_TEST_USER_ID=clerk_user_xxx
+E2E_TEST_EMAIL=e2e-test@example.com
+E2E_TEST_PASSWORD=secure-test-password
+DATABASE_URL=postgresql://localhost:5432/gilbert
+```
+
+### Running E2E Tests
+
+```bash
+# Run all E2E tests
+yarn test:e2e
+
+# Run with UI mode (for debugging)
+yarn playwright test --ui
+
+# Run specific test file
+yarn playwright test e2e/vineyard.spec.ts
+
+# Generate tests via recording
+yarn playwright codegen http://localhost:3000
+```
+
+### Best Practices for E2E Tests
+
+1. **Use test user isolation** - Never run E2E tests with production user accounts
+2. **Clean before, not after** - Reset at start of run so you can inspect state after failures
+3. **Don't share state between tests** - Each test should set up its own data
+4. **Use data-testid for selectors** - More stable than text or CSS selectors
+5. **Record flaky tests** - Use `--trace on` to debug intermittent failures
+6. **Keep tests focused** - Test one user flow per test file
