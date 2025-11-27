@@ -130,6 +130,102 @@ When removing grape varieties from vineyard settings, the system now protects ag
 
 ---
 
+## ORGANIZATION & MULTI-TENANCY
+
+This section covers the transition from single-user/single-vineyard to multi-user organizations with multiple vineyards.
+
+**Current architecture:** User → Vineyard → Blocks → Vines
+**Target architecture:** User → Organization(s) → Vineyard(s) → Blocks → Vines
+
+Features listed in priority order:
+
+### Priority 1: Organization Entity & Data Model
+**Status:** 🔲 Not Started
+
+- [ ] Database schema: `organization` table (id, name, slug, settings, created_at)
+- [ ] Database schema: `organization_membership` table (user_id, org_id, role, invited_by, joined_at)
+- [ ] Add `organization_id` foreign key to `vineyard` table
+- [ ] Migration strategy for existing users (auto-create personal org)
+- [ ] Update Zero schema and permissions for org-scoped data
+- [ ] Org context in Zero queries (filter by current org)
+
+**Breaking changes:**
+- All vineyard queries must be scoped to organization
+- Mutators need org-level permission checks
+
+---
+
+### Priority 2: Organization Switcher & Navigation
+**Status:** 🔲 Not Started
+
+- [ ] Org switcher dropdown in header/nav
+- [ ] Persist selected org in local storage
+- [ ] URL structure decision: `/org/:slug/vineyard/:id` vs query param
+- [ ] Redirect to org selection if user belongs to multiple
+- [ ] "Personal" org for solo users (simplified UX)
+
+---
+
+### Priority 3: Roles & Permissions
+**Status:** 🔲 Not Started
+
+**Role definitions:**
+- **Owner** - Full control, billing, delete org, transfer ownership
+- **Manager** - All operations, invite/remove users, manage vineyards
+- **Member** - Standard access, create/edit vines, wines, tasks
+- **Field Worker** - Limited to data entry (scan QR, update vine health, complete tasks)
+
+**Implementation:**
+- [ ] Role enum in `organization_membership` table
+- [ ] Permission helper functions (canInvite, canDeleteVine, canEditSettings, etc.)
+- [ ] Role-based UI visibility (hide admin features from field workers)
+- [ ] Mutator-level permission enforcement
+- [ ] Role management UI for owners/managers
+
+---
+
+### Priority 4: Invitation & Joining Flow
+**Status:** 🔲 Not Started
+
+- [ ] Invite user by email (send invite link)
+- [ ] Shareable invite link with optional expiration
+- [ ] Pending invitations list (for org managers)
+- [ ] Accept/decline invitation flow
+- [ ] Assign role during invitation
+- [ ] Revoke pending invitations
+- [ ] Database schema: `organization_invitations` table
+
+---
+
+### Priority 5: Onboarding & Demographics
+**Status:** 🔲 Not Started
+
+Collect during signup or first vineyard creation to understand market and tailor UX:
+
+- [ ] Onboarding wizard after signup (skippable)
+- [ ] Vineyard size (acres/hectares or vine count)
+- [ ] Operation type (hobby, small commercial, estate winery, large commercial)
+- [ ] Workforce size (just me, 2-5, 6-20, 20+)
+- [ ] Experience level (first vineyard, 1-3 years, 3-10 years, 10+ years)
+- [ ] Primary goals (personal consumption, local sales, distribution, education)
+- [ ] Climate zone / region selection
+- [ ] How did you hear about Gilbert?
+- [ ] Store in `organization` or separate `organization_profile` table
+- [ ] Analytics dashboard for aggregate demographics (internal use)
+
+---
+
+### Priority 6: Multi-Vineyard Management
+**Status:** 🔲 Not Started
+
+- [ ] Vineyard list view within organization
+- [ ] Add new vineyard to existing org
+- [ ] Vineyard-level settings (separate from org settings)
+- [ ] Cross-vineyard reporting and analytics
+- [ ] Vineyard selector in navigation
+
+---
+
 ## VINEYARD OPERATIONS
 
 Features listed in priority order:
@@ -491,6 +587,45 @@ Features listed in priority order:
 
 ---
 
+## UX POLISH
+
+Lower priority improvements to overall user experience.
+
+### Priority 1: Navigation Context & Headers
+**Status:** 🔲 Not Started
+
+- [ ] Persistent header showing current vineyard name
+- [ ] Breadcrumb navigation (Vineyard → Block → Vine)
+- [ ] Vintage context header in wine detail views
+- [ ] Block name displayed when viewing filtered vine list
+- [ ] "Back to..." links with destination names (not just arrows)
+- [ ] Current section indicator in bottom nav
+
+---
+
+### Priority 2: Layout Stability (CLS)
+**Status:** 🔲 Not Started
+
+- [ ] Audit pages for Cumulative Layout Shift issues
+- [ ] Skeleton loaders for async content (vine lists, weather, tasks)
+- [ ] Reserved height for dynamic elements (alerts panel, task counts)
+- [ ] Suspense boundaries with size-matched fallbacks
+- [ ] Placeholder cards while data loads
+- [ ] Font loading optimization (prevent FOUT/FOIT)
+- [ ] Image dimension hints to prevent reflow
+
+---
+
+### Priority 3: Empty States & First-Run Experience
+**Status:** 🔲 Not Started
+
+- [ ] Friendly empty states with clear CTAs
+- [ ] First-time user guidance (tooltips or inline hints)
+- [ ] Sample data option for exploring features
+- [ ] Progress indicators for setup completion
+
+---
+
 ## CROSS-CUTTING CONCERNS
 
 ### Shared Infrastructure
@@ -509,6 +644,24 @@ Features listed in priority order:
 - [ ] Historical weather data queries
 - [ ] Weather pattern analysis
 - [ ] Integration with watering tracking (rainfall)
+
+**Push Notifications**
+**Status:** 🔲 Not Started
+- Shared by: Weather alerts, Task reminders, Winery task deadlines
+- [ ] Service Worker registration for PWA push support
+- [ ] Push notification permission request flow
+- [ ] Backend push service (web-push library or Firebase Cloud Messaging)
+- [ ] Subscription management (store device tokens per user)
+- [ ] Weather alert notifications (frost warnings, heat advisories, etc.)
+- [ ] Task due date reminders (configurable timing: day before, morning of)
+- [ ] Winery task notifications (fermentation checks, racking reminders)
+- [ ] Notification preferences UI (enable/disable by category)
+- [ ] Badge count updates for unread notifications
+- [ ] Database schema: `push_subscriptions` and `notification_preferences` tables
+
+**Dependencies:**
+- HTTPS required for service workers (already have via Netlify)
+- Backend endpoint for sending push notifications (queries-service or new service)
 
 ---
 
