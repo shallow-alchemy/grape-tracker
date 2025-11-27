@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { useZero } from '../contexts/ZeroContext';
-import { myTasks } from '../queries';
+import { myTasks } from '../shared/queries';
 import { fetchWeather, getWeatherIcon, WeatherData } from '../utils/weather';
 import { Alerts } from './Alerts';
 import { WeatherAlertSettingsModal } from './weather/WeatherAlertSettingsModal';
@@ -10,6 +11,7 @@ import { formatDueDate } from './winery/taskHelpers';
 import styles from '../App.module.css';
 
 export const Weather = () => {
+  const { user } = useUser();
   const zero = useZero();
   const [, setLocation] = useLocation();
   const [showHighTemps, setShowHighTemps] = useState(() => {
@@ -21,7 +23,7 @@ export const Weather = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  const [tasksData] = useQuery(myTasks() as any) as any;
+  const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
 
   const nextTask = tasksData
     .filter((t: any) => !t.completed_at && !t.skipped)

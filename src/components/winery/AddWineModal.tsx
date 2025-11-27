@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useZero } from '../../contexts/ZeroContext';
-import { myVintages } from '../../queries';
+import { myVintages } from '../../shared/queries';
 import { Modal } from '../Modal';
 import styles from '../../App.module.css';
 
@@ -16,7 +16,7 @@ type AddWineModalProps = {
 export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: AddWineModalProps) => {
   const { user } = useUser();
   const zero = useZero();
-  const [vintagesData] = useQuery(myVintages() as any) as any;
+  const [vintagesData] = useQuery(myVintages(user?.id) as any) as any;
 
   const vintages = [...vintagesData].sort((a, b) => b.vintage_year - a.vintage_year);
 

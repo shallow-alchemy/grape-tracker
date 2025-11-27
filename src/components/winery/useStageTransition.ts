@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useZero } from '../../contexts/ZeroContext';
-import { myStageHistoryByEntity, taskTemplates } from '../../queries';
+import { myStageHistoryByEntity, taskTemplates } from '../../shared/queries';
 import type { EntityType } from './stages';
 import { calculateDueDate } from './taskHelpers';
 
@@ -33,7 +33,7 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
     try {
       const now = Date.now();
 
-      const allStageHistory = await myStageHistoryByEntity(entityType, entityId).run();
+      const allStageHistory = await myStageHistoryByEntity(user?.id, entityType, entityId).run();
       const stageHistory = allStageHistory.filter((s: any) => s.stage === currentStage);
 
       const currentEntry = stageHistory.find((s: any) => !s.completed_at);
@@ -75,7 +75,7 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
         });
       }
 
-      const allTemplates = await taskTemplates().run();
+      const allTemplates = await taskTemplates(user?.id).run();
 
       const relevantTemplates = allTemplates.filter((template: any) => {
         const stageMatch = template.stage === data.toStage;

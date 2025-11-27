@@ -50,6 +50,10 @@ rs.mock('../contexts/ZeroContext', () => ({
   useZero: () => mockZero,
 }));
 
+rs.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({ user: { id: 'test-user-id' } }),
+}));
+
 rs.mock('@rocicorp/zero/react', () => ({
   useQuery: (query: any) => {
     const queryName = query?.customQueryID?.name;

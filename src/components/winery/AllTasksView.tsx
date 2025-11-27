@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
-import { myTasks } from '../../queries';
+import { myTasks } from '../../shared/queries';
 import { formatDueDate, isOverdue } from './taskHelpers';
 import styles from '../../App.module.css';
 
 const TASKS_PER_PAGE = 20;
 
 export const AllTasksView = () => {
+  const { user } = useUser();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
 
-  const [tasksData] = useQuery(myTasks() as any) as any;
+  const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
 
   const filteredTasks = tasksData.filter((task: any) => {
     if (!searchQuery) return true;

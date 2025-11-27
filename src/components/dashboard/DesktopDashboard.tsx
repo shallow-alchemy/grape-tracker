@@ -1,6 +1,7 @@
 import { useQuery } from '@rocicorp/zero/react';
+import { useUser } from '@clerk/clerk-react';
 import { useLocation, Link } from 'wouter';
-import { myTasks } from '../../queries';
+import { myTasks } from '../../shared/queries';
 import { formatDueDate } from '../winery/taskHelpers';
 import styles from '../../App.module.css';
 
@@ -90,8 +91,9 @@ export const SuppliesNeeded = () => {
 };
 
 export const TaskManagement = () => {
+  const { user } = useUser();
   const [, setLocation] = useLocation();
-  const [tasksData] = useQuery(myTasks() as any) as any;
+  const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
 
   const upcomingTasks = tasksData
     .filter((t: any) => !t.completed_at && !t.skipped)

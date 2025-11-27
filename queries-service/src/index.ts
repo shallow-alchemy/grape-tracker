@@ -4,7 +4,29 @@ import { cors } from 'hono/cors';
 import { withValidation } from '@rocicorp/zero';
 import { handleGetQueriesRequest } from '@rocicorp/zero/server';
 import { schema } from '../schema.js';
-import { activeWines } from './queries.js';
+import {
+  myVineyards,
+  myBlocks,
+  myVines,
+  myVinesByBlock,
+  myVineById,
+  myVintages,
+  myVintageById,
+  myWines,
+  myWineById,
+  myWinesByVintage,
+  activeWines,
+  myStageHistory,
+  myStageHistoryByEntity,
+  myTaskTemplates,
+  myTaskTemplatesByStage,
+  taskTemplates,
+  myTasks,
+  myTasksByEntity,
+  myMeasurements,
+  myMeasurementsByEntity,
+  measurementRanges,
+} from './queries.js';
 
 const app = new Hono();
 
@@ -13,7 +35,27 @@ app.use('/*', cors());
 
 // Register all synced queries with validation
 const validatedQueries = {
+  [myVineyards.queryName]: withValidation(myVineyards),
+  [myBlocks.queryName]: withValidation(myBlocks),
+  [myVines.queryName]: withValidation(myVines),
+  [myVinesByBlock.queryName]: withValidation(myVinesByBlock),
+  [myVineById.queryName]: withValidation(myVineById),
+  [myVintages.queryName]: withValidation(myVintages),
+  [myVintageById.queryName]: withValidation(myVintageById),
+  [myWines.queryName]: withValidation(myWines),
+  [myWineById.queryName]: withValidation(myWineById),
+  [myWinesByVintage.queryName]: withValidation(myWinesByVintage),
   [activeWines.queryName]: withValidation(activeWines),
+  [myStageHistory.queryName]: withValidation(myStageHistory),
+  [myStageHistoryByEntity.queryName]: withValidation(myStageHistoryByEntity),
+  [myTaskTemplates.queryName]: withValidation(myTaskTemplates),
+  [myTaskTemplatesByStage.queryName]: withValidation(myTaskTemplatesByStage),
+  [taskTemplates.queryName]: withValidation(taskTemplates),
+  [myTasks.queryName]: withValidation(myTasks),
+  [myTasksByEntity.queryName]: withValidation(myTasksByEntity),
+  [myMeasurements.queryName]: withValidation(myMeasurements),
+  [myMeasurementsByEntity.queryName]: withValidation(myMeasurementsByEntity),
+  [measurementRanges.queryName]: withValidation(measurementRanges),
 };
 
 // Extract user ID from request headers
@@ -60,7 +102,7 @@ const getQuery = (
     throw new Error(`Unknown query: ${name}`);
   }
   // Call query with userID as context (matches ztunes pattern)
-  return query(userID, ...args);
+  return query(userID, ...(args as any[]));
 };
 
 // POST /get-queries endpoint (zero-cache calls this)

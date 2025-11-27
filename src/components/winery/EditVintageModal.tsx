@@ -3,7 +3,7 @@ import { useUser } from '@clerk/clerk-react';
 import { useQuery } from '@rocicorp/zero/react';
 import { Modal } from '../Modal';
 import { useZero } from '../../contexts/ZeroContext';
-import { myMeasurementsByEntity } from '../../queries';
+import { myMeasurementsByEntity } from '../../shared/queries';
 import { DeleteVintageConfirmModal } from './DeleteVintageConfirmModal';
 import styles from '../../App.module.css';
 
@@ -38,7 +38,7 @@ export const EditVintageModal = ({
   const zero = useZero();
 
   const [allMeasurementsData] = useQuery(
-    myMeasurementsByEntity('vintage', vintage.id)
+    myMeasurementsByEntity(user?.id, 'vintage', vintage.id)
   ) as any;
   const measurementsData = allMeasurementsData.filter((m: any) => m.stage === 'harvest');
   const harvestMeasurement = measurementsData[0];

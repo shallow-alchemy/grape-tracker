@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { useUser } from '@clerk/clerk-react';
 import { useZero } from '../../contexts/ZeroContext';
-import { myTasksByEntity } from '../../queries';
+import { myTasksByEntity } from '../../shared/queries';
 import { TaskCompletionModal } from './TaskCompletionModal';
 import { CreateTaskModal } from './CreateTaskModal';
 import { formatDueDate, isOverdue } from './taskHelpers';
@@ -23,10 +24,11 @@ export const TaskListView = ({
   currentStage,
   onBack,
 }: TaskListViewProps) => {
+  const { user } = useUser();
   const zero = useZero();
 
   const [tasksData] = useQuery(
-    myTasksByEntity(entityType, entityId)
+    myTasksByEntity(user?.id, entityType, entityId)
   ) as any;
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);

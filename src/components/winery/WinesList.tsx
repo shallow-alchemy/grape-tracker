@@ -1,5 +1,6 @@
 import { useQuery } from '@rocicorp/zero/react';
-import { myWines } from '../../queries';
+import { useUser } from '@clerk/clerk-react';
+import { myWines } from '../../shared/queries';
 import styles from '../../App.module.css';
 
 type WinesListProps = {
@@ -7,7 +8,8 @@ type WinesListProps = {
 };
 
 export const WinesList = ({ onWineClick }: WinesListProps) => {
-  const [winesData] = useQuery(myWines() as any) as any;
+  const { user } = useUser();
+  const [winesData] = useQuery(myWines(user?.id) as any) as any;
 
   const activeWines = winesData.filter((w: any) => w.status === 'active');
   const agingWines = winesData.filter((w: any) => w.status === 'aging');

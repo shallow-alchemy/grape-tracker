@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
-import { myWines, myVintages, myStageHistoryByEntity, myMeasurementsByEntity } from '../../queries';
+import { myWines, myVintages, myStageHistoryByEntity, myMeasurementsByEntity } from '../../shared/queries';
 import { EditWineModal } from './EditWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
 import { AddMeasurementModal } from './AddMeasurementModal';
@@ -20,24 +21,25 @@ type WineDetailsViewProps = {
 };
 
 export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
+  const { user } = useUser();
   const [, setLocation] = useLocation();
-  const [allWinesData] = useQuery(myWines() as any) as any;
+  const [allWinesData] = useQuery(myWines(user?.id) as any) as any;
   const wine = allWinesData.find((w: any) => w.id === wineId);
 
-  const [allVintagesData] = useQuery(myVintages() as any) as any;
+  const [allVintagesData] = useQuery(myVintages(user?.id) as any) as any;
   const vintage = allVintagesData.find((v: any) => v.id === wine?.vintage_id);
 
   const isBlend = wine?.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
 
   const [stageHistoryData] = useQuery(
-    myStageHistoryByEntity('wine', wineId)
+    myStageHistoryByEntity(user?.id, 'wine', wineId)
   ) as any;
 
   const stageHistory = [...stageHistoryData].sort((a, b) => b.started_at - a.started_at);
   const currentStageHistory = stageHistory.find(s => !s.completed_at);
 
   const [measurementsData] = useQuery(
-    myMeasurementsByEntity('wine', wineId)
+    myMeasurementsByEntity(user?.id, 'wine', wineId)
   ) as any;
 
   const measurements = [...measurementsData].sort((a, b) => b.date - a.date);

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { useUser } from '@clerk/clerk-react';
 import { useZero } from '../../contexts/ZeroContext';
-import { myWines } from '../../queries';
+import { myWines } from '../../shared/queries';
 import { Modal } from '../Modal';
 import { DeleteWineConfirmModal } from './DeleteWineConfirmModal';
 import styles from '../../App.module.css';
@@ -15,8 +16,9 @@ type EditWineModalProps = {
 };
 
 export const EditWineModal = ({ isOpen, onClose, onSuccess, onDelete, wineId }: EditWineModalProps) => {
+  const { user } = useUser();
   const zero = useZero();
-  const [allWinesData] = useQuery(myWines() as any) as any;
+  const [allWinesData] = useQuery(myWines(user?.id) as any) as any;
   const wine = allWinesData.find((w: any) => w.id === wineId);
 
   const [formData, setFormData] = useState({

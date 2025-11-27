@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
-import { myVintages, myWines } from '../../queries';
-import { activeWines } from '../../shared/queries';
+import { activeWines, myVintages, myWines } from '../../shared/queries';
 import { AddVintageModal } from './AddVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { VintagesList } from './VintagesList';
@@ -71,7 +70,7 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   };
 
   if (initialVintageTasksId) {
-    const [allVintagesData] = useQuery(myVintages() as any) as any;
+    const [allVintagesData] = useQuery(myVintages(user?.id) as any) as any;
     const vintage = allVintagesData.find((v: any) => v.id === initialVintageTasksId);
 
     if (!vintage) {
@@ -97,7 +96,7 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   }
 
   if (initialWineTasksId) {
-    const [allWinesData] = useQuery(myWines() as any) as any;
+    const [allWinesData] = useQuery(myWines(user?.id) as any) as any;
     const wine = allWinesData.find((w: any) => w.id === initialWineTasksId);
 
     if (!wine) {

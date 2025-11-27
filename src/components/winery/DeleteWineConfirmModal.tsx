@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
+import { useUser } from '@clerk/clerk-react';
 import { Modal } from '../Modal';
 import { useZero } from '../../contexts/ZeroContext';
-import { myWines, myVintages, myStageHistoryByEntity, myMeasurementsByEntity, myTasksByEntity } from '../../queries';
+import { myWines, myVintages, myStageHistoryByEntity, myMeasurementsByEntity, myTasksByEntity } from '../../shared/queries';
 import styles from '../../App.module.css';
 
 type DeleteWineConfirmModalProps = {
@@ -18,26 +19,27 @@ export const DeleteWineConfirmModal = ({
   onSuccess,
   wineId,
 }: DeleteWineConfirmModalProps) => {
+  const { user } = useUser();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const zero = useZero();
-  const [allWinesData] = useQuery(myWines() as any) as any;
+  const [allWinesData] = useQuery(myWines(user?.id) as any) as any;
   const wine = allWinesData.find((w: any) => w.id === wineId);
 
-  const [allVintagesData] = useQuery(myVintages() as any) as any;
+  const [allVintagesData] = useQuery(myVintages(user?.id) as any) as any;
   const vintage = allVintagesData.find((v: any) => v.id === wine?.vintage_id);
 
   const [stageHistoryData] = useQuery(
-    myStageHistoryByEntity('wine', wineId)
+    myStageHistoryByEntity(user?.id, 'wine', wineId)
   ) as any;
 
   const [measurementsData] = useQuery(
-    myMeasurementsByEntity('wine', wineId)
+    myMeasurementsByEntity(user?.id, 'wine', wineId)
   ) as any;
 
   const [tasksData] = useQuery(
-    myTasksByEntity('wine', wineId)
+    myTasksByEntity(user?.id, 'wine', wineId)
   ) as any;
 
   const handleDelete = async () => {
