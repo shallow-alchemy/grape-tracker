@@ -6,11 +6,16 @@
 
 **Gilbert** is a mobile-first grape tracking application with an 80s hacker terminal aesthetic. It helps vineyard workers and grape growers track their operations, view weather conditions, manage tasks, and scan QR codes for grape tracking.
 
-## Current Priority (as of Nov 15, 2025)
+## Current Priority (as of Nov 28, 2025)
 
-**Phase 2**: QR Code → STL conversion for 3D printable vine tags
+**Completed Features:**
+- Core vine and block management with real-time sync
+- QR code generation and 3D printable STL stakes
+- Winery management (vintages, wines, stages, tasks, measurements)
+- Weather dashboard with alerts
+- User authentication and data isolation
 
-**Phase 1 Complete**: All core vine and block management features are functional with real-time sync.
+**Active Development:** See `docs/04-product/roadmap.md` for current priorities (Organization & Multi-Tenancy, Photo Management, Training & Pruning)
 
 ## Essential Documentation
 
@@ -18,11 +23,11 @@ Read these files in order:
 
 1. **`docs/engineering-principles.md`** - Code standards (MUST READ before writing code)
 2. **`docs/theme.md`** - Design philosophy (80s terminal aesthetic)
-3. **`docs/theme.json`** - Design tokens (reference for all values)
+3. **`src/index.css`** - CSS variables / theme tokens (reference for all values)
 4. **`docs/02-architecture/system-architecture.md`** - How services connect
 5. **`docs/02-architecture/database-schema.md`** - Database tables and relationships
 6. **`docs/03-setup/local-development.md`** - How to run the app locally
-7. **`docs/roadmap.md`** - Feature priorities and development phases
+7. **`docs/04-product/roadmap.md`** - Feature priorities and development phases
 
 ## Tech Stack Summary
 
@@ -56,28 +61,33 @@ Read these files in order:
 
 ```
 src/
-├── App.tsx              # Main app with all dashboard components
-├── App.module.css       # Dashboard styles
+├── App.tsx              # Main app with dashboard and routing
+├── App.module.css       # Component styles
 ├── index.tsx            # Entry point with auth routing
-├── index.module.css     # Sign-in page styles
 ├── index.css            # Global styles + CSS variables (theme tokens)
-└── global.d.ts          # Type definitions
-
-components/
-├── QRScanner.tsx        # Fullscreen QR scanner component
-├── Modal.tsx            # Reusable modal component
-├── VineyardView.tsx     # Vineyard management page
-├── VineDetailsView.tsx  # Individual vine details page
-└── WineryView.tsx       # Winery management page
+├── mutators.ts          # Client-side Zero mutators
+├── contexts/
+│   └── ZeroContext.tsx  # Zero provider with Clerk auth
+├── shared/
+│   └── queries.ts       # Synced queries
+└── components/
+    ├── auth/            # SignInPage, SignUpPage, OnboardingModal, AuthGuard
+    ├── winery/          # WineryView, VintageDetailsView, WineDetailsView, etc.
+    ├── dashboard/       # DesktopDashboard
+    ├── weather/         # Weather, WeatherAlertSettingsModal
+    ├── VineyardView.tsx # Vineyard management
+    ├── VineDetailsView.tsx # Vine details
+    ├── Modal.tsx        # Reusable modal
+    ├── InlineEdit.tsx   # Inline editing component
+    └── QRScanner.tsx    # QR scanner
 
 docs/
 ├── 01-onboarding/       # Start here
-├── 02-architecture/     # System design
+├── 02-architecture/     # System design, database schema
 ├── 03-setup/           # Local development
-├── engineering-principles.md
-├── theme.md
-├── theme.json
-└── roadmap.md
+├── 04-product/         # Roadmap, specs, bug tracker
+├── 05-testing/         # Testing guide, coverage status
+└── archive/            # Historical documents
 
 schema.ts                # Zero schema definition
 ```

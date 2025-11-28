@@ -1,6 +1,6 @@
 # User Sign-Up/Sign-In Workflow Plan
 
-**Status:** Planned
+**Status:** ✅ Complete (implemented Nov 2025)
 
 ## Overview
 

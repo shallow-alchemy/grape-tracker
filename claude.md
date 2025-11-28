@@ -24,8 +24,8 @@ Documents in `docs/04-product/detailed-specs/` are **implementation references**
 3. **[Local Development Setup](docs/03-setup/local-development.md)** - Get up and running
 
 ### Critical Technical Knowledge
-4. **[Zero Provider Fix](docs/zero-provider-fix.md)** - ⚠️ CRITICAL: Must use Zero's built-in provider
-5. **[Test Coverage Status](docs/05-testing/test-coverage-status.md)** - ⚠️ CRITICAL: 75% of tests are `todo`!
+4. **[Zero Provider](src/contexts/ZeroContext.tsx)** - Uses Zero's built-in provider with Clerk auth
+5. **[Test Coverage Status](docs/05-testing/test-coverage-status.md)** - 91% coverage (696 passing, 72 todo)
 6. **[Code Standards](docs/engineering-principles.md)** - Fat arrows, named exports, CSS Modules
 7. **[Testing Guide](docs/05-testing/testing-guide.md)** - rstest, mocking, React hooks, best practices
 
@@ -59,41 +59,27 @@ Documents in `docs/04-product/detailed-specs/` are **implementation references**
 
 ## Current State
 
-### Main Branch (Zero Sync)
-- ✅ Sign-in page with themed button
-- ✅ Dashboard with weather section (mock data)
-- ✅ QR scan button (UI only, no functionality yet)
-- ✅ Mobile-first layout with fixed bottom button
-- ✅ PostgreSQL with wal_level=logical configured
-- ✅ Gilbert database with vine table
-- ✅ zero-cache server starting successfully
-- ⚠️ **ISSUE**: Vines not syncing to UI (permissions deployment)
+### Completed Features
+- ✅ Sign-in/sign-up with Clerk authentication
+- ✅ Dashboard with real-time weather (Open-Meteo API)
+- ✅ Vineyard management (vines, blocks, varieties)
+- ✅ QR code generation and scanning
+- ✅ 3D printable STL vine stakes
+- ✅ Winery management (vintages, wines, stages)
+- ✅ Task management with templates
+- ✅ Measurements tracking (pH, TA, Brix)
+- ✅ Weather alerts system
+- ✅ Zero sync with custom mutators
+- ✅ User data isolation via JWT auth
+- ✅ 91% test coverage (696 tests)
 
-### ElectricSQL Branch
-- ✅ Full sync functionality working
-- ✅ Docker PostgreSQL + Electric + Backend API
-- ✅ Real-time updates functional
-- ✅ Ready for testing
+### Active Development
+See `docs/04-product/roadmap.md` for current priorities:
+- Organization & multi-tenancy
+- Photo management
+- Training & pruning system
+- Analytics & insights
 
-### Roadmap (see `docs/roadmap.md` for details)
-
-**Phase 1: Core Vine Management**
-1. ⚠️ Fix vine sync issue (current blocker)
-2. Improve vine creation form
-3. Add block management system
-4. Add quantity field (batch create vines)
-
-**Phase 2: QR Code & 3D Printable Tags**
-1. SVG QR codes (partially done)
-2. SVG → STL conversion
-3. 3D printable vine stake design
-4. QR scanning functionality
-
-**Phase 3: Additional Features**
-- Weather API integration
-- Task management
-- Harvest tracking
-- Photo uploads
-- Analytics dashboard
-
-**Important**: Check current git branch before starting work. See `docs/context.md` database setup section for branch-specific instructions.
+### Branch Info
+- **main**: Primary development branch (Zero sync)
+- **electricsql**: Legacy branch, kept for reference

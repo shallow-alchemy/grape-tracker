@@ -2,11 +2,20 @@ import { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { FiSettings } from 'react-icons/fi';
 import { Modal } from './Modal';
+import { InlineEdit } from './InlineEdit';
 import { useZero } from '../contexts/ZeroContext';
 import { useBlocks, useVineyard } from './vineyard-hooks';
 import { transformBlockData } from './vineyard-utils';
 import { generate3MF } from './vine-stake-3d';
 import styles from '../App.module.css';
+
+const HEALTH_OPTIONS = [
+  { value: 'EXCELLENT', label: 'EXCELLENT' },
+  { value: 'GOOD', label: 'GOOD' },
+  { value: 'FAIR', label: 'FAIR' },
+  { value: 'POOR', label: 'POOR' },
+  { value: 'DEAD', label: 'DEAD' },
+];
 
 type VineDetailsViewProps = {
   vine: any;
@@ -141,22 +150,74 @@ export const VineDetailsView = ({
       <div className={styles.vineDetailsGrid}>
         <div className={styles.vineDetailsSection}>
           <h2 className={styles.sectionTitle}>DETAILS</h2>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>BLOCK</span>
-            <span className={styles.detailValue}>{vine?.block}</span>
-          </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>VARIETY</span>
-            <span className={styles.detailValue}>{vine?.variety}</span>
-          </div>
+          <InlineEdit
+            label="BLOCK"
+            value={vine?.block || ''}
+            type="select"
+            options={blocks.map((b) => ({ value: b.id, label: b.name }))}
+            formatDisplay={(blockId) => {
+              const block = blocks.find((b) => b.id === blockId);
+              return block?.name || blockId;
+            }}
+            onSave={async (newBlock) => {
+              await zero.mutate.vine.update({
+                id: vine.id,
+                block: newBlock,
+                updated_at: Date.now(),
+              });
+              onUpdateSuccess('Block updated');
+            }}
+          />
+          <InlineEdit
+            label="VARIETY"
+            value={vine?.variety || ''}
+            type="select"
+            options={
+              vineyardData?.varieties && vineyardData.varieties.length > 0
+                ? vineyardData.varieties.map((v: string) => ({ value: v, label: v }))
+                : [{ value: vine?.variety || '', label: vine?.variety || '' }]
+            }
+            onSave={async (newVariety) => {
+              await zero.mutate.vine.update({
+                id: vine.id,
+                variety: newVariety.toUpperCase(),
+                updated_at: Date.now(),
+              });
+              onUpdateSuccess('Variety updated');
+            }}
+          />
           <div className={styles.detailRow}>
             <span className={styles.detailLabel}>AGE</span>
-            <span className={styles.detailValue}>{vine?.age}</span>
+            <span className={styles.detailValue}>{vine?.age || 'Unknown'}</span>
           </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>HEALTH</span>
-            <span className={styles.detailValue}>{vine?.health}</span>
-          </div>
+          <InlineEdit
+            label="HEALTH"
+            value={vine?.health || 'GOOD'}
+            type="select"
+            options={HEALTH_OPTIONS}
+            onSave={async (newHealth) => {
+              await zero.mutate.vine.update({
+                id: vine.id,
+                health: newHealth,
+                updated_at: Date.now(),
+              });
+              onUpdateSuccess('Health status updated');
+            }}
+          />
+          <InlineEdit
+            label="NOTES"
+            value={vine?.notes || ''}
+            type="textarea"
+            placeholder="Add notes about this vine..."
+            onSave={async (newNotes) => {
+              await zero.mutate.vine.update({
+                id: vine.id,
+                notes: newNotes,
+                updated_at: Date.now(),
+              });
+              onUpdateSuccess('Notes updated');
+            }}
+          />
         </div>
         <div className={styles.vineDetailsSection}>
           <h2 className={styles.sectionTitle}>PHOTOS</h2>

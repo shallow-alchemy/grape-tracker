@@ -830,6 +830,148 @@
   letter-spacing: 0.05em;
 }
 
+/* Inline Edit Component */
+.inlineEditContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--spacing-sm) 0;
+  border-bottom: var(--spacing-px) solid var(--color-border);
+  gap: var(--spacing-md);
+}
+
+.inlineEditContainer:last-child {
+  border-bottom: none;
+}
+
+.inlineEditButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: transparent;
+  border: var(--spacing-px) solid transparent;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin: calc(-1 * var(--spacing-xs)) calc(-1 * var(--spacing-sm));
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: right;
+}
+
+.inlineEditButton:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border);
+}
+
+.inlineEditButton:hover .inlineEditIcon {
+  opacity: 1;
+}
+
+.inlineEditValue {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inlineEditPlaceholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.inlineEditIcon {
+  color: var(--color-text-muted);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.inlineEditInputWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  flex: 1;
+  max-width: 200px;
+}
+
+.inlineEditInput,
+.inlineEditSelect {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: 100%;
+}
+
+.inlineEditInput:focus,
+.inlineEditSelect:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary-muted);
+}
+
+.inlineEditTextarea {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  width: 100%;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.inlineEditTextarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary-muted);
+}
+
+.inlineEditActions {
+  display: flex;
+  gap: var(--spacing-xs);
+  justify-content: flex-end;
+}
+
+.inlineEditActionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.inlineEditActionBtn:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-background);
+}
+
+.inlineEditSaving {
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.inlineEditError {
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+}
+
 .sectionPlaceholder {
   font-family: var(--font-body);
   font-size: var(--font-size-sm);

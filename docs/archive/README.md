@@ -2,25 +2,26 @@
 
 This directory contains superseded documentation that has been merged into newer, more comprehensive documents.
 
-## Archived Files (Ready to Move)
+## Archived Files
+
+### Planning Documents (November 28, 2025)
+
+These planning documents describe approaches that were superseded by simpler solutions:
+
+- `auth_plan.md` - Synced queries migration plan (superseded by custom mutators approach)
+- `zero-query-crate-plan.md` - Rust crate plan for Zero query building (never implemented, TypeScript approach used instead)
+
+**Why archived:** The roadmap explains: "The original plan was to build a Rust `zero-query` crate to match Zero's query AST format. This was deprioritized in favor of the simpler custom mutators approach using the official Zero SDK."
 
 ### Test Coverage Documentation (November 15, 2025)
 
-The following files have been merged into `docs/05-testing/test-coverage-status.md`:
+These files have been merged into `docs/05-testing/test-coverage-status.md`:
 
-**To Archive:**
-- `docs/test-coverage-summary.md` - Original test coverage summary
-- `docs/test-coverage-gaps.md` - Test todo analysis
-
-**Action Required:**
-```bash
-# Move old files to archive
-mv docs/test-coverage-summary.md docs/archive/
-mv docs/test-coverage-gaps.md docs/archive/
-```
+- `test-coverage-summary.md` - Original test coverage summary
+- `test-coverage-gaps.md` - Test todo analysis
 
 **New Comprehensive Document:**
-- `docs/05-testing/test-coverage-status.md` - Merged coverage status with all information
+- `docs/05-testing/test-coverage-status.md` - Current coverage status (91% as of Nov 2025)
 
 ---
 

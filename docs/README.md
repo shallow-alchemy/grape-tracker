@@ -39,10 +39,11 @@
 
 - [Product Planning Overview](./04-product/README.md) - Feature planning process
 - [Roadmap](./04-product/roadmap.md) - Product development roadmap and priorities
-- **Winery Features:**
-  - [Vintages UI Planning](./04-product/vintages_ui_planning.md) - Vintage (harvest) management UI
-  - [Winery Backend Plan](./04-product/winery-backend-plan.md) - Zero mutations, schema
-  - [Winery Frontend Plan](./04-product/winery-frontend-plan.md) - Wine production UI components
+- [Bug Tracker](./04-product/bug-tracker.md) - Known issues and deployment bugs
+- **Detailed Specifications:**
+  - [Vintages UI](./04-product/detailed-specs/vintages-ui.md) - Vintage (harvest) management UI
+  - [Winery Production](./04-product/detailed-specs/winery-production.md) - Wine production UI components
+  - [Terroir Optimizer](./04-product/detailed-specs/terroir-optimizer.md) - Varietal recommendations (planned)
 
 ### 05. Testing
 **Test strategy, patterns, and coverage**
@@ -54,24 +55,18 @@
 **Visual design, theming, and UI patterns**
 
 - [Theme & Design System](./theme.md) - 80s terminal aesthetic, mobile-first design
-- [Theme Tokens](./theme.json) - Colors, typography, spacing, effects
+- [Theme Tokens](../src/index.css) - CSS custom properties (single source of truth)
 
 ### 07. Deployment
 **Production deployment guides**
 
 - [Deployment Guide](./deployment.md) - Railway + Netlify deployment
-- [Bug Tracker](./bug-tracker.md) - Known deployment issues
 
-### 08. Refactoring
-**Code cleanup and technical debt**
+### 08. Zero Sync & Queries
+**Zero cache, synced queries, and data isolation**
 
-- [Code Cleanup Plan](./code-cleanup.md) - Refactoring priorities, anti-patterns to fix
-
-### 09. Critical Issues & Fixes
-**Important post-mortems and solutions**
-
-- [Zero Provider Fix](./zero-provider-fix.md) - ⚠️ CRITICAL: How to properly use Zero's built-in provider
-- [Test Coverage Gaps](./05-testing/test-coverage-status.md#the-testtodo-problem) - ⚠️ 75% of tests are todo!
+- [Zero Synced Queries](./zero-synced-queries-knowledge.md) - Query patterns and context handling
+- [Zero Provider](../src/contexts/ZeroContext.tsx) - Auth integration with Clerk
 
 ---
 
@@ -101,13 +96,13 @@
 → Read [Code Standards](./engineering-principles.md)
 
 **...fix a Zero provider error**
-→ See [Zero Provider Fix](./zero-provider-fix.md)
+→ Check [ZeroContext.tsx](../src/contexts/ZeroContext.tsx) - uses Zero's built-in provider with Clerk auth
 
 **...understand test coverage**
 → Check [Test Coverage Status](./05-testing/test-coverage-status.md)
 
 **...implement winery features**
-→ Read [Winery Frontend Plan](./04-product/winery-frontend-plan.md) and [Vintages UI Planning](./04-product/vintages_ui_planning.md)
+→ Read [Winery Production](./04-product/detailed-specs/winery-production.md) and [Vintages UI](./04-product/detailed-specs/vintages-ui.md)
 
 **...understand the product roadmap**
 → See [Roadmap](./04-product/roadmap.md)
@@ -116,7 +111,7 @@
 → Read [Product Planning Overview](./04-product/README.md)
 
 **...understand the design system**
-→ Read [Theme](./theme.md) and [Theme Tokens](./theme.json)
+→ Read [Theme](./theme.md) and [CSS Variables](../src/index.css)
 
 ---
 
@@ -130,7 +125,7 @@
 - **05-testing**: Testing strategy and coverage
 - **06-design**: Theme and UI patterns (files at root for now)
 - **07-deployment**: Production deployment (files at root for now)
-- **08-refactoring**: Cleanup plans (files at root for now)
+- **08-zero**: Zero sync, queries, and data isolation
 - **archive**: Old documentation versions
 
 ### Writing Style
@@ -144,7 +139,7 @@
 - Start with [For AI Agents](./01-onboarding/for-ai-agents.md) for context
 - Reference [Code Standards](./engineering-principles.md) for style
 - Check [Testing Guide](./05-testing/testing-guide.md) before writing tests
-- Read [Zero Provider Fix](./zero-provider-fix.md) to avoid common pitfalls
+- Review [ZeroContext.tsx](../src/contexts/ZeroContext.tsx) for Zero provider patterns
 
 ---
 
@@ -176,7 +171,7 @@ When making significant changes:
 | Testing | ✅ Complete | Nov 2025 |
 | Design System | ✅ Complete | Nov 2025 |
 | Deployment | ✅ Complete | Nov 2025 |
-| Refactoring | 🟡 In Progress | Nov 2025 |
+| Zero Sync | ✅ Complete | Nov 2025 |
 
 **Legend:**
 - ✅ Complete - Comprehensive and up-to-date
@@ -193,16 +188,16 @@ When making significant changes:
 A: Use `main` branch (Zero sync). See [For AI Agents](./01-onboarding/for-ai-agents.md#branch-information)
 
 **Q: Why is my Zero provider not working?**
-A: Read [Zero Provider Fix](./zero-provider-fix.md) - you must use Zero's built-in provider
+A: Check [ZeroContext.tsx](../src/contexts/ZeroContext.tsx) - it correctly wraps Zero's built-in provider with Clerk auth
 
-**Q: Why are my tests passing but features broken?**
-A: Check [Test Coverage Status](./05-testing/test-coverage-status.md#the-testtodo-problem) - 75% of tests are `test.todo()`!
+**Q: How is test coverage?**
+A: Check [Test Coverage Status](./05-testing/test-coverage-status.md) - currently at 91% with 696 passing tests
 
 **Q: What's the package manager?**
 A: Use `yarn`, not `npm`. See [For AI Agents](./01-onboarding/for-ai-agents.md#quick-reference)
 
 **Q: Where's the theme info?**
-A: [Theme](./theme.md) for philosophy, [Theme Tokens](./theme.json) for exact values
+A: [Theme](./theme.md) for philosophy, [CSS Variables](../src/index.css) for exact values
 
 ### Still Stuck?
 
@@ -213,5 +208,5 @@ A: [Theme](./theme.md) for philosophy, [Theme Tokens](./theme.json) for exact va
 
 ---
 
-**Last Updated**: November 15, 2025
+**Last Updated**: November 28, 2025
 **Maintained By**: Development Team
