@@ -1,76 +1,573 @@
 # Gilbert - Development Roadmap
 
-**Last Updated:** Nov 27, 2025
-**Priorities Established:** Jan 19, 2025
+**Last Updated:** Nov 28, 2025
+**Version:** 2.0 - Restructured
 
-This roadmap organizes features by topic area rather than timeline. Within each category, features are listed in priority order (Priority 1 = next to implement). Features are marked as ✅ Complete, 🔄 In Progress, or 🔲 Not Started.
-
----
-
-## INFRASTRUCTURE & TOOLING
-
-### ✅ COMPLETED: User Data Isolation via Custom Mutators
-**Status:** ✅ Complete
-**Completed:** Nov 27, 2025
-
-User-specific data isolation is now enforced via Zero custom mutators.
-
-**What was built:**
-1. ✅ Server-side mutators (`queries-service/src/mutators.ts`) with auth enforcement
-2. ✅ Client-side mutators (`src/mutators.ts`) for optimistic updates
-3. ✅ Push endpoint (`/push`) for mutation processing
-4. ✅ JWT extraction from Clerk tokens for user identification
-5. ✅ Comprehensive test coverage (12 server tests, 11 client tests)
-6. ✅ Deployed to Railway (queries-service + zero-cache configured)
-
-**How it works:**
-- All mutations flow through `ZERO_MUTATE_URL` to queries-service
-- Server validates JWT and extracts `user_id`
-- Mutations enforce: users can only modify their own data
-- Inserts automatically set `user_id` from auth token
-- Updates/deletes verify ownership before allowing operation
-
-**Previous approach (abandoned):**
-The original plan was to build a Rust `zero-query` crate to match Zero's query AST format. This was deprioritized in favor of the simpler custom mutators approach using the official Zero SDK, which provides equivalent security with less complexity.
-
-**Related files:**
-- `queries-service/src/mutators.ts` - Server-side auth enforcement
-- `queries-service/src/index.ts` - Push endpoint
-- `src/mutators.ts` - Client-side mutators
-- `src/contexts/ZeroContext.tsx` - Zero provider with custom mutators
+This roadmap prioritizes **vineyard and winery features first**, then operational enhancements. AI-powered features reference the [AI Knowledge Manifest](./ai-knowledge-manifest.md) for knowledge dependencies.
 
 ---
 
-## HIGH PRIORITY BUG FIXES
+## How This Roadmap Works
 
-### ✅ COMPLETED: Variety Removal Guardrails
-**Status:** ✅ Complete
-**Completed:** Nov 27, 2025
+**Section Order = Priority Order:**
+1. VINEYARD MANAGEMENT — Core vine tracking and field operations
+2. WINERY PRODUCTION — Wine production workflows
+3. AI-POWERED FEATURES — Seasonal guidance, disease management, harvest timing
+4. DATA & ANALYTICS — Infrastructure for insights (user-facing + internal)
+5. OPERATIONAL ENHANCEMENTS — Multi-tenancy, planning tools
 
-When removing grape varieties from vineyard settings, the system now protects against orphaned vines.
+**Within each section:** Priority 1 = next to implement
 
-**What was built:**
-1. ✅ `RemoveVarietyConfirmModal.tsx` - Confirmation modal for variety removal
-2. ✅ Updated `VineyardSettingsModal.tsx` - Detects when removed varieties affect vines
-3. ✅ Migrate or delete options - Same UX pattern as block deletion
-4. ✅ Comprehensive test coverage (19 modal tests, 11 integration tests)
-
-**How it works:**
-- When saving vineyard settings, the system checks if any removed varieties are used by vines
-- If affected vines exist, shows confirmation modal with options:
-  - Migrate affected vines to a remaining variety
-  - Delete all affected vines
-- If no vines are affected, saves directly without confirmation
-
-**Related files:**
-- `src/components/RemoveVarietyConfirmModal.tsx` - Confirmation modal
-- `src/components/VineyardSettingsModal.tsx` - Updated to detect variety removal
-- `src/components/RemoveVarietyConfirmModal.test.tsx` - Modal tests
-- `src/components/VineyardSettingsModal.test.tsx` - Integration tests
+**AI Features:** Features marked with 🤖 require AI knowledge docs. See manifest for status.
 
 ---
 
 ## COMPLETED FEATURES
+
+All previously completed features remain unchanged. See [Completed Features Archive](#completed-features-archive) at end of document.
+
+**Summary of what's built:**
+- ✅ Core vine management (create, edit, batch create, blocks)
+- ✅ QR codes (generate, scan, 3D printable stakes)
+- ✅ Weather integration (Open-Meteo, alerts, 10-day forecast)
+- ✅ Vintage management (full CRUD, cascade delete)
+- ✅ Wine production (stages, tasks, measurements, blends)
+- ✅ User data isolation (JWT auth, custom mutators)
+- ✅ 696 frontend tests, 12 backend tests
+
+---
+
+## VINEYARD MANAGEMENT
+
+Core features for tracking and managing vines in the field.
+
+### Priority 1: Training & Pruning System 🤖
+**Status:** 🔲 Not Started
+**AI Knowledge:** ✅ Ready (8 training system docs complete)
+
+Track how each vine is trained and pruned. AI provides guidance based on training method.
+
+**Core Features:**
+- [ ] Training method field per vine (dropdown)
+- [ ] Available methods: Head Training, Vertical Cordon, Bilateral Cordon, Four-Arm Kniffen, GDC, Umbrella, Cane Pruned, VSP
+- [ ] Track pruning dates per vine
+- [ ] Cane/spur count tracking
+- [ ] Database schema: `training_method` enum, `pruning_log` table
+
+**AI-Powered Features:**
+- [ ] Training method selection helper (recommends based on variety, climate, vigor)
+- [ ] Pruning guidance by method (what to do, when, how much)
+- [ ] Visual reference diagrams for each training system
+
+**AI Knowledge Required:**
+| Document | Status |
+|----------|--------|
+| `training/head-training.md` | ✅ Complete |
+| `training/vertical-cordon.md` | ✅ Complete |
+| `training/bilateral-cordon-training.md` | ✅ Complete |
+| `training/four-arm-kniffen.md` | ✅ Complete |
+| `training/geneva-double-curtain.md` | ✅ Complete |
+| `training/umbrella-system.md` | ✅ Complete |
+| `training/cane-pruning.md` | ✅ Complete |
+| `training/divided-canopy-system.md` | ✅ Complete |
+| `training/selection-guide.md` | ⏳ Needed for AI recommendations |
+
+---
+
+### Priority 2: Photo Management
+**Status:** 🔲 Not Started
+
+Visual documentation for vines. Shared infrastructure with winery photos.
+
+- [ ] Mobile camera capture with permission handling
+- [ ] Photo library picker
+- [ ] Desktop drag-and-drop upload
+- [ ] Thumbnail grid view (3-4 per row on mobile)
+- [ ] Fullscreen viewer with swipe navigation
+- [ ] Photo metadata display (date, size)
+- [ ] Delete photos with confirmation
+- [ ] Image compression before upload
+- [ ] Storage solution integration (S3/Cloudinary)
+- [ ] Database schema: `photos` table (polymorphic: vine_id, vintage_id, etc.)
+
+**Dependencies:**
+- Photo storage infrastructure (S3 or equivalent)
+- Image processing library (compression, thumbnails)
+
+---
+
+### Priority 3: Direct Editing Completion
+**Status:** 🔄 In Progress
+
+**Completed:**
+- [x] Click-to-edit health status
+- [x] Click-to-edit variety and notes
+- [x] Real-time save indicators
+- [x] Inline validation
+
+**Remaining:**
+- [ ] Click-to-edit planting date (currently uses modal)
+- [ ] Click-to-edit training method (after Priority 1)
+
+---
+
+### Priority 4: Per-Vine Harvest Tracking
+**Status:** 🔲 Not Started
+
+Track harvest data at the vine level (separate from vintage-level tracking).
+
+- [ ] Record harvest date per vine
+- [ ] Track yield/weight per vine
+- [ ] Quality metrics per vine (Brix at harvest)
+- [ ] Historical harvest comparison
+- [ ] Aggregate to block-level summaries
+- [ ] Database schema: `vine_harvest` table
+
+**Data Value:** Enables per-vine yield analytics and identifies high/low performers.
+
+---
+
+### Priority 5: Watering Tracking
+**Status:** 🔲 Not Started
+
+Simple irrigation logging with weather integration.
+
+- [ ] "Water Now" quick button (timestamp recording)
+- [ ] Manual entry for past watering (date + amount)
+- [ ] Watering history chronological list
+- [ ] Days-since-watered visual indicator
+- [ ] Weather integration: show rainfall in watering history
+- [ ] Database schema: `watering_log` table
+
+---
+
+### Priority 6: Spur Planning
+**Status:** 🔲 Not Started
+
+Visual planning for spur positions on trained vines.
+
+- [ ] Visual spur layout planning
+- [ ] Integration with training method
+- [ ] Track spur productivity year-over-year
+- [ ] Plan future spur positions
+
+**Dependencies:**
+- Training & Pruning System (Priority 1)
+
+---
+
+### Priority 7: Vineyard Task Management
+**Status:** 🔲 Not Started
+
+General vineyard operations todo system (separate from winery tasks and AI recommendations).
+
+- [ ] Task list view for vineyard operations
+- [ ] Create/edit/delete tasks manually
+- [ ] Task categories (pruning, spraying, canopy management, irrigation, general)
+- [ ] Due date and scheduling
+- [ ] Task completion tracking with notes
+- [ ] Recurring task support
+- [ ] Database schema: `vineyard_task` table
+
+**Note:** This is the manual foundation. AI-powered seasonal recommendations (see AI-POWERED FEATURES) build on top of this.
+
+---
+
+### Priority 8: Disease Tracking (Basic)
+**Status:** 🔲 Not Started
+
+Simple disease logging per vine. Foundation for AI-powered disease management.
+
+- [ ] Disease log per vine (date, type, severity, notes)
+- [ ] Status tracking: active → monitoring → resolved
+- [ ] Disease history timeline view
+- [ ] Common disease dropdown (powdery mildew, downy mildew, botrytis, etc.)
+- [ ] Treatment notes field
+- [ ] Database schema: `disease_log` table
+
+**Note:** This is the manual foundation. AI-powered disease identification and treatment recommendations (see AI-POWERED FEATURES) build on top of this.
+
+---
+
+## WINERY PRODUCTION
+
+Enhancements to the existing wine production workflow.
+
+### Priority 1: Photo Uploads per Vintage
+**Status:** 🔲 Not Started
+
+- [ ] Document harvest visually
+- [ ] Camera capture for harvest photos
+- [ ] Photo gallery on vintage detail view
+
+**Dependencies:**
+- Photo Management (Vineyard Priority 2)
+
+---
+
+### Priority 2: Measurement History Graphs
+**Status:** 🔲 Not Started
+
+Visualize wine chemistry over time.
+
+- [ ] pH trends over time (line chart)
+- [ ] TA trends over time
+- [ ] Brix/SG trends through fermentation
+- [ ] Temperature tracking visualization
+- [ ] Stage markers on timeline
+- [ ] Export measurement data (CSV)
+
+**Technical:**
+- [ ] Chart library selection (Recharts recommended for React)
+
+---
+
+### Priority 3: Task Template Configuration UI
+**Status:** 🔲 Not Started
+
+- [ ] Settings gear in winery view
+- [ ] Enable/disable default task templates
+- [ ] Customize task descriptions
+- [ ] Adjust task frequencies
+- [ ] Wine-type specific template sets (red vs white)
+- [ ] Reset to defaults option
+
+---
+
+### Priority 4: Inventory Management
+**Status:** 🔲 Not Started
+
+Track bottled wine inventory.
+
+- [ ] Track bottle counts for bottled wines
+- [ ] Record bottling date and batch size
+- [ ] Consumption/sales tracking
+- [ ] Remaining inventory display
+- [ ] Low stock alerts
+
+---
+
+### Priority 5: Weather/Vintage Correlation
+**Status:** 🔲 Not Started
+
+Connect weather patterns to vintage outcomes.
+
+- [ ] Display weather during growing season on vintage detail
+- [ ] GDD accumulation for vintage
+- [ ] Historical weather data lookup (Open-Meteo historical API)
+- [ ] Correlate weather patterns with wine quality notes
+
+**Dependencies:**
+- Historical weather API integration
+
+---
+
+## AI-POWERED FEATURES 🤖
+
+Features that require AI knowledge documents and real-time data integration.
+
+### Priority 1: AI Seasonal Guidance
+**Status:** 🔲 Not Started
+**AI Knowledge:** ⏳ Seasonal docs needed
+
+AI-generated task recommendations based on season, region, and vineyard state.
+
+**Prerequisites:**
+- Vineyard Task Management (Vineyard Priority 7) — provides manual task infrastructure
+
+**Features:**
+- [ ] AI-generated seasonal task suggestions
+- [ ] Tasks generated from: season + region + user's varietals + training systems
+- [ ] One-click add AI suggestions to task list
+- [ ] "What should I be doing now?" assistant
+
+**AI Integration:**
+- [ ] Real-time weather lookup for task timing (frost warnings → protection tasks)
+- [ ] Historical weather analysis (unusual patterns → adjusted recommendations)
+- [ ] Regional knowledge: "In [user's region], [month] typically means [tasks]"
+- [ ] Varietal-specific tasks: "Pinot Noir in your climate needs [specific care] now"
+
+**AI Knowledge Required:**
+| Document | Status | Purpose |
+|----------|--------|---------|
+| `seasonal/dormant-season.md` | ⏳ Needed | Nov–Feb tasks |
+| `seasonal/bud-break.md` | ⏳ Needed | Mar–Apr tasks |
+| `seasonal/bloom-fruit-set.md` | ⏳ Needed | May–Jun tasks |
+| `seasonal/veraison-ripening.md` | ⏳ Needed | Jul–Aug tasks |
+| `seasonal/harvest.md` | ⏳ Needed | Aug–Oct tasks |
+| `seasonal/post-harvest.md` | ⏳ Needed | Oct–Nov tasks |
+| Climate doc for user's region | ✅ Ready | Regional timing adjustments |
+| Training doc for user's system | ✅ Ready | System-specific tasks |
+
+**Weather Integration:**
+- Open-Meteo API (already integrated) for current conditions
+- Open-Meteo Historical API for pattern analysis
+- GDD calculation from accumulated temperature data
+
+---
+
+### Priority 2: AI Disease Management
+**Status:** 🔲 Not Started
+**AI Knowledge:** ⏳ Pest/disease docs needed
+
+AI-assisted disease identification and treatment recommendations.
+
+**Prerequisites:**
+- Disease Tracking Basic (Vineyard Priority 8) — provides manual disease logging
+
+**AI-Powered Features:**
+- [ ] Photo-based disease identification (upload photo → AI suggests diagnosis)
+- [ ] Treatment recommendations by disease + organic/conventional preference
+- [ ] Spread risk alerts (disease on one vine → warn about neighbors)
+- [ ] Preventive recommendations based on conditions (humidity + temp → mildew risk)
+
+**AI Knowledge Required:**
+| Document | Status | Purpose |
+|----------|--------|---------|
+| `pests/powdery-mildew.md` | ⏳ Needed | Universal threat |
+| `pests/downy-mildew.md` | ⏳ Needed | Humid climates |
+| `pests/botrytis.md` | ⏳ Needed | Humid + tight clusters |
+| `pests/phylloxera.md` | ⏳ Needed | Rootstock context |
+| `pests/pierces-disease.md` | ⏳ Needed | Southern US, CA |
+| Climate doc for user's region | ✅ Ready | Disease pressure context |
+| Varietal docs | ⏳ Needed | Susceptibility info |
+
+---
+
+### Priority 3: Harvest Timing Assistant
+**Status:** 🔲 Not Started
+**AI Knowledge:** ⏳ Partial (climate docs ready, varietal docs needed)
+
+AI recommendations for optimal harvest window.
+
+**Features:**
+- [ ] Input: variety, region, recent Brix/pH/TA readings
+- [ ] Output: harvest window recommendation with reasoning
+- [ ] Factors: varietal ripening profile, regional norms, current readings, weather forecast
+- [ ] Alerts: "Based on forecast, consider harvesting before [date] rain event"
+
+**AI Knowledge Required:**
+| Document | Status |
+|----------|--------|
+| `seasonal/harvest.md` | ⏳ Needed |
+| Climate doc for region | ✅ Ready |
+| Varietal docs | ⏳ Needed |
+
+---
+
+## DATA & ANALYTICS
+
+Infrastructure for insights — both user-facing and internal (cross-vineyard learning).
+
+### Data Infrastructure Principles
+
+**Capture now, analyze later:**
+Every feature should store granular data that enables future analytics, even if we don't surface those analytics immediately.
+
+**Key data points to capture:**
+- Location (coordinates, not just ZIP) for every vineyard
+- Timestamps on everything (created, updated, completed)
+- Weather snapshots at key events (harvest date → weather that day)
+- All user inputs, even abandoned (started a plan but didn't save)
+
+**Future value:**
+When 100+ vineyards use the app, we can:
+- Identify regional patterns (what's working in [region])
+- Improve AI recommendations with real outcomes
+- Benchmark users against anonymized peers
+
+---
+
+### Priority 1: Winery Analytics (User-Facing)
+**Status:** 🔲 Not Started
+
+- [ ] Measurement trends (pH/TA/Brix charts)
+- [ ] Wine production timeline visualization
+- [ ] Stage duration analysis (how long in each stage)
+- [ ] Vintage comparison (side-by-side metrics)
+
+**Dependencies:**
+- Chart library (Recharts)
+- Existing winery data
+
+---
+
+### Priority 2: Vineyard Analytics (User-Facing)
+**Status:** 🔲 Not Started
+
+- [ ] Vine health distribution (pie/bar chart)
+- [ ] Variety distribution
+- [ ] Block-level comparisons
+- [ ] Training method adoption
+
+**Dependencies:**
+- Training & Pruning System (Vineyard Priority 1)
+
+---
+
+### Priority 3: Data Export & API
+**Status:** 🔲 Not Started
+
+Enable users to export their data; prepare for internal analytics.
+
+- [ ] Export vineyard data (CSV/JSON)
+- [ ] Export winery data (CSV/JSON)
+- [ ] Export measurement history
+- [ ] API endpoints for bulk data access (internal use)
+
+---
+
+## OPERATIONAL ENHANCEMENTS
+
+Multi-tenancy and planning features. Lower priority than core vineyard/winery.
+
+### Priority 1: Organization & Multi-Tenancy
+**Status:** 🔲 Not Started
+
+Support teams and multiple vineyards per account.
+
+**Phase 1: Data Model**
+- [ ] `organization` table (id, name, slug, settings)
+- [ ] `organization_membership` table (user_id, org_id, role)
+- [ ] Add `organization_id` to `vineyard` table
+- [ ] Migration: auto-create personal org for existing users
+
+**Phase 2: UI**
+- [ ] Org switcher in navigation
+- [ ] Multi-vineyard list within org
+- [ ] Vineyard selector
+
+**Phase 3: Permissions**
+- [ ] Roles: Owner, Manager, Member, Field Worker
+- [ ] Role-based UI visibility
+- [ ] Mutator-level permission enforcement
+
+**Phase 4: Invitations**
+- [ ] Invite by email
+- [ ] Shareable invite links
+- [ ] Accept/decline flow
+
+---
+
+### Priority 2: Onboarding & Demographics
+**Status:** 🔲 Not Started
+
+Collect user context for better AI recommendations and internal analytics.
+
+- [ ] Onboarding wizard (skippable)
+- [ ] Vineyard size, operation type, experience level
+- [ ] Climate zone selection
+- [ ] Goals (personal, commercial, education)
+- [ ] Store in organization profile
+
+**Value:** Tailors AI recommendations; provides internal market insights.
+
+---
+
+### Priority 3: Planning Tools (Terroir Optimizer) 🤖
+**Status:** 🔲 Not Started
+**AI Knowledge:** ⏳ Partial (climate docs ready, planning docs needed)
+
+Help users plan new vineyards or expansions.
+
+**Detailed Spec:** [terroir-optimizer-spec.md](./detailed-specs/terroir-optimizer.md)
+
+**Mode 1: New Vineyard Planning**
+- [ ] Location input → varietal recommendations
+- [ ] Progressive disclosure (site details, soil, microclimate)
+- [ ] Save as plan
+
+**Mode 2: Vineyard Expansion**
+- [ ] Recommendations based on existing varietals
+- [ ] Blending compatibility
+
+**Mode 3: Wine-Style Planning**
+- [ ] Target wine style → required varietals
+- [ ] Climate feasibility check
+
+**AI Knowledge Required:**
+| Document | Status |
+|----------|--------|
+| Climate docs (all regions) | ✅ Ready |
+| `planning/site-assessment.md` | ⏳ Needed |
+| `planning/yield-calculations.md` | ⏳ Needed |
+| `planning/spacing-guidelines.md` | ⏳ Needed |
+| `training/selection-guide.md` | ⏳ Needed |
+| Varietal docs | ⏳ Needed |
+| `winemaking/blending.md` | ⏳ Needed |
+
+---
+
+## UX POLISH
+
+Lower priority improvements.
+
+### Priority 1: Navigation Context
+- [ ] Breadcrumb navigation
+- [ ] Current section indicator
+- [ ] "Back to..." with destination names
+
+### Priority 2: Layout Stability
+- [ ] Skeleton loaders
+- [ ] Reserved heights for dynamic content
+- [ ] Font loading optimization
+
+### Priority 3: Empty States
+- [ ] Friendly empty states with CTAs
+- [ ] First-time user guidance
+
+---
+
+## CROSS-CUTTING CONCERNS
+
+### Photo Storage Infrastructure
+**Shared by:** Vine photos, Vintage photos, Disease photos
+- [ ] S3 or Cloudinary integration
+- [ ] Image compression pipeline
+- [ ] Thumbnail generation
+- [ ] CDN delivery
+
+### Push Notifications
+**Shared by:** Weather alerts, Task reminders, Winery deadlines
+- [ ] Service Worker for PWA
+- [ ] Push permission flow
+- [ ] Notification preferences UI
+
+### Historical Weather API
+**Shared by:** Seasonal tasks, Vintage correlation, Harvest timing
+- [ ] Open-Meteo Historical API integration
+- [ ] GDD calculation service
+- [ ] Weather snapshot storage (capture weather at key events)
+
+### CI/CD Pipeline
+**Status:** 🔲 Not Started
+- [ ] GitHub Actions workflow for PR checks
+- [ ] Run tests on every PR
+- [ ] Docker Compose for isolated test environments
+- [ ] Automated E2E tests (depends on Playwright setup)
+- [ ] Fail PR if tests fail or coverage drops
+- [ ] Deploy previews for PRs (Netlify)
+
+---
+
+## TECHNICAL DEBT
+
+### Wine Status Field Deprecation
+**Status:** 📋 Documented
+
+The `wine.status` field is redundant with `wine.current_stage`. Derive status from stage at display time.
+
+**Migration:**
+1. ✅ `formatWineStatus()` helper exists
+2. [ ] Update all UI to use derived status
+3. [ ] Remove `status` column from schema
+
+---
+
+## COMPLETED FEATURES ARCHIVE
+
+<details>
+<summary>Click to expand completed features</summary>
 
 ### Core Vine Management
 - ✅ Vine creation & syncing with Zero
@@ -90,667 +587,58 @@ When removing grape varieties from vineyard settings, the system now protects ag
 - ✅ Railway deployment (PostgreSQL + zero-cache + backend)
 - ✅ Netlify frontend deployment
 - ✅ Health endpoints and CORS configuration
-- ✅ Custom mutators for user data isolation (queries-service)
-- ✅ JWT-based auth enforcement on all mutations
+- ✅ Custom mutators for user data isolation
+- ✅ JWT-based auth enforcement
 
 ### Testing Infrastructure
 - ✅ RSTest + React Testing Library setup
-- ✅ Test isolation (`isolate: true`) for reliable test runs
-- ✅ Console error suppression patterns for clean output
-- ✅ Server-side mutator tests (auth enforcement, ownership)
-- ✅ Client-side mutator tests
-- ✅ 679 passing tests (frontend) + 12 passing tests (backend)
+- ✅ Test isolation for reliable runs
+- ✅ 696 passing tests (frontend) + 12 passing tests (backend)
 - 🔄 E2E testing with Playwright (in progress)
-  - Test user isolation for database management
-  - Clerk auth state persistence
-  - Recording via `playwright codegen`
-  - See: `docs/05-testing/testing-guide.md` → E2E Testing section
-- 🔲 CI/CD pipeline with GitHub Actions (planned)
-  - Docker Compose for isolated test environments
-  - Automated E2E tests on PR
 
 ### Weather & Alerts
 - ✅ Weather API integration (Open-Meteo)
 - ✅ Real-time weather display with geolocation
-- ✅ 10-day forecast with temperature toggle
-- ✅ Configurable weather alerts system
-- ✅ Dynamic alerts panel on dashboard
+- ✅ 10-day forecast
+- ✅ Configurable weather alerts
+- ✅ Dynamic alerts panel
 
 ### Winery - Vintage Management
-- ✅ Add vintage modal (harvest weight, volume, brix)
-- ✅ Vintages list with featured card layout
-- ✅ Vintage details view
-- ✅ Edit vintage modal
-- ✅ Delete vintage confirmation with cascade warnings
-
-### Winery - Wine Production (Mostly Complete)
-- ✅ Add wine modal (create from vintage)
-- ✅ Wines list organized by status (active/aging/bottled)
-- ✅ Wine details view with blend support
-- ✅ Edit wine modal
-- ✅ Delete wine confirmation
-- ✅ Stage transition modal with task selection
-- ✅ Task list view (complete/skip tasks)
-- ✅ Task completion modal with notes
-- ✅ Create custom task modal
-- ✅ Add measurement modal (pH/TA/Brix with validation)
-- ✅ All tasks view (cross-entity task management)
-
----
-
-## ORGANIZATION & MULTI-TENANCY
-
-This section covers the transition from single-user/single-vineyard to multi-user organizations with multiple vineyards.
-
-**Current architecture:** User → Vineyard → Blocks → Vines
-**Target architecture:** User → Organization(s) → Vineyard(s) → Blocks → Vines
-
-Features listed in priority order:
-
-### Priority 1: Organization Entity & Data Model
-**Status:** 🔲 Not Started
-
-- [ ] Database schema: `organization` table (id, name, slug, settings, created_at)
-- [ ] Database schema: `organization_membership` table (user_id, org_id, role, invited_by, joined_at)
-- [ ] Add `organization_id` foreign key to `vineyard` table
-- [ ] Migration strategy for existing users (auto-create personal org)
-- [ ] Update Zero schema and permissions for org-scoped data
-- [ ] Org context in Zero queries (filter by current org)
-
-**Breaking changes:**
-- All vineyard queries must be scoped to organization
-- Mutators need org-level permission checks
-
----
-
-### Priority 2: Organization Switcher & Navigation
-**Status:** 🔲 Not Started
-
-- [ ] Org switcher dropdown in header/nav
-- [ ] Persist selected org in local storage
-- [ ] URL structure decision: `/org/:slug/vineyard/:id` vs query param
-- [ ] Redirect to org selection if user belongs to multiple
-- [ ] "Personal" org for solo users (simplified UX)
-
----
-
-### Priority 3: Roles & Permissions
-**Status:** 🔲 Not Started
-
-**Role definitions:**
-- **Owner** - Full control, billing, delete org, transfer ownership
-- **Manager** - All operations, invite/remove users, manage vineyards
-- **Member** - Standard access, create/edit vines, wines, tasks
-- **Field Worker** - Limited to data entry (scan QR, update vine health, complete tasks)
-
-**Implementation:**
-- [ ] Role enum in `organization_membership` table
-- [ ] Permission helper functions (canInvite, canDeleteVine, canEditSettings, etc.)
-- [ ] Role-based UI visibility (hide admin features from field workers)
-- [ ] Mutator-level permission enforcement
-- [ ] Role management UI for owners/managers
-
----
-
-### Priority 4: Invitation & Joining Flow
-**Status:** 🔲 Not Started
-
-- [ ] Invite user by email (send invite link)
-- [ ] Shareable invite link with optional expiration
-- [ ] Pending invitations list (for org managers)
-- [ ] Accept/decline invitation flow
-- [ ] Assign role during invitation
-- [ ] Revoke pending invitations
-- [ ] Database schema: `organization_invitations` table
-
----
-
-### Priority 5: Onboarding & Demographics
-**Status:** 🔲 Not Started
-
-Collect during signup or first vineyard creation to understand market and tailor UX:
-
-- [ ] Onboarding wizard after signup (skippable)
-- [ ] Vineyard size (acres/hectares or vine count)
-- [ ] Operation type (hobby, small commercial, estate winery, large commercial)
-- [ ] Workforce size (just me, 2-5, 6-20, 20+)
-- [ ] Experience level (first vineyard, 1-3 years, 3-10 years, 10+ years)
-- [ ] Primary goals (personal consumption, local sales, distribution, education)
-- [ ] Climate zone / region selection
-- [ ] How did you hear about Gilbert?
-- [ ] Store in `organization` or separate `organization_profile` table
-- [ ] Analytics dashboard for aggregate demographics (internal use)
-
----
-
-### Priority 6: Multi-Vineyard Management
-**Status:** 🔲 Not Started
-
-- [ ] Vineyard list view within organization
-- [ ] Add new vineyard to existing org
-- [ ] Vineyard-level settings (separate from org settings)
-- [ ] Cross-vineyard reporting and analytics
-- [ ] Vineyard selector in navigation
-
----
-
-## VINEYARD OPERATIONS
-
-Features listed in priority order:
-
-### Priority 1: Photo Management
-**Status:** 🔲 Not Started
-
-- [ ] Mobile camera capture with permission handling
-- [ ] Photo library picker
-- [ ] Desktop drag-and-drop upload
-- [ ] Thumbnail grid view (3-4 per row on mobile)
-- [ ] Fullscreen viewer with swipe navigation
-- [ ] Photo metadata display (date, size)
-- [ ] Delete photos with confirmation
-- [ ] Image compression before upload
-- [ ] Storage solution integration (S3/Cloudinary)
-- [ ] Database schema: `vine_photos` table
-
-**Dependencies:**
-- Photo storage infrastructure (S3 or equivalent)
-- Image processing library (compression, thumbnails)
-- Mobile camera permissions handling
-
----
-
-### Priority 2: Direct Editing
-**Status:** 🔲 Not Started
-
-- [ ] Click-to-edit health status (GOOD → FAIR → POOR → DEAD)
-- [ ] Click-to-edit variety, planting date, and notes
-- [ ] Real-time save indicators
-- [ ] Inline validation for edits
-
----
-
-### Priority 3: Training & Pruning System
-**Status:** 🔲 Not Started
-
-- [ ] Set training method per vine (VSP, GDC, Cordon, etc.)
-- [ ] Track pruning dates and cane/spur counts
-- [ ] Visual diagrams/reference for training systems
-- [ ] Future: AI pruning recommendations
-- [ ] Future: Photo-based growth tracking
-- [ ] Future: Seasonal pruning checklists
-- [ ] Research: Training methods and terminology
-- [ ] Database schema: Training configurations
-
----
-
-### Priority 4: Vineyard Task Management
-**Status:** 🔲 Not Started
-
-- [ ] General vineyard operations to-do system
-- [ ] Seasonal task tracking (pruning, spraying, canopy management)
-- [ ] Task scheduling and reminders
-- [ ] Task completion tracking
-- [ ] Separate from winery task templates
-
----
-
-### Priority 5: Disease & Disorder Management (Basic)
-**Status:** 🔲 Not Started
-
-- [ ] Basic: Editable disease notes text area
-- [ ] Track disease status (active, monitoring, resolved)
-- [ ] Date tracking for onset and resolution
-- [ ] Database schema: `disease_log` table (basic version)
-- [ ] Future: AI photo analysis for disease identification
-- [ ] Future: Treatment recommendations
-- [ ] Future: Disease spread tracking across vineyard
-- [ ] Future: Historical disease patterns for prevention
-
-**Dependencies:**
-- Potential AI integration (disease ID) for advanced features
-
----
-
-### Priority 6: Per-Vine Harvest Tracking
-**Status:** 🔲 Not Started
-
-- [ ] Record harvest date per vine
-- [ ] Track yield/weight per vine
-- [ ] Quality metrics per vine
-- [ ] Historical harvest comparison
-- [ ] Different from vintage-level harvest tracking
-
----
-
-### Priority 7: Spur Planning
-**Status:** 🔲 Not Started
-
-- [ ] Visual spur layout planning
-- [ ] Integration with training method
-- [ ] Track spur productivity year-over-year
-- [ ] Plan future spur positions
-- [ ] Research: Viticulture best practices
-- [ ] UI: Spur visualization design
-
----
-
-### Priority 8: Watering Tracking
-**Status:** 🔲 Not Started
-
-- [ ] "Water Now" quick button (timestamp recording)
-- [ ] Manual entry for past watering (date + amount)
-- [ ] Watering history chronological list
-- [ ] Days-since-watered visual indicator
-- [ ] Optional weather integration (rainfall tracking)
-- [ ] Database schema: `watering_log` table
-
----
-
-## WINERY PRODUCTION
-
-**Detailed Specifications:**
-- [Vintages UI Spec](./detailed-specs/vintages-ui.md) - Reference for completed vintage management features
-- [Winery Production Spec](./detailed-specs/winery-production.md) - Reference for completed wine production features
-
-Features listed in priority order:
-
-### Priority 1: Photo Uploads per Vintage
-**Status:** 🔲 Not Started
-
-- [ ] Document harvest visually
-- [ ] Camera capture for harvest photos
-- [ ] Photo gallery on vintage detail view
-- [ ] Shares infrastructure with vine photo management
-
-**Dependencies:**
-- Photo management system (shared with Vineyard Operations Priority 1)
-
----
-
-### Priority 2: Task Template Configuration UI
-**Status:** 🔲 Not Started
-
-- [ ] Settings gear in winery view
-- [ ] Enable/disable default task templates
-- [ ] Customize task descriptions
-- [ ] Adjust task frequencies
-- [ ] Wine-type specific template sets
-- [ ] Reset to defaults option
-
----
-
-### Priority 3: Inventory Management Modal
-**Status:** 🔲 Not Started
-
-- [ ] Track bottle counts for bottled wines
-- [ ] Record bottling date and batch size
-- [ ] Consumption/sales tracking
-- [ ] Remaining inventory display
-- [ ] Low stock alerts
-
----
-
-### Priority 4: Measurement History Graphs
-**Status:** 🔲 Not Started
-
-- [ ] Visualize pH trends over time
-- [ ] Visualize TA trends over time
-- [ ] Visualize Brix trends over time
-- [ ] Temperature tracking visualization
-- [ ] Stage-by-stage comparison
-- [ ] Export measurement data
-
----
-
-### Priority 5: Weather Data Correlation
-**Status:** 🔲 Not Started
-
-- [ ] Link weather patterns to vintage performance
-- [ ] Display weather during growing season
-- [ ] Correlate GDD with vintage quality
-- [ ] Historical weather impact analysis
-
-**Dependencies:**
-- Existing weather API integration (already complete)
-
----
-
-## PLANNING & OPTIMIZATION
-
-**Detailed Specification:** [Terroir Optimizer Spec](./detailed-specs/terroir-optimizer.md) - Complete product specification with UI flows, progressive disclosure patterns, AI knowledge requirements, and integration points.
-
-**Core Value Propositions:**
-- New growers: Find suitable grapes for your climate before investing
-- Existing growers: Expand strategically with compatible varietals
-- Winemakers: Plant the right grapes for desired wine styles
-
-Features listed in priority order:
-
-### Priority 1: Planning Infrastructure
-**Status:** 🔲 Not Started
-
-- [ ] Hamburger menu (☰) with Planning section
-- [ ] "Plan New Vineyard" menu item
-- [ ] "Plan Vineyard Expansion" (conditional on existing vines)
-- [ ] "Plan New Wine" menu item
-- [ ] "My Saved Plans" with count badge
-- [ ] Contextual CTAs in empty states (My Vineyard, My Wine)
-- [ ] Save/compare/refine plans workflow
-
-**Dependencies:**
-- User authentication and data persistence (for saved plans)
-
----
-
-### Priority 2: Mode 1 - New Vineyard Planning (MVP)
-**Status:** 🔲 Not Started
-
-- [ ] Dashboard entry point for users with no vines
-- [ ] Location-based varietal recommendations (ZIP/city input)
-- [ ] Progressive disclosure: site characteristics, soil data, microclimate
-- [ ] Climate compatibility reasoning (GDD, frost dates, regional patterns)
-- [ ] 3-5 recommended varietals with explanations
-- [ ] Warnings about site limitations
-- [ ] Save as "Vineyard Plan"
-
-**Dependencies:**
-- AI/LLM integration for recommendation engine
-- Climate and varietal knowledge database
-
----
-
-### Priority 3: Refinement Cards (Basic)
-**Status:** 🔲 Not Started
-
-- [ ] Site Details: slope, sun exposure, frost risk, wind, drainage
-- [ ] Soil Information: pH, type, drainage, nutrients
-- [ ] Microclimate Factors: frost dates, heat/cold patterns, fog, altitude
-- [ ] Wine Goals: styles, blending vs varietal, commercial vs personal
-- [ ] Production Scale: hobby, enthusiast, serious, commercial
-
----
-
-### Priority 4: Mode 3 - Wine-Style Planning
-**Status:** 🔲 Not Started
-
-- [ ] Entry from My Wine to plant for specific wine goals
-- [ ] Desired wine style input (Bordeaux blend, Burgundy, etc.)
-- [ ] Required varietals for chosen style
-- [ ] Minimum vine counts for target production
-- [ ] Climate feasibility for wine style in user's location
-- [ ] Alternative wine styles if primary isn't suitable
-- [ ] Phased planting plan for multi-year implementation
-
-**Dependencies:**
-- Winery management features complete (wine production context)
-
----
-
-### Priority 5: Mode 2 - Vineyard Expansion
-**Status:** 🔲 Not Started
-
-- [ ] Entry from My Vineyard for existing growers
-- [ ] Pre-populated location and existing varietals
-- [ ] Recommendations considering existing vines
-- [ ] Blending compatibility notes
-- [ ] Equipment/workflow compatibility analysis
-- [ ] Harvest timing coordination
-- [ ] Integration suggestions with existing layout
-
----
-
-### Priority 6: "Create Vines from Plan" Workflow
-**Status:** 🔲 Not Started
-
-- [ ] Pre-populate vine creation from saved plans
-- [ ] Batch create vines from recommendations
-- [ ] Link created vines to originating plan
-
----
-
-### Priority 7: AI Knowledge Base Expansion
-**Status:** 🔲 Not Started
-
-- [ ] Climate & geography data (GDD by region, frost patterns)
-- [ ] Varietal characteristics (climate ranges, ripening windows, disease susceptibility)
-- [ ] Soil science (pH requirements, drainage needs, amendments)
-- [ ] Viticulture practices (spacing, trellis systems, labor intensity)
-- [ ] Wine production (blending ratios, production volumes, style feasibility)
-
----
-
-### Priority 8: Future Enhancements
-**Status:** 🔲 Not Started
-
-- [ ] Photo-based site assessment (AI analyzes slope, sun, soil from images)
-- [ ] Calendar integration (planting timelines, maintenance schedules)
-- [ ] Cost estimation based on vine count and varietals
-- [ ] Yield predictions by varietal and age
-- [ ] Community plans (see what others in your region planted)
-- [ ] Success tracking (actual vs predicted performance)
-- [ ] Pest/disease risk by varietal and region
-- [ ] Regulatory compliance helpers (permits, restrictions)
-- [ ] Multi-year phasing for large projects
-- [ ] ROI calculation for commercial growers
-- [ ] Climate change projections (future suitability)
-- [ ] Precision viticulture integration (soil sensors, weather stations)
-
----
-
-## ANALYTICS & INSIGHTS
-
-Features listed in priority order:
-
-### Priority 1: Winery Analytics
-**Status:** 🔲 Not Started
-
-- [ ] Measurement trends (pH/TA/Brix) visualization
-- [ ] Wine production timeline visualization
-- [ ] Stage duration analysis
-- [ ] Task completion rates
-- [ ] Vintage comparison metrics
-- [ ] Yield analysis by variety
-
-**Dependencies:**
-- Existing winery data (measurements, wines, vintages already tracked)
-- Chart library selection (Recharts, Chart.js, etc.)
-
----
-
-### Priority 2: Vineyard Analytics
-**Status:** 🔲 Not Started
-
-- [ ] Vine health trends over time
-- [ ] Variety distribution visualization
-- [ ] Block-level performance comparison
-- [ ] Disease occurrence patterns (depends on Disease Management feature)
-- [ ] Watering frequency analysis (depends on Watering Tracking feature)
-- [ ] Training method adoption stats (depends on Training & Pruning feature)
-
-**Dependencies:**
-- Vineyard Operations features (disease tracking, watering, training/pruning)
-
----
-
-### Priority 3: Harvest Metrics
-**Status:** 🔲 Not Started
-
-- [ ] Per-vine yield tracking
-- [ ] Block-level harvest performance
-- [ ] Year-over-year vintage comparison
-- [ ] Harvest timing analysis
-- [ ] Quality metric trends
-
-**Dependencies:**
-- Per-Vine Harvest Tracking (Vineyard Operations Priority 6)
-
----
-
-### Technical Considerations (All Priorities)
-- [ ] Chart library selection (Recharts, Chart.js, etc.)
-- [ ] Data aggregation queries
-- [ ] Performance optimization for large datasets
-- [ ] Export analytics as PDF/CSV
-- [ ] Mobile-optimized chart rendering
-
----
-
-## UX POLISH
-
-Lower priority improvements to overall user experience.
-
-### Priority 1: Navigation Context & Headers
-**Status:** 🔲 Not Started
-
-- [ ] Persistent header showing current vineyard name
-- [ ] Breadcrumb navigation (Vineyard → Block → Vine)
-- [ ] Vintage context header in wine detail views
-- [ ] Block name displayed when viewing filtered vine list
-- [ ] "Back to..." links with destination names (not just arrows)
-- [ ] Current section indicator in bottom nav
-
----
-
-### Priority 2: Layout Stability (CLS)
-**Status:** 🔲 Not Started
-
-- [ ] Audit pages for Cumulative Layout Shift issues
-- [ ] Skeleton loaders for async content (vine lists, weather, tasks)
-- [ ] Reserved height for dynamic elements (alerts panel, task counts)
-- [ ] Suspense boundaries with size-matched fallbacks
-- [ ] Placeholder cards while data loads
-- [ ] Font loading optimization (prevent FOUT/FOIT)
-- [ ] Image dimension hints to prevent reflow
-
----
-
-### Priority 3: Empty States & First-Run Experience
-**Status:** 🔲 Not Started
-
-- [ ] Friendly empty states with clear CTAs
-- [ ] First-time user guidance (tooltips or inline hints)
-- [ ] Sample data option for exploring features
-- [ ] Progress indicators for setup completion
-
----
-
-## CROSS-CUTTING CONCERNS
-
-### Shared Infrastructure
-
-**Photo Management System**
-- Shared by: Vines, Vintages, Disease tracking
-- [ ] S3 or Cloudinary integration
-- [ ] Image compression pipeline
-- [ ] Thumbnail generation
-- [ ] CDN for fast delivery
-- [ ] Database schema: Generic `photos` table with entity references
-
-**Weather Integration**
-- Shared by: Dashboard alerts, Vintage correlation, Terroir optimizer
-- [ ] Existing Open-Meteo API (already integrated)
-- [ ] Historical weather data queries
-- [ ] Weather pattern analysis
-- [ ] Integration with watering tracking (rainfall)
-
-**Push Notifications**
-**Status:** 🔲 Not Started
-- Shared by: Weather alerts, Task reminders, Winery task deadlines
-- [ ] Service Worker registration for PWA push support
-- [ ] Push notification permission request flow
-- [ ] Backend push service (web-push library or Firebase Cloud Messaging)
-- [ ] Subscription management (store device tokens per user)
-- [ ] Weather alert notifications (frost warnings, heat advisories, etc.)
-- [ ] Task due date reminders (configurable timing: day before, morning of)
-- [ ] Winery task notifications (fermentation checks, racking reminders)
-- [ ] Notification preferences UI (enable/disable by category)
-- [ ] Badge count updates for unread notifications
-- [ ] Database schema: `push_subscriptions` and `notification_preferences` tables
-
-**Dependencies:**
-- HTTPS required for service workers (already have via Netlify)
-- Backend endpoint for sending push notifications (queries-service or new service)
-
----
-
-## TECHNICAL DEBT & DEPRECATIONS
-
-### Wine Status Field - Planned Deprecation
-**Status:** 📋 Documented - Not Yet Implemented
-
-**Issue:**
-The `wine.status` field (values: `active`, `aging`, `bottled`) is redundant with the more granular `wine.current_stage` field (values: `crush`, `primary_fermentation`, `secondary_fermentation`, `racking`, `oaking`, `aging`, `bottling`).
-
-**Problems:**
-- Overlapping terminology: "aging" exists as both a stage and a status
-- Unclear boundaries: when does "active" become "aging"?
-- Data redundancy: status is derivable from stage
-- Maintenance burden: two fields to keep in sync
-
-**Proposed Solution:**
-- **Deprecate** the `wine.status` database field
-- **Derive** display status from `current_stage` in frontend code
-- Example logic:
-  - Stages `crush` through `racking` → Display as "FERMENTING"
-  - Stages `oaking` and `aging` → Display as "AGING"
-  - Stage `bottling` → Display as "BOTTLED"
-
-**Rationale:**
-Status is a display concern, not a data concern. The `current_stage` field is the source of truth for where wine is in production. Any high-level summary status should be computed at display time, not stored redundantly.
-
-**Migration Path:**
-1. ✅ Add `formatWineStatus()` helper in frontend (already implemented as interim solution)
-2. [ ] Update all UI to use stage-derived status
-3. [ ] Add migration to remove `status` column from schema
-4. [ ] Update API to ignore/remove status field
-5. [ ] Remove status field from TypeScript types
-
-**Timeline:** TBD - Low priority, no user-facing impact
+- ✅ Add/edit/delete vintage
+- ✅ Vintages list with featured card
+- ✅ Cascade delete warnings
+
+### Winery - Wine Production
+- ✅ Add/edit/delete wine
+- ✅ Wines list by status
+- ✅ Stage transitions with task selection
+- ✅ Task completion with notes
+- ✅ Custom tasks
+- ✅ Measurements (pH/TA/Brix)
+- ✅ All tasks view
+
+### Infrastructure
+- ✅ User data isolation via custom mutators
+- ✅ Variety removal guardrails
+
+</details>
 
 ---
 
 ## DEVELOPMENT GUIDELINES
 
 **For each feature:**
-1. Research existing code thoroughly before implementing
-2. Create feature branch from main
-3. Implement minimal viable version
-4. Test thoroughly (manual + user acceptance)
-5. Update documentation
-6. Merge to main when stable
+1. Check AI Knowledge Manifest for required docs
+2. If docs missing, either write them first or build non-AI version
+3. Create feature branch
+4. Implement minimal viable version
+5. Test on mobile first
+6. Update roadmap status
 
-**Testing checklist for each feature:**
-- [ ] Works on mobile (primary platform)
+**Testing checklist:**
+- [ ] Works on mobile (primary)
 - [ ] Works on desktop
-- [ ] Data persists (survives page refresh)
-- [ ] Syncs in real-time (if applicable)
-- [ ] Error handling works
+- [ ] Data persists
+- [ ] Syncs in real-time
 - [ ] Follows 80s terminal theme
-- [ ] Accessible (keyboard navigation, screen readers)
 - [ ] No console errors
-
----
-
-## PRIORITIZATION FRAMEWORK
-
-**Status:** ✅ Priorities Established (Nov 19, 2025)
-
-Features are organized by topic area with clear priority numbers within each category. This allows for focused development within specific domains.
-
-**Criteria used for prioritization:**
-1. **User Impact** - How much does this improve the core user experience?
-2. **Mobile Criticality** - Is this essential for field work?
-3. **Dependencies** - What else needs to be built first?
-4. **Technical Complexity** - How long will this take to implement?
-5. **AI Requirements** - Does this need AI integration?
-
-**How to use this roadmap:**
-- Ask "What's next in VINEYARD OPERATIONS?" → Answer: Priority 1 (Photo Management)
-- Ask "What's next in WINERY PRODUCTION?" → Answer: Priority 1 (Photo Uploads per Vintage)
-- Ask "What's next in PLANNING & OPTIMIZATION?" → Answer: Priority 1 (Planning Infrastructure)
-- Ask "What's next in ANALYTICS & INSIGHTS?" → Answer: Priority 1 (Winery Analytics)
-
-**Cross-category dependencies:**
-- Photo Management (Vineyard Ops #1) enables Photo Uploads per Vintage (Winery #1)
-- Per-Vine Harvest Tracking (Vineyard Ops #6) enables Harvest Metrics (Analytics #3)
-- Winery features must be complete before Wine-Style Planning (Planning & Optimization #4)
