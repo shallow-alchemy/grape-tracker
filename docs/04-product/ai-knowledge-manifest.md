@@ -1,26 +1,46 @@
 # AI Knowledge Manifest
 
-This document serves two purposes:
-1. **Knowledge inventory** — Tracks what reference documents exist and their completion status
-2. **Feature mapping** — Connects knowledge domains to specific product features that consume them
+This document is the **single source of truth for AI knowledge documents** — what exists, what's planned, and how documents should be structured.
+
+For feature priorities and which features consume which knowledge, see the [Development Roadmap](./roadmap.md).
 
 ---
 
-## Document Completion Status
+## Quick Reference
+
+| Domain | Status | Count |
+|--------|--------|-------|
+| Climate & Regions | ✅ Complete | 5/5 |
+| Training Systems | ✅ Complete (core) | 8 complete, 4 planned |
+| Soil Science | ⏳ Not Started | 0/3 |
+| Varietals | ⏳ Not Started | 0/40+ |
+| Seasonal Management | ⏳ Not Started | 0/6 |
+| Pest & Disease | ⏳ Not Started | 0/8 |
+| Wine Production | ⏳ Not Started | 0/7 |
+| Planning & Calculations | ⏳ Not Started | 0/5 |
+
+---
+
+## Document Inventory
 
 ### Climate & Regions ✅ COMPLETE
 
-Regional reference data for varietal selection and site assessment.
+Regional reference data for varietal selection and site assessment. All major US wine-growing climate zones represented.
 
-| Document | Status | File |
-|----------|--------|------|
-| Mediterranean | ✅ Complete | `Mediterranean_Climate_Viticulture_Reference_Data...md` |
-| Continental | ✅ Complete | `Continental_Climate_Viticulture_Reference_Data...md` |
-| Maritime | ✅ Complete | `Maritime_Climate_Viticulture_Reference_Data...md` |
-| High-Desert | ✅ Complete | `High-Desert_Climate_Viticulture_Reference_Data...md` |
-| Humid-Subtropical | ✅ Complete | `Humid-Subtropical_Climate_Viticulture_Reference...md` |
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `climate/mediterranean` | ✅ Complete | `Mediterranean_Climate_Viticulture_Reference_Data__Varietal_Recommendations_and_Site_Assessment_for_California__Southern_Oregon__and_Washington.md` |
+| `climate/continental` | ✅ Complete | `Continental_Climate_Viticulture_Reference_Data__Eastern_United_States_Vineyard_Planning_Guide.md` |
+| `climate/maritime` | ✅ Complete | `Maritime_Climate_Viticulture_Reference_Data__Pacific_Northwest_Wine_Region_Analysis.md` |
+| `climate/high-desert` | ✅ Complete | `High-Desert_Climate_Viticulture_Reference_Data__Intermountain_West_United_States.md` |
+| `climate/humid-subtropical` | ✅ Complete | `Humid-Subtropical_Climate_Viticulture_Reference__Pierce_s_Disease__Variety_Selection__and_Regional_Growing_Conditions_for_the_Southeastern_United_States.md` |
 
-**Coverage:** All major US wine-growing climate zones represented.
+**Coverage by region:**
+- Mediterranean: CA, Southern OR, parts of WA
+- Continental: Midwest, Northeast, high elevation
+- Maritime: Coastal CA, Pacific Northwest
+- High-Desert: UT, CO, NM, AZ, NV
+- Humid-Subtropical: Southeast, TX
 
 ---
 
@@ -28,57 +48,70 @@ Regional reference data for varietal selection and site assessment.
 
 Establishment and management guides for vine training methods.
 
-| Document | Status | File |
-|----------|--------|------|
-| Head Training | ✅ Complete | `Head_Training_Wine_Grapes...md` |
-| Vertical Cordon | ✅ Complete | `Vertical_Cordon_Vine_Training...md` |
-| Four-Arm Kniffen | ✅ Complete | `Four-Arm_Kniffen...md` |
-| Bilateral Cordon | ✅ Complete | `Bilateral_Cordon_Training...md` |
-| Geneva Double Curtain | ✅ Complete | `The_Geneva_Double_Curtain...md` |
-| Umbrella System | ✅ Complete | `The_Complete_Guide_to_Umbrella_Grape_Training...md` |
-| Cane Pruning (High Head) | ✅ Complete | `Cane_Pruning_for_High_Head_Wine_Grapes...md` |
-| California Divided Canopy | ✅ Complete | `California_Divided_Canopy_Systems...md` |
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `training/head-training` | ✅ Complete | `Head_Training_Wine_Grapes__A_Complete_Guide_for_Dry-Climate_Growers.md` |
+| `training/vertical-cordon` | ✅ Complete | `Vertical_Cordon_Vine_Training__A_Practical_Guide_for_Small-Scale_Growers.md` |
+| `training/bilateral-cordon` | ✅ Complete | `Bilateral_Cordon_Training__The_Practical_Guide_for_Small-Scale_Grape_Growers.md` |
+| `training/four-arm-kniffen` | ✅ Complete | `Four-Arm_Kniffen__The_Eastern_Vineyard_Workhorse.md` |
+| `training/geneva-double-curtain` | ✅ Complete | `The_Geneva_Double_Curtain__Mastering_Divided_Canopy_Training_for_High-Vigor_Vineyards.md` |
+| `training/umbrella` | ✅ Complete | `The_Complete_Guide_to_Umbrella_Grape_Training_Systems_for_Eastern_US_Growers.md` |
+| `training/cane-pruning` | ✅ Complete | `Cane_Pruning_for_High_Head_Wine_Grapes__A_California_Grower_s_Guide.md` |
+| `training/california-divided-canopy` | ✅ Complete | `California_Divided_Canopy_Systems_for_Wine_Grapes__A_Practical_Guide.md` |
 
-**Not yet documented:**
-- VSP (Vertical Shoot Positioning) — common for premium wine grapes
-- Scott Henry — divided canopy alternative to GDC
-- Lyre / U-System — European divided canopy
-- Training System Selection Guide — decision framework
+**Planned (not yet documented):**
+
+| Logical Name | Status | Purpose |
+|--------------|--------|---------|
+| `training/vsp` | ⏳ Planned | Vertical Shoot Positioning — common for premium wine grapes |
+| `training/scott-henry` | ⏳ Planned | Divided canopy alternative to GDC |
+| `training/lyre` | ⏳ Planned | European divided canopy (U-System) |
+| `training/selection-guide` | ⏳ Planned | Decision framework for choosing training system |
 
 ---
 
 ### Soil Science ⏳ NOT STARTED
 
-| Document | Status | Purpose |
-|----------|--------|---------|
-| Soil Fundamentals | ⏳ Planned | pH, drainage, texture, organic matter basics |
-| Soil Amendments | ⏳ Planned | How to adjust pH, improve drainage, add nutrients |
-| Problem Soils | ⏳ Planned | High pH, salinity, compaction, shallow depth |
+| Logical Name | Status | Purpose |
+|--------------|--------|---------|
+| `soil/fundamentals` | ⏳ Planned | pH, drainage, texture, organic matter basics |
+| `soil/amendments` | ⏳ Planned | How to adjust pH, improve drainage, add nutrients |
+| `soil/problem-soils` | ⏳ Planned | High pH, salinity, compaction, shallow depth, hardpan |
 
 ---
 
 ### Varietals ⏳ NOT STARTED
 
-Individual grape variety profiles. **Note:** This will be an extensive library. Initial list below is a starting point, not comprehensive.
+Individual grape variety profiles. This will be an extensive library built over time.
 
-**Red Vinifera (Priority):**
-- Cabernet Sauvignon, Cabernet Franc, Merlot, Petit Verdot, Malbec (Bordeaux varieties)
-- Pinot Noir
-- Syrah/Shiraz, Grenache, Mourvèdre (Rhône varieties)
-- Zinfandel, Petite Sirah
-- Tempranillo, Sangiovese, Nebbiolo, Barbera (Mediterranean varieties)
+**Each varietal doc should contain:**
+- Climate requirements (GDD, frost tolerance, heat needs)
+- Vigor characteristics
+- Disease susceptibility
+- Ripening timing and indicators
+- Expected flavor profile by climate type
+- Blending compatibility
+- Common rootstock pairings
+- Winemaking considerations
+- Small-scale growing notes
 
-**White Vinifera (Priority):**
-- Chardonnay, Sauvignon Blanc, Sémillon
-- Riesling, Gewürztraminer, Pinot Gris/Grigio
-- Viognier, Roussanne, Marsanne
-- Albariño, Verdejo, Vermentino
+**Priority varietals (suggested first batch):**
 
-**Cold-Hardy Hybrids:**
+| Category | Varietals |
+|----------|-----------|
+| Bordeaux Reds | Cabernet Sauvignon, Cabernet Franc, Merlot, Petit Verdot, Malbec |
+| Burgundy | Pinot Noir, Chardonnay |
+| Rhône | Syrah/Shiraz, Grenache, Mourvèdre, Viognier, Roussanne, Marsanne |
+| California Classics | Zinfandel, Petite Sirah |
+| Mediterranean | Tempranillo, Sangiovese, Nebbiolo, Barbera |
+| Aromatic Whites | Riesling, Gewürztraminer, Sauvignon Blanc, Pinot Gris/Grigio |
+| Other Whites | Sémillon, Albariño, Verdejo, Vermentino |
+
+**Cold-hardy hybrids (for continental/cold climates):**
 - Marquette, Frontenac, La Crescent, Brianna, St. Croix
 - Itasca, Petite Pearl, Crimson Pearl
 
-**Disease-Resistant Hybrids:**
+**Disease-resistant hybrids (for humid climates):**
 - Chambourcin, Vidal Blanc, Seyval Blanc, Traminette
 - Chardonel, Cayuga White, Norton/Cynthiana
 
@@ -90,269 +123,166 @@ Individual grape variety profiles. **Note:** This will be an extensive library. 
 
 ### Seasonal Management ⏳ NOT STARTED
 
-| Document | Status | Timing |
-|----------|--------|--------|
-| Dormant Season | ⏳ Planned | Nov–Feb |
-| Bud Break | ⏳ Planned | Mar–Apr |
-| Bloom & Fruit Set | ⏳ Planned | May–Jun |
-| Veraison & Ripening | ⏳ Planned | Jul–Aug |
-| Harvest | ⏳ Planned | Aug–Oct |
-| Post-Harvest | ⏳ Planned | Oct–Nov |
+Time-specific guidance for vineyard tasks throughout the growing cycle.
+
+| Logical Name | Status | Timing | Key Topics |
+|--------------|--------|--------|------------|
+| `seasonal/dormant-season` | ⏳ Planned | Nov–Feb | Pruning timing, winter protection, planning |
+| `seasonal/bud-break` | ⏳ Planned | Mar–Apr | Frost protection, shoot thinning, early spray |
+| `seasonal/bloom-fruit-set` | ⏳ Planned | May–Jun | Canopy management, disease prevention, crop thinning |
+| `seasonal/veraison-ripening` | ⏳ Planned | Jul–Aug | Bird protection, irrigation decisions, monitoring |
+| `seasonal/harvest` | ⏳ Planned | Aug–Oct | Timing decisions, indicators, logistics |
+| `seasonal/post-harvest` | ⏳ Planned | Oct–Nov | Vine nutrition, preparing for dormancy |
+
+**Note:** Timing varies significantly by region. Each doc should include regional adjustments.
 
 ---
 
 ### Pest & Disease ⏳ NOT STARTED
 
-| Document | Status | Region/Condition |
-|----------|--------|------------------|
-| Powdery Mildew | ⏳ Planned | Universal |
-| Downy Mildew | ⏳ Planned | Humid climates |
-| Botrytis | ⏳ Planned | Humid, tight clusters |
-| Phylloxera | ⏳ Planned | Rootstock decisions |
-| Pierce's Disease | ⏳ Planned | Southern US, CA |
-| Japanese Beetle | ⏳ Planned | Eastern US |
-| Bird Management | ⏳ Planned | Universal at harvest |
-| Deer Management | ⏳ Planned | As needed |
+Identification, prevention, and treatment guides.
+
+| Logical Name | Status | Relevance |
+|--------------|--------|-----------|
+| `pests/powdery-mildew` | ⏳ Planned | Universal — all regions |
+| `pests/downy-mildew` | ⏳ Planned | Humid climates |
+| `pests/botrytis` | ⏳ Planned | Humid climates, tight-clustered varietals |
+| `pests/phylloxera` | ⏳ Planned | Rootstock selection context |
+| `pests/pierces-disease` | ⏳ Planned | Southern US, California |
+| `pests/japanese-beetle` | ⏳ Planned | Eastern US |
+| `pests/bird-management` | ⏳ Planned | Universal at harvest |
+| `pests/deer-management` | ⏳ Planned | As needed |
+
+**Each pest/disease doc should contain:**
+- Visual identification (symptoms, progression)
+- Conditions that favor the problem
+- Prevention strategies
+- Treatment options (organic and conventional)
+- Regional considerations
+- Varietal susceptibility notes
 
 ---
 
 ### Wine Production ⏳ NOT STARTED
 
-| Document | Status | Purpose |
-|----------|--------|---------|
-| Red Wine Basics | ⏳ Planned | Crush → fermentation → pressing → aging |
-| White Wine Basics | ⏳ Planned | Pressing → cold settle → fermentation |
-| Rosé Methods | ⏳ Planned | Saignée, direct press, blending |
-| Fermentation Troubleshooting | ⏳ Planned | Stuck ferment, off odors, temp issues |
-| Sulfite Management | ⏳ Planned | Timing, dosing, testing |
-| Blending Principles | ⏳ Planned | Trials, classic combinations |
-| Small-Scale Equipment | ⏳ Planned | 5–50 gallon scale essentials |
+Guides for winemaking from crush to bottle.
 
-**Note:** Grape chemistry (Brix, pH, TA) matters for winemaking decisions, not whether grapes are grown or sourced.
+| Logical Name | Status | Purpose |
+|--------------|--------|---------|
+| `winemaking/red-basics` | ⏳ Planned | Crush → fermentation → pressing → MLF → aging |
+| `winemaking/white-basics` | ⏳ Planned | Pressing → cold settling → fermentation → aging |
+| `winemaking/rose-methods` | ⏳ Planned | Saignée, direct press, blending approaches |
+| `winemaking/fermentation-troubleshooting` | ⏳ Planned | Stuck fermentation, off odors, temperature issues |
+| `winemaking/sulfite-management` | ⏳ Planned | When to add, how much, testing methods |
+| `winemaking/blending-principles` | ⏳ Planned | Trial methodology, classic combinations |
+| `winemaking/small-scale-equipment` | ⏳ Planned | What you need at 5–50 gallon scale |
+
+**Note:** Grape chemistry (Brix, pH, TA) drives winemaking decisions, not whether grapes are grown or sourced.
 
 ---
 
 ### Planning & Calculations ⏳ NOT STARTED
 
-| Document | Status | Purpose |
-|----------|--------|---------|
-| Yield Calculations | ⏳ Planned | Vines → pounds → gallons math |
-| Spacing Guidelines | ⏳ Planned | Row/vine spacing by system and vigor |
-| Site Assessment | ⏳ Planned | Pre-planting evaluation checklist |
-| Nursery Ordering | ⏳ Planned | Lead times, specs, quality indicators |
-| First Three Years | ⏳ Planned | Timeline, expectations, milestones |
+Reference data for vineyard planning features.
 
----
-
-## Feature → Knowledge Mapping
-
-This section defines which knowledge documents support which product features. This is the bridge between content and code.
-
-### Approach
-
-Rather than generic "Load When" triggers, each feature explicitly declares its knowledge dependencies. This enables:
-- Clear scope for feature development
-- Knowledge gap identification before building features
-- Potential for machine-readable configuration
-
----
-
-### Feature: Terroir Optimizer
-
-**Spec:** `terroir-optimizer-spec.md`
-
-**Modes:**
-1. New Vineyard Planning (clean slate)
-2. Vineyard Expansion (add to existing)
-3. Wine Style Planning (work backward from wine goals)
-
-#### Mode 1: New Vineyard Planning
-
-**User provides:** Location (ZIP or coordinates), available space, experience level
-
-**Knowledge required:**
-| Document | Purpose | Status |
-|----------|---------|--------|
-| Climate doc for user's region | Varietal shortlist, climate challenges | ✅ Ready |
-| Site Assessment | Evaluation checklist | ⏳ Blocks feature |
-| Training System Selection Guide | Recommend system for conditions | ⏳ Blocks feature |
-| Spacing Guidelines | Calculate capacity | ⏳ Blocks feature |
-| Yield Calculations | Set production expectations | ⏳ Blocks feature |
-| First Three Years | Timeline expectations | ⏳ Blocks feature |
-
-**Varietal docs:** Loaded dynamically based on recommendations generated from climate doc.
-
-#### Mode 2: Vineyard Expansion
-
-**User provides:** Location, existing varietals, existing training system, expansion goals
-
-**Knowledge required:**
-| Document | Purpose | Status |
-|----------|---------|--------|
-| Climate doc for user's region | Compatible varietals | ✅ Ready |
-| Varietal docs for existing plantings | Understand current situation | ⏳ Needed |
-| Training doc for existing system | Maintain consistency | ✅ Likely ready |
-| Blending Principles | Complementary varietal selection | ⏳ Needed |
-| Yield Calculations | Expansion math | ⏳ Needed |
-
-#### Mode 3: Wine Style Planning
-
-**User provides:** Target wine style (e.g., "Bordeaux-style red," "crisp white"), location
-
-**Knowledge required:**
-| Document | Purpose | Status |
-|----------|---------|--------|
-| Climate doc for user's region | What's possible here | ✅ Ready |
-| Blending Principles | Classic combinations for style | ⏳ Blocks feature |
-| Varietal docs for style | Which grapes make this wine | ⏳ Needed |
-| Yield Calculations | How much to plant | ⏳ Needed |
-
----
-
-### Feature: Seasonal Task Dashboard
-
-**Purpose:** Surface relevant tasks based on current date and user's vineyard
-
-**User context:** Location, varietals planted, training system, current date
-
-**Knowledge required:**
-| Document | Purpose | Status |
-|----------|---------|--------|
-| Seasonal doc for current phase | What to do now | ⏳ Blocks feature |
-| Training doc for user's system | System-specific tasks | ✅ Ready |
-| Pest docs for region + season | What to watch for | ⏳ Blocks feature |
-| Varietal docs for user's plantings | Variety-specific timing | ⏳ Needed |
-
----
-
-### Feature: Problem Diagnosis
-
-**Purpose:** Help identify and address vineyard/wine issues
-
-**User provides:** Symptoms (text description, optionally photos)
-
-**Knowledge required:**
-| Document | Purpose | Status |
-|----------|---------|--------|
-| All pest/disease docs | Symptom matching | ⏳ Blocks feature |
-| Varietal docs | Susceptibility context | ⏳ Needed |
-| Fermentation Troubleshooting | Wine issues | ⏳ Needed for winery side |
-
----
-
-### Feature: Harvest Timing Assistant
-
-**Purpose:** Help determine optimal harvest window
-
-**User provides:** Varietals, location, Brix/pH/TA readings (if available)
-
-**Knowledge required:**
-| Document | Purpose | Status |
-|----------|---------|--------|
-| Harvest (seasonal doc) | General harvest guidance | ⏳ Blocks feature |
-| Climate doc for region | Regional harvest norms | ✅ Ready |
-| Varietal docs | Variety-specific indicators | ⏳ Needed |
-
----
-
-### Feature: Wine Production Guidance
-
-**Purpose:** Guide winemaking from crush to bottle
-
-**User provides:** Grape type, quantity, target wine style, current step
-
-**Knowledge required:**
-| Document | Purpose | Status |
-|----------|---------|--------|
-| Red/White/Rosé basics | Process guidance | ⏳ Blocks feature |
-| Sulfite Management | SO2 decisions | ⏳ Needed |
-| Blending Principles | If multiple varietals | ⏳ Needed |
-| Fermentation Troubleshooting | Problem solving | ⏳ Needed |
-| Small-Scale Equipment | What you need | ⏳ Nice to have |
-
----
-
-## Priority Roadmap
-
-Based on feature dependencies, here's the suggested order for knowledge development:
-
-### Phase 1: Terroir Optimizer MVP (Mode 1 Focus)
-**Goal:** Enable new vineyard planning
-
-1. `planning/site-assessment.md`
-2. `planning/yield-calculations.md`
-3. `planning/spacing-guidelines.md`
-4. `training/selection-guide.md`
-5. `planning/first-three-years.md`
-6. Top 10 varietal docs (most requested for small-scale US growers)
-
-**Unlocks:** Terroir Optimizer Mode 1
-
-### Phase 2: Seasonal Guidance
-**Goal:** Enable task dashboard and harvest assistant
-
-1. All 6 seasonal docs
-2. Core pest docs: Powdery Mildew, Bird Management
-3. Additional varietal docs (expand to 20+)
-
-**Unlocks:** Seasonal Task Dashboard, Harvest Timing Assistant (basic)
-
-### Phase 3: Winemaking Support
-**Goal:** Enable wine production guidance
-
-1. Red Wine Basics
-2. White Wine Basics
-3. Sulfite Management
-4. Fermentation Troubleshooting
-5. Blending Principles
-
-**Unlocks:** Wine Production Guidance, Terroir Optimizer Mode 3
-
-### Phase 4: Problem Diagnosis
-**Goal:** Enable issue identification
-
-1. Full pest/disease library
-2. Problem Soils doc (for vineyard issues)
-
-**Unlocks:** Problem Diagnosis feature
-
-### Phase 5: Expansion & Polish
-**Goal:** Complete coverage
-
-1. Remaining varietal docs (comprehensive library)
-2. Soil Science docs
-3. Small-Scale Equipment guide
-4. Additional training systems (VSP, Scott Henry, etc.)
-
-**Unlocks:** Terroir Optimizer Mode 2 (full), general completeness
+| Logical Name | Status | Purpose |
+|--------------|--------|---------|
+| `planning/yield-calculations` | ⏳ Planned | Vines → pounds → gallons math by varietal |
+| `planning/spacing-guidelines` | ⏳ Planned | Row and vine spacing by vigor, system, equipment |
+| `planning/site-assessment` | ⏳ Planned | Pre-planting evaluation checklist |
+| `planning/nursery-ordering` | ⏳ Planned | Lead times, what to specify, quality indicators |
+| `planning/first-three-years` | ⏳ Planned | Realistic timeline, when to expect first crop |
 
 ---
 
 ## Document Standards
 
-Each document should follow consistent structure:
+All knowledge documents should follow these standards for consistent AI consumption.
 
-**Header metadata:**
+### Header Metadata
+
+Every document should begin with:
+
 ```markdown
 # Document Title
 
-**Domain:** [climate|soil|varietal|training|seasonal|pest|winemaking|planning]
-**Keywords:** [searchable terms]
-**Last updated:** [date]
+**Domain:** [climate | soil | varietal | training | seasonal | pest | winemaking | planning]
+**Keywords:** [comma-separated searchable terms]
+**Last updated:** [YYYY-MM-DD]
 ```
 
-**Content guidelines:**
-- Factual, actionable information
-- Small-scale/home grower focus when relevant
-- Specific numbers and thresholds (not vague hedging)
-- Regional variations noted explicitly
-- Practical over theoretical
+### Content Guidelines
 
-**Length targets:**
-- Climate docs: 3,000–6,000 words (detailed reference data)
-- Training docs: 3,000–6,000 words
-- Varietal docs: 2,000–4,000 words
-- Planning docs: 1,000–2,000 words
-- Pest docs: 1,000–2,000 words
-- Winemaking docs: 2,000–4,000 words
-- Seasonal docs: 2,000–3,000 words
+- **Factual and actionable** — Concrete guidance, not vague suggestions
+- **Small-scale focus** — Home and small commercial growers are the primary audience
+- **Specific numbers** — Include thresholds, ranges, and measurements where applicable
+- **Regional variations** — Note explicitly when guidance differs by region
+- **Practical over theoretical** — What to do, not just why it matters
+- **No hedging** — Instead of "it depends," give concrete guidance with conditions stated
+
+### Length Targets
+
+| Domain | Target Length | Notes |
+|--------|---------------|-------|
+| Climate docs | 3,000–6,000 words | Detailed regional reference data |
+| Training docs | 3,000–6,000 words | Step-by-step establishment and management |
+| Varietal docs | 2,000–4,000 words | Complete variety profile |
+| Planning docs | 1,000–2,000 words | Focused reference/calculations |
+| Pest docs | 1,000–2,000 words | ID, prevention, treatment |
+| Winemaking docs | 2,000–4,000 words | Process guidance |
+| Seasonal docs | 2,000–3,000 words | Time-specific task guidance |
+
+### Example Document Structure
+
+```markdown
+# Powdery Mildew
+
+**Domain:** pest
+**Keywords:** powdery mildew, Erysiphe necator, fungal disease, sulfur, prevention
+**Last updated:** 2025-01-15
+
+## Overview
+[Brief description of the problem]
+
+## Identification
+[Visual symptoms, what to look for]
+
+## Conditions That Favor Development
+[Temperature, humidity, timing]
+
+## Prevention
+[Cultural practices, spray timing]
+
+## Treatment
+### Organic Options
+[Sulfur, etc.]
+
+### Conventional Options
+[Fungicides, etc.]
+
+## Regional Considerations
+[How this varies by climate zone]
+
+## Varietal Susceptibility
+[Which varieties are more/less susceptible]
+```
+
+---
+
+## Using This Manifest
+
+### For Development
+When building an AI-powered feature, check this manifest to:
+1. Identify which knowledge docs the feature needs
+2. Verify their completion status
+3. Plan knowledge doc creation if gaps exist
+
+### For Knowledge Creation
+When writing new docs:
+1. Follow the document standards above
+2. Use the logical naming convention (`domain/topic`)
+3. Update this manifest when complete
+4. Add the actual filename to the inventory table
+
+### Logical Names vs Actual Files
+The roadmap and code should reference **logical names** (e.g., `training/bilateral-cordon`). This manifest maps logical names to **actual filenames**. This decouples code from file naming conventions.
