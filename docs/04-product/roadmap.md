@@ -33,7 +33,7 @@ All previously completed features remain unchanged. See [Completed Features Arch
 - ✅ Vintage management (full CRUD, cascade delete)
 - ✅ Wine production (stages, tasks, measurements, blends)
 - ✅ User data isolation (JWT auth, custom mutators)
-- ✅ 696 frontend tests, 12 backend tests
+- ✅ 698 frontend tests, 12 backend tests
 
 ---
 
@@ -97,16 +97,15 @@ Visual documentation for vines. Shared infrastructure with winery photos.
 ---
 
 ### Priority 3: Direct Editing Completion
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-**Completed:**
 - [x] Click-to-edit health status
 - [x] Click-to-edit variety and notes
+- [x] Click-to-edit planting date
 - [x] Real-time save indicators
 - [x] Inline validation
 
-**Remaining:**
-- [ ] Click-to-edit planting date (currently uses modal)
+**Future Enhancement:**
 - [ ] Click-to-edit training method (after Priority 1)
 
 ---
@@ -593,7 +592,7 @@ The `wine.status` field is redundant with `wine.current_stage`. Derive status fr
 ### Testing Infrastructure
 - ✅ RSTest + React Testing Library setup
 - ✅ Test isolation for reliable runs
-- ✅ 696 passing tests (frontend) + 12 passing tests (backend)
+- ✅ 698 passing tests (frontend) + 12 passing tests (backend)
 - 🔄 E2E testing with Playwright (in progress)
 
 ### Weather & Alerts

@@ -12,8 +12,7 @@ const mockVine = {
   block: 'North Block',
   sequence_number: 1,
   variety: 'Cabernet Sauvignon',
-  planting_date: new Date('2022-04-15'),
-  age: '2 years',
+  planting_date: new Date('2022-04-15').getTime(),
   health: 'Good',
   notes: 'Growing well, needs pruning',
   qr_generated: 1,
@@ -96,7 +95,7 @@ describe('VineDetailsView', () => {
       expect(elements.length).toBeGreaterThan(0);
     });
 
-    test.todo('shows planting date to user', () => {
+    test('shows planting date to user', () => {
       render(
         <VineDetailsView
           vine={mockVine}
@@ -106,10 +105,11 @@ describe('VineDetailsView', () => {
         />
       );
 
+      expect(screen.getByText('PLANTED')).toBeInTheDocument();
       expect(screen.getByText(/2022/)).toBeInTheDocument();
     });
 
-    test('shows vine age to user', () => {
+    test('shows vine age calculated from planting date', () => {
       render(
         <VineDetailsView
           vine={mockVine}
@@ -119,7 +119,8 @@ describe('VineDetailsView', () => {
         />
       );
 
-      expect(screen.getByText(/2 years/)).toBeInTheDocument();
+      expect(screen.getByText('AGE')).toBeInTheDocument();
+      expect(screen.getByText(/years?/)).toBeInTheDocument();
     });
 
     test('shows health status to user', () => {
@@ -242,6 +243,43 @@ describe('VineDetailsView', () => {
       await waitFor(() => {
         expect(onUpdateSuccess).toHaveBeenCalledWith(expect.stringContaining('updated'));
       });
+    });
+
+    test('user can edit planting date inline', async () => {
+      const user = userEvent.setup();
+      const onUpdateSuccess = rs.fn();
+
+      render(
+        <VineDetailsView
+          vine={mockVine}
+          onUpdateSuccess={onUpdateSuccess}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      const plantedLabel = screen.getByText('PLANTED');
+      const plantedContainer = plantedLabel.closest('div');
+      const editButton = plantedContainer?.querySelector('button');
+
+      expect(editButton).toBeTruthy();
+      await user.click(editButton!);
+
+      const dateInput = screen.getByDisplayValue('2022-04-15');
+      await user.clear(dateInput);
+      await user.type(dateInput, '2023-05-20');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(mockZero.mutate.vine.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 'vine-1',
+            planting_date: expect.any(Number),
+          })
+        );
+      });
+
+      expect(onUpdateSuccess).toHaveBeenCalledWith('Planting date updated');
     });
   });
 

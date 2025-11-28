@@ -17,6 +17,23 @@ const HEALTH_OPTIONS = [
   { value: 'DEAD', label: 'DEAD' },
 ];
 
+const calculateAge = (plantingDate: number | undefined): string => {
+  if (!plantingDate) return 'Unknown';
+
+  const planted = new Date(plantingDate);
+  const now = new Date();
+
+  const years = now.getFullYear() - planted.getFullYear();
+  const months = now.getMonth() - planted.getMonth();
+
+  const totalMonths = years * 12 + months;
+
+  if (totalMonths < 1) return 'Just planted';
+  if (totalMonths < 12) return `${totalMonths} month${totalMonths === 1 ? '' : 's'}`;
+  if (totalMonths < 24) return '1 year';
+  return `${Math.floor(totalMonths / 12)} years`;
+};
+
 type VineDetailsViewProps = {
   vine: any;
   onUpdateSuccess: (message: string) => void;
@@ -186,9 +203,29 @@ export const VineDetailsView = ({
               onUpdateSuccess('Variety updated');
             }}
           />
+          <InlineEdit
+            label="PLANTED"
+            value={vine?.planting_date ? new Date(vine.planting_date).toISOString().split('T')[0] : ''}
+            type="date"
+            placeholder="Set planting date"
+            formatDisplay={(dateStr) => {
+              if (!dateStr) return '';
+              const date = new Date(dateStr);
+              return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            }}
+            onSave={async (newDateStr) => {
+              const timestamp = new Date(newDateStr).getTime();
+              await zero.mutate.vine.update({
+                id: vine.id,
+                planting_date: timestamp,
+                updated_at: Date.now(),
+              });
+              onUpdateSuccess('Planting date updated');
+            }}
+          />
           <div className={styles.detailRow}>
             <span className={styles.detailLabel}>AGE</span>
-            <span className={styles.detailValue}>{vine?.age || 'Unknown'}</span>
+            <span className={styles.detailValue}>{calculateAge(vine?.planting_date)}</span>
           </div>
           <InlineEdit
             label="HEALTH"

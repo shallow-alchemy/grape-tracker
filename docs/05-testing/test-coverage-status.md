@@ -2,7 +2,7 @@
 
 **Last Updated**: November 28, 2025
 **Test Framework**: RSTest + React Testing Library
-**Overall Status**: ✅ **91% actual coverage** (696 passing, 72 todo)
+**Overall Status**: ✅ **91% actual coverage** (698 passing, 71 todo)
 
 ---
 
@@ -10,9 +10,9 @@
 
 ### Current State
 
-- **Total Tests**: 768 tests across 45 test files
-- **Passing**: 696 tests (91%)
-- **Todo (Not Running)**: 72 tests (9%)
+- **Total Tests**: 769 tests across 45 test files
+- **Passing**: 698 tests (91%)
+- **Todo (Not Running)**: 71 tests (9%)
 - **Failures**: 0 ✅
 
 ### What This Means
@@ -120,8 +120,9 @@ yarn test VineyardView.test.tsx
 - Critical issue: Most winery features untested
 
 ### Current State (Nov 28, 2025)
-- 696 passing, 72 todo (91% coverage)
+- 698 passing, 71 todo (91% coverage)
 - All major features have comprehensive tests
+- Direct Editing (InlineEdit) fully tested
 
 ### Key Improvements Made
 - Converted 600+ tests from todo to passing
