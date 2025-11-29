@@ -17,9 +17,15 @@ CREATE INDEX IF NOT EXISTS idx_user_email ON "user"(email);
 CREATE INDEX IF NOT EXISTS idx_user_vineyard_id ON "user"(vineyard_id);
 
 -- Add to Zero replication (required for Zero sync)
--- Use DO block to handle case where table is already in publication
+-- Use DO block to handle case where publication doesn't exist or table is already in it
 DO $$
 BEGIN
+  -- Create publication if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '_zero_public_0') THEN
+    CREATE PUBLICATION _zero_public_0;
+  END IF;
+
+  -- Add table to publication
   ALTER PUBLICATION _zero_public_0 ADD TABLE "user";
 EXCEPTION WHEN duplicate_object THEN
   NULL;
