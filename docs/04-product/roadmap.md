@@ -127,17 +127,33 @@ Track harvest data at the vine level (separate from vintage-level tracking).
 
 ---
 
-### Priority 5: Watering Tracking
+### Priority 5: Irrigation Scheduling System
 **Status:** 🔲 Not Started
 
-Simple irrigation logging with weather integration.
+Vineyard-level irrigation scheduling with block assignment and automatic logging.
 
-- [ ] "Water Now" quick button (timestamp recording)
-- [ ] Manual entry for past watering (date + amount)
-- [ ] Watering history chronological list
-- [ ] Days-since-watered visual indicator
-- [ ] Weather integration: show rainfall in watering history
-- [ ] Database schema: `watering_log` table
+**Vineyard Settings:**
+- [ ] Define named watering schedules (e.g., "Schedule A", "Schedule B")
+- [ ] Schedule configuration: frequency, duration, irrigation type (drip, sprinkler, flood)
+- [ ] Support multiple schedules per vineyard (different zones)
+
+**Block Assignment:**
+- [ ] Add schedule selector to Add/Edit Block modal
+- [ ] Options: Schedule A, B, C... or "None/Manual"
+- [ ] Changing schedule only affects future events (non-retroactive)
+
+**Automatic Logging:**
+- [ ] System generates watering log entries based on schedule
+- [ ] Database schema: `irrigation_schedule` table, `watering_log` table
+
+**Vine Details (Read-Only):**
+- [ ] Display watering history inherited from block's schedule
+- [ ] No manual input at vine level
+
+**Future Enhancements:**
+- [ ] Mark actual vs scheduled (handle pump failures, skipped days)
+- [ ] Weather integration: show rainfall, auto-skip if rain detected
+- [ ] Days-since-watered indicator at block level
 
 ---
 
@@ -156,20 +172,29 @@ Visual planning for spur positions on trained vines.
 
 ---
 
-### Priority 7: Vineyard Task Management
+### Priority 7: Vineyard Seasonal Stage Tracking
 **Status:** 🔲 Not Started
 
-General vineyard operations todo system (separate from winery tasks and AI recommendations).
+Track which seasonal stage each block is in. Foundation for vineyard seasonal tasks.
 
-- [ ] Task list view for vineyard operations
-- [ ] Create/edit/delete tasks manually
-- [ ] Task categories (pruning, spraying, canopy management, irrigation, general)
-- [ ] Due date and scheduling
-- [ ] Task completion tracking with notes
-- [ ] Recurring task support
-- [ ] Database schema: `vineyard_task` table
+**Seasonal Stages:**
+Dormant → Bud Break → Flowering → Fruit Set → Veraison → Ripening → Harvest → Post-Harvest
 
-**Note:** This is the manual foundation. AI-powered seasonal recommendations (see AI-POWERED FEATURES) build on top of this.
+**Core Features:**
+- [ ] Add `current_stage` and `stage_entered_at` to block table
+- [ ] Create `block_stage_history` table for history tracking
+- [ ] UI to view/change block stage (manual transitions)
+- [ ] Stage indicator on block cards in vineyard view
+- [ ] Vineyard-level stage summary (aggregate of blocks)
+- [ ] Blocks can be in different stages simultaneously
+
+**Future Enhancements:**
+- [ ] Automatic stage suggestions based on date/GDD
+- [ ] Weather integration for frost warnings during bud break
+
+**Detailed Spec:** [task-system-architecture.md](./detailed-specs/task-system-architecture.md)
+
+**Note:** This is the prerequisite for vineyard seasonal tasks. See Unified Task System (Winery Priority 3) for full task customization.
 
 ---
 
@@ -222,15 +247,41 @@ Visualize wine chemistry over time.
 
 ---
 
-### Priority 3: Task Template Configuration UI
+### Priority 3: Unified Task Customization System
 **Status:** 🔲 Not Started
 
-- [ ] Settings gear in winery view
-- [ ] Enable/disable default task templates
-- [ ] Customize task descriptions
-- [ ] Adjust task frequencies
-- [ ] Wine-type specific template sets (red vs white)
-- [ ] Reset to defaults option
+Comprehensive task management across winery, vineyard, and general operations.
+
+**Entry Point:**
+- [ ] "Customize Task Settings" button in All Tasks view
+- [ ] Task Settings page with tabbed interface
+
+**Phase 1: Winery Task Customization**
+- [ ] Display templates grouped by stage (crush, primary fermentation, etc.)
+- [ ] Enable/disable toggle per template
+- [ ] Edit task (name, description, frequency, wine type)
+- [ ] Delete task (user override, doesn't affect defaults)
+- [ ] Add new task to any stage
+- [ ] Copy-on-write architecture (user edits don't modify defaults)
+- [ ] "Reset to defaults" functionality
+
+**Phase 2: General Tasks**
+- [ ] Tasks not tied to any stage
+- [ ] One-time or recurring (daily, weekly, bi-weekly, monthly)
+- [ ] Examples: "Check water tubing" every 2 weeks
+- [ ] Background job for recurring task generation
+
+**Phase 3: Vineyard Seasonal Tasks**
+- [ ] Requires: Vineyard Seasonal Stage Tracking (Vineyard Priority 7)
+- [ ] Task templates per seasonal stage
+- [ ] Auto-create tasks when block enters stage
+
+**Phase 4: Inventory Integration**
+- [ ] Link tasks to inventory items
+- [ ] Deplete inventory on task completion
+- [ ] Low stock warnings
+
+**Detailed Spec:** [task-system-architecture.md](./detailed-specs/task-system-architecture.md)
 
 ---
 
