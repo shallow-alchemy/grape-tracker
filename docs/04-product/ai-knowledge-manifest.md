@@ -12,11 +12,11 @@ For feature priorities and which features consume which knowledge, see the [Deve
 |--------|--------|-------|
 | Climate & Regions | ✅ Complete | 5/5 |
 | Training Systems | ✅ Complete | 12/12 |
-| Soil Science | 🟡 In Progress | 1/3 |
-| Varietals | ✅ Complete | 30 profiles |
 | Seasonal Management | ✅ Complete | 6/6 |
+| Varietals | ✅ Complete | 30 profiles |
+| Soil Science | 🟡 In Progress | 1/3 |
+| Wine Production | 🟡 In Progress | 6/7 |
 | Pest & Disease | ⏳ Not Started | 0/8 |
-| Wine Production | ⏳ Not Started | 0/7 |
 | Planning & Calculations | ⏳ Not Started | 0/5 |
 
 ---
@@ -192,19 +192,19 @@ Identification, prevention, and treatment guides.
 
 ---
 
-### Wine Production ⏳ NOT STARTED
+### Wine Production 🟡 IN PROGRESS
 
 Guides for winemaking from crush to bottle.
 
-| Logical Name | Status | Purpose |
-|--------------|--------|---------|
-| `winemaking/red-basics` | ⏳ Planned | Crush → fermentation → pressing → MLF → aging |
-| `winemaking/white-basics` | ⏳ Planned | Pressing → cold settling → fermentation → aging |
-| `winemaking/rose-methods` | ⏳ Planned | Saignée, direct press, blending approaches |
-| `winemaking/fermentation-troubleshooting` | ⏳ Planned | Stuck fermentation, off odors, temperature issues |
-| `winemaking/sulfite-management` | ⏳ Planned | When to add, how much, testing methods |
-| `winemaking/blending-principles` | ⏳ Planned | Trial methodology, classic combinations |
-| `winemaking/small-scale-equipment` | ⏳ Planned | What you need at 5–50 gallon scale |
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `winemaking/process-reference` | ✅ Complete | `process-reference.md` |
+| `winemaking/fermentation-troubleshooting` | ✅ Complete | `fermentation-troubleshooting.md` |
+| `winemaking/sulfite-management` | ✅ Complete | `Sulfite_Management_for_Small-Scale_Winemaking.md` |
+| `winemaking/small-scale-equipment` | ✅ Complete | `Small-Scale_Winemaking_Equipment_Guide.md` |
+| `winemaking/blending-principles` | ⏳ Planned | — |
+
+**Note:** The `process-reference.md` is a comprehensive master document covering the complete winemaking process for red, white, and rosé wines (11 stages from crush to bottle aging), replacing the originally planned separate `red-basics`, `white-basics`, and `rose-methods` docs.
 
 **Note:** Grape chemistry (Brix, pH, TA) drives winemaking decisions, not whether grapes are grown or sourced.
 

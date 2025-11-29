@@ -317,6 +317,25 @@ Connect weather patterns to vintage outcomes.
 
 Features that require AI knowledge documents and real-time data integration.
 
+**Detailed Spec:** [ai-integration-roadmap.md](./detailed-specs/ai-integration-roadmap.md) — RAG infrastructure, pgvector setup, all AI features
+
+### Priority 0: RAG Infrastructure
+**Status:** 🔲 Not Started
+
+Foundation for all AI features. Enables AI to use our knowledgebase docs.
+
+- [ ] Add pgvector extension to Railway Postgres
+- [ ] Create `doc_embeddings` table with vector column
+- [ ] Build embedding pipeline CLI (`yarn embed-docs`)
+- [ ] OpenAI embeddings API integration (text-embedding-3-small)
+- [ ] Query helper for similarity search in backend
+- [ ] Wire training advisor to use RAG
+
+**Environment Variables Needed:**
+- `OPENAI_API_KEY` for embeddings
+
+---
+
 ### Priority 1: AI Seasonal Guidance
 **Status:** 🔲 Not Started
 **AI Knowledge:** ⏳ Seasonal docs needed
@@ -403,6 +422,32 @@ AI recommendations for optimal harvest window.
 | `seasonal/harvest.md` | ⏳ Needed |
 | Climate doc for region | ✅ Ready |
 | Varietal docs | ⏳ Needed |
+
+---
+
+### Priority 4: Winemaking Guidance
+**Status:** 🔲 Not Started
+**AI Knowledge:** ⏳ Partial (measurement ranges exist, process docs needed)
+
+AI recommendations for winemaking adjustments based on measurements.
+
+**Features:**
+- [ ] Input: current stage, measurements (pH, TA, Brix, temp), wine type
+- [ ] Output: assessment + recommended adjustments with amounts
+- [ ] Process guidance for current stage
+- [ ] Warning signs to watch for
+
+**Data Model Additions:**
+- [ ] Wine style/target field on wine entity
+- [ ] More winemaking process docs in knowledgebase
+
+**AI Knowledge Required:**
+| Document | Status |
+|----------|--------|
+| `winemaking/process-reference.md` | ✅ Ready |
+| `winemaking/adjustments.md` | ⏳ Needed |
+| `winemaking/troubleshooting.md` | ⏳ Needed |
+| Measurement ranges | ✅ In DB |
 
 ---
 

@@ -101,9 +101,15 @@ In backend service Variables tab, add:
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 PORT=3001
 RUST_LOG=info
+ANTHROPIC_API_KEY=sk-ant-...   # Required for AI features
+OPENAI_API_KEY=sk-...          # Required for RAG embeddings
 ```
 
 **Note:** The `${{Postgres.DATABASE_URL}}` syntax references your PostgreSQL service's connection string.
+
+**AI Integration:**
+- `ANTHROPIC_API_KEY` - Enables AI recommendations (Claude). Get a key from https://console.anthropic.com/settings/keys
+- `OPENAI_API_KEY` - Enables RAG for grounded recommendations. Get a key from https://platform.openai.com/api-keys
 
 ### 2.4 Deploy
 

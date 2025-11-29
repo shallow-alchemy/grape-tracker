@@ -125,6 +125,31 @@ struct TrainingRecommendationResponse {
     context_summary: String,
 }
 
+// RAG types for document embeddings
+#[derive(Debug)]
+struct RelevantChunk {
+    content: String,
+    source_path: String,
+    similarity: f64,
+}
+
+// OpenAI Embedding types
+#[derive(Serialize)]
+struct OpenAIEmbeddingRequest {
+    model: String,
+    input: String,
+}
+
+#[derive(Deserialize)]
+struct OpenAIEmbeddingResponse {
+    data: Vec<OpenAIEmbeddingData>,
+}
+
+#[derive(Deserialize)]
+struct OpenAIEmbeddingData {
+    embedding: Vec<f64>,
+}
+
 // Anthropic API types
 #[derive(Serialize)]
 struct AnthropicRequest {
@@ -535,6 +560,7 @@ async fn update_alert_settings(
 }
 
 async fn get_training_recommendation(
+    State(state): State<AppState>,
     Json(payload): Json<TrainingRecommendationRequest>,
 ) -> Result<Json<TrainingRecommendationResponse>, StatusCode> {
     let anthropic_api_key = std::env::var("ANTHROPIC_API_KEY")
@@ -542,6 +568,9 @@ async fn get_training_recommendation(
             tracing::error!("ANTHROPIC_API_KEY not set");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
+
+    // Check for OpenAI key for RAG (optional - will work without it)
+    let openai_api_key = std::env::var("OPENAI_API_KEY").ok();
 
     let client = reqwest::Client::new();
 
@@ -567,10 +596,46 @@ async fn get_training_recommendation(
 
     let context_summary = context_parts.join(" • ");
 
+    // Build RAG query from context
+    let rag_query_text = format!(
+        "training system selection for {} grape varieties, vineyard with {} vines{}{}",
+        varieties_str,
+        payload.vine_count,
+        payload.vineyard_location.as_ref().map(|l| format!(", {}", l)).unwrap_or_default(),
+        payload.soil_type.as_ref().map(|s| format!(", {} soil", s)).unwrap_or_default()
+    );
+
+    // Fetch relevant documents from knowledgebase (if OpenAI key available)
+    let mut knowledge_context = String::new();
+    if let Some(openai_key) = &openai_api_key {
+        match rag_query(&state.db, &rag_query_text, openai_key, 5, None).await {
+            Ok(chunks) if !chunks.is_empty() => {
+                tracing::info!("RAG: Found {} relevant documents", chunks.len());
+                knowledge_context = format!(
+                    "\n\n## Reference Documentation\nThe following excerpts from our viticulture knowledgebase are relevant to this recommendation:\n\n{}",
+                    chunks
+                        .iter()
+                        .map(|c| format!("### From: {}\n{}\n", c.source_path, c.content))
+                        .collect::<Vec<_>>()
+                        .join("\n---\n")
+                );
+            }
+            Ok(_) => {
+                tracing::info!("RAG: No relevant documents found (embeddings may not be populated yet)");
+            }
+            Err(e) => {
+                tracing::warn!("RAG query failed (continuing without): {:?}", e);
+            }
+        }
+    } else {
+        tracing::info!("RAG: Skipping (OPENAI_API_KEY not set)");
+    }
+
     let prompt = format!(
         r#"You are a viticulture expert helping a home vineyard grower choose a training method for their grape vines.
 
 Context about this vineyard block:
+{}
 {}
 
 Available training methods (use these exact codes):
@@ -602,9 +667,11 @@ Consider:
 2. Climate zone - infer from vineyard location (coordinates or place name) if provided. Consider Mediterranean, Continental, Maritime, High-Desert, or Humid-Subtropical climates.
 3. Ease of management for home growers
 4. Soil type and vigor implications
+5. Any specific guidance from the reference documentation above
 
 Provide practical recommendations suitable for a home vineyard."#,
-        context_parts.join("\n")
+        context_parts.join("\n"),
+        knowledge_context
     );
 
     let request = AnthropicRequest {
@@ -690,4 +757,137 @@ fn parse_ai_recommendations(text: &str) -> Vec<TrainingRecommendation> {
         confidence: "medium".to_string(),
         reasoning: "VSP is a versatile, widely-used system suitable for most grape varieties and manageable for home growers.".to_string(),
     }]
+}
+
+/// Generate an embedding for the given text using OpenAI's API
+async fn generate_query_embedding(text: &str, api_key: &str) -> Result<Vec<f64>, StatusCode> {
+    let client = reqwest::Client::new();
+
+    let request = OpenAIEmbeddingRequest {
+        model: "text-embedding-3-small".to_string(),
+        input: text.to_string(),
+    };
+
+    let response = client
+        .post("https://api.openai.com/v1/embeddings")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&request)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to call OpenAI embeddings API: {}", e);
+            StatusCode::BAD_GATEWAY
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        tracing::error!("OpenAI API error: {} - {}", status, body);
+        return Err(StatusCode::BAD_GATEWAY);
+    }
+
+    let embedding_response: OpenAIEmbeddingResponse = response
+        .json()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to parse OpenAI response: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    embedding_response
+        .data
+        .first()
+        .map(|d| d.embedding.clone())
+        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)
+}
+
+/// Query the doc_embeddings table for similar documents
+async fn query_similar_documents(
+    db: &PgPool,
+    query_embedding: &[f64],
+    limit: i32,
+    category_filter: Option<&str>,
+) -> Result<Vec<RelevantChunk>, StatusCode> {
+    // Format embedding as PostgreSQL vector literal
+    let embedding_str = format!(
+        "[{}]",
+        query_embedding
+            .iter()
+            .map(|f| f.to_string())
+            .collect::<Vec<_>>()
+            .join(",")
+    );
+
+    // Build query with optional category filter
+    // Using query_scalar/fetch_all with manual Row handling to avoid compile-time schema check
+    let query = if category_filter.is_some() {
+        format!(
+            r#"
+            SELECT
+                content,
+                source_path,
+                1 - (embedding <=> $1::vector) as similarity
+            FROM doc_embeddings
+            WHERE metadata->>'category' = $3
+            ORDER BY embedding <=> $1::vector
+            LIMIT $2
+            "#
+        )
+    } else {
+        format!(
+            r#"
+            SELECT
+                content,
+                source_path,
+                1 - (embedding <=> $1::vector) as similarity
+            FROM doc_embeddings
+            ORDER BY embedding <=> $1::vector
+            LIMIT $2
+            "#
+        )
+    };
+
+    let results: Result<Vec<(String, String, f64)>, _> = if let Some(category) = category_filter {
+        sqlx::query_as(&query)
+            .bind(&embedding_str)
+            .bind(limit)
+            .bind(category)
+            .fetch_all(db)
+            .await
+    } else {
+        sqlx::query_as(&query)
+            .bind(&embedding_str)
+            .bind(limit)
+            .fetch_all(db)
+            .await
+    };
+
+    match results {
+        Ok(rows) => Ok(rows
+            .into_iter()
+            .map(|(content, source_path, similarity)| RelevantChunk {
+                content,
+                source_path,
+                similarity,
+            })
+            .collect()),
+        Err(e) => {
+            tracing::warn!("Failed to query similar documents: {}", e);
+            // Return empty vec instead of error - RAG is optional enhancement
+            Ok(Vec::new())
+        }
+    }
+}
+
+/// Perform RAG query: embed the question and retrieve relevant documents
+async fn rag_query(
+    db: &PgPool,
+    query: &str,
+    openai_api_key: &str,
+    limit: i32,
+    category_filter: Option<&str>,
+) -> Result<Vec<RelevantChunk>, StatusCode> {
+    let embedding = generate_query_embedding(query, openai_api_key).await?;
+    query_similar_documents(db, &embedding, limit, category_filter).await
 }

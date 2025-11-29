@@ -270,7 +270,7 @@ describe('AddVineModal', () => {
       expect(mockVineInsert).toHaveBeenCalledWith(
         expect.objectContaining({
           block: 'block-1',
-          variety: 'CABERNET SAUVIGNON',
+          variety: 'Cabernet Sauvignon',
           health: 'GOOD',
         })
       );

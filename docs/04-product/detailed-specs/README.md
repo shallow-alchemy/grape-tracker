@@ -20,6 +20,8 @@ Use these specs when:
 
 - **[winery-production.md](./winery-production.md)** - ✅ Complete - Wine production workflow reference
 - **[vintages-ui.md](./vintages-ui.md)** - ✅ Complete - Vintage management UI reference
+- **[training-pruning-system.md](./training-pruning-system.md)** - ✅ Complete - Training method & pruning log reference
+- **[ai-integration-roadmap.md](./ai-integration-roadmap.md)** - 📋 Planned - RAG infrastructure, all AI features
 - **[terroir-optimizer.md](./terroir-optimizer.md)** - 📋 Planned - AI terroir optimizer (future)
 
 ## Document Status Indicators

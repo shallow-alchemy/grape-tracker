@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { RemoveVarietyConfirmModal } from './RemoveVarietyConfirmModal';
+import { VarietyInput } from './VarietyInput';
 import { type VineyardFormData, type VineDataRaw } from './vineyard-types';
 import { useZero } from '../contexts/ZeroContext';
 import { useVineyard, useVines } from './vineyard-hooks';
@@ -23,10 +24,18 @@ export const VineyardSettingsModal = ({
   const [pendingFormData, setPendingFormData] = useState<VineyardFormData | null>(null);
   const [removedVarieties, setRemovedVarieties] = useState<string[]>([]);
   const [affectedVines, setAffectedVines] = useState<VineDataRaw[]>([]);
+  const [varieties, setVarieties] = useState<string[]>([]);
 
   const zero = useZero();
   const vineyardData = useVineyard();
   const vinesData = useVines();
+
+  // Sync varieties state with vineyard data when modal opens
+  useEffect(() => {
+    if (isOpen && vineyardData?.varieties) {
+      setVarieties(vineyardData.varieties);
+    }
+  }, [isOpen, vineyardData?.varieties]);
   return (
     <>
     <Modal
@@ -46,21 +55,16 @@ export const VineyardSettingsModal = ({
 
             try {
               const formData = new FormData(e.currentTarget);
-              const varietiesInput = formData.get('varieties') as string;
-              const newVarieties = varietiesInput
-                .split(',')
-                .map(v => v.trim().toUpperCase())
-                .filter(v => v.length > 0);
 
               const vineyardFormData: VineyardFormData = {
                 name: formData.get('name') as string,
                 location: formData.get('location') as string,
-                varieties: newVarieties,
+                varieties: varieties,
               };
 
               const currentVarieties = vineyardData.varieties || [];
               const removed = currentVarieties.filter(
-                (v: string) => !newVarieties.includes(v)
+                (v: string) => !varieties.includes(v)
               );
 
               const vinesUsingRemovedVarieties = vinesData.filter((vine) =>
@@ -147,14 +151,12 @@ export const VineyardSettingsModal = ({
 
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>VARIETIES</label>
-            <textarea
-              name="varieties"
-              className={styles.formTextarea}
-              defaultValue={vineyardData.varieties?.join(', ') || ''}
-              placeholder="CABERNET SAUVIGNON, PINOT NOIR, CHARDONNAY"
-              rows={4}
+            <VarietyInput
+              value={varieties}
+              onChange={setVarieties}
+              placeholder="Type to search varieties..."
             />
-            <div className={styles.formHint}>Comma-separated list of grape varieties (automatically converted to uppercase)</div>
+            <div className={styles.formHint}>Select from known varieties or add custom ones</div>
           </div>
 
           {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}

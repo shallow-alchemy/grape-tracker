@@ -84,7 +84,9 @@ describe('VineyardSettingsModal', () => {
       expect(screen.getByText('VINEYARD SETTINGS')).toBeInTheDocument();
       expect(screen.getByDisplayValue('Test Vineyard')).toBeInTheDocument();
       expect(screen.getByDisplayValue('38.0, -122.0')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('CABERNET, MERLOT')).toBeInTheDocument();
+      // Varieties are now displayed as individual tags
+      expect(screen.getByText('CABERNET')).toBeInTheDocument();
+      expect(screen.getByText('MERLOT')).toBeInTheDocument();
     });
   });
 
@@ -157,9 +159,10 @@ describe('VineyardSettingsModal', () => {
         />
       );
 
-      const varietiesInput = screen.getByDisplayValue('CABERNET');
-      await user.clear(varietiesInput);
-      await user.type(varietiesInput, 'CABERNET, MERLOT, CHARDONNAY');
+      // With VarietyInput, type in the input field and press Enter to add
+      const varietyInput = screen.getByPlaceholderText('');
+      await user.type(varietyInput, 'Merlot{Enter}');
+      await user.type(varietyInput, 'Chardonnay{Enter}');
 
       const saveButton = screen.getByRole('button', { name: /save settings/i });
       await user.click(saveButton);
@@ -167,7 +170,7 @@ describe('VineyardSettingsModal', () => {
       await waitFor(() => {
         expect(mockVineyardUpdate).toHaveBeenCalledWith(
           expect.objectContaining({
-            varieties: ['CABERNET', 'MERLOT', 'CHARDONNAY'],
+            varieties: ['CABERNET', 'Merlot', 'Chardonnay'],
           })
         );
       });
@@ -213,9 +216,9 @@ describe('VineyardSettingsModal', () => {
         />
       );
 
-      const varietiesInput = screen.getByDisplayValue('CABERNET, MERLOT');
-      await user.clear(varietiesInput);
-      await user.type(varietiesInput, 'MERLOT');
+      // Remove CABERNET tag by clicking its remove button
+      const removeButton = screen.getByRole('button', { name: /remove cabernet/i });
+      await user.click(removeButton);
 
       const saveButton = screen.getByRole('button', { name: /save settings/i });
       await user.click(saveButton);
@@ -265,9 +268,9 @@ describe('VineyardSettingsModal', () => {
         />
       );
 
-      const varietiesInput = screen.getByDisplayValue('CABERNET, MERLOT, CHARDONNAY');
-      await user.clear(varietiesInput);
-      await user.type(varietiesInput, 'CABERNET, MERLOT');
+      // Remove CHARDONNAY (not used by any vines)
+      const removeButton = screen.getByRole('button', { name: /remove chardonnay/i });
+      await user.click(removeButton);
 
       const saveButton = screen.getByRole('button', { name: /save settings/i });
       await user.click(saveButton);
@@ -318,9 +321,9 @@ describe('VineyardSettingsModal', () => {
         />
       );
 
-      const varietiesInput = screen.getByDisplayValue('CABERNET, MERLOT');
-      await user.clear(varietiesInput);
-      await user.type(varietiesInput, 'MERLOT');
+      // Remove CABERNET tag
+      const removeButton = screen.getByRole('button', { name: /remove cabernet/i });
+      await user.click(removeButton);
 
       const saveButton = screen.getByRole('button', { name: /save settings/i });
       await user.click(saveButton);
@@ -388,9 +391,9 @@ describe('VineyardSettingsModal', () => {
         />
       );
 
-      const varietiesInput = screen.getByDisplayValue('CABERNET, MERLOT');
-      await user.clear(varietiesInput);
-      await user.type(varietiesInput, 'MERLOT');
+      // Remove CABERNET tag
+      const removeButton = screen.getByRole('button', { name: /remove cabernet/i });
+      await user.click(removeButton);
 
       const saveButton = screen.getByRole('button', { name: /save settings/i });
       await user.click(saveButton);
@@ -454,9 +457,9 @@ describe('VineyardSettingsModal', () => {
         />
       );
 
-      const varietiesInput = screen.getByDisplayValue('CABERNET, MERLOT');
-      await user.clear(varietiesInput);
-      await user.type(varietiesInput, 'MERLOT');
+      // Remove CABERNET tag
+      const removeButton = screen.getByRole('button', { name: /remove cabernet/i });
+      await user.click(removeButton);
 
       const saveButton = screen.getByRole('button', { name: /save settings/i });
       await user.click(saveButton);
@@ -529,9 +532,11 @@ describe('VineyardSettingsModal', () => {
         />
       );
 
-      const varietiesInput = screen.getByDisplayValue('CABERNET, MERLOT, CHARDONNAY');
-      await user.clear(varietiesInput);
-      await user.type(varietiesInput, 'CHARDONNAY');
+      // Remove both CABERNET and MERLOT tags
+      const removeCabernet = screen.getByRole('button', { name: /remove cabernet/i });
+      await user.click(removeCabernet);
+      const removeMerlot = screen.getByRole('button', { name: /remove merlot/i });
+      await user.click(removeMerlot);
 
       const saveButton = screen.getByRole('button', { name: /save settings/i });
       await user.click(saveButton);

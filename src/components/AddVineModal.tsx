@@ -88,7 +88,7 @@ export const AddVineModal = ({
                 user_id: user!.id,
                 block: vineData.block,
                 sequence_number: sequenceNumber,
-                variety: vineData.variety.toUpperCase(),
+                variety: vineData.variety,
                 planting_date: vineData.plantingDate.getTime(),
                 health: vineData.health,
                 notes: vineData.notes || '',
