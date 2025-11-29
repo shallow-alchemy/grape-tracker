@@ -675,7 +675,7 @@ Provide practical recommendations suitable for a home vineyard."#,
     );
 
     let request = AnthropicRequest {
-        model: "claude-3-5-haiku-20241022".to_string(),
+        model: "claude-sonnet-4-5-20250929".to_string(), // Temporarily using Sonnet 4.5 for testing (switch back to claude-3-5-haiku-20241022 for cost)
         max_tokens: 1024,
         messages: vec![AnthropicMessage {
             role: "user".to_string(),
