@@ -1,0 +1,176 @@
+:root {
+  --color-primary-50: #101712;
+  --color-primary-100: #152019;
+  --color-primary-200: #1d2d22;
+  --color-primary-300: #23402e;
+  --color-primary-400: #2d5b3f;
+  --color-primary-500: #3a7a52;
+  --color-primary-600: #4c9367;
+  --color-primary-700: #63aa7d;
+  --color-primary-800: #84c29a;
+  --color-primary-900: #b9e2c8;
+
+  --color-secondary-50: #131314;
+  --color-secondary-100: #1a1a1c;
+  --color-secondary-200: #232326;
+  --color-secondary-300: #303033;
+  --color-secondary-400: #4b4b4e;
+  --color-secondary-500: #68686b;
+  --color-secondary-600: #8d8d90;
+  --color-secondary-700: #b1b1b3;
+  --color-secondary-800: #d2d2d3;
+  --color-secondary-900: #efefef;
+
+  --color-accent-50: #101513;
+  --color-accent-100: #17201c;
+  --color-accent-200: #1f2d26;
+  --color-accent-300: #294033;
+  --color-accent-400: #35604a;
+  --color-accent-500: #418568;
+  --color-accent-600: #54a181;
+  --color-accent-700: #72b99a;
+  --color-accent-800: #9ed4bc;
+  --color-accent-900: #c9ebe0;
+
+  --color-interaction-50: #17111d;
+  --color-interaction-100: #201628;
+  --color-interaction-200: #2b1f38;
+  --color-interaction-300: #392a4d;
+  --color-interaction-400: #533d71;
+  --color-interaction-500: #6e5197;
+  --color-interaction-600: #896db4;
+  --color-interaction-700: #a48acb;
+  --color-interaction-800: #c4b2e1;
+  --color-interaction-900: #e6dcf5;
+
+  --color-background: #0d0f0d;
+  --color-surface: #141614;
+  --color-surface-elevated: #1c1f1c;
+  --color-surface-hover: #242824;
+
+  --color-border: #2b322d;
+  --color-border-hover: #333b35;
+  --color-border-focus: #54a181;
+  --color-border-accent: #54a181;
+
+  --color-text-primary: #e3eee6;
+  --color-text-secondary: #a3b6ac;
+  --color-text-muted: #6f7d75;
+  --color-text-inverse: #0d0f0d;
+  --color-text-accent: #72b99a;
+
+  --color-success: #54a181;
+  --color-error: #e35757;
+  --color-warning: #e0a53c;
+  --color-info: #3b82f6;
+
+  /* Fonts + Other Variables remain unchanged */
+
+  --font-heading: 'Urbanist', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  --spacing-px: 1px;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 0.75rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.25rem;
+  --spacing-2xl: 1.5rem;
+  --spacing-3xl: 2rem;
+  --spacing-4xl: 2.5rem;
+  --spacing-5xl: 3rem;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 15px rgba(58, 122, 58, 0.2);
+  --shadow-glow-strong: 0 0 25px rgba(58, 122, 58, 0.3);
+  --shadow-glow-interaction: 0 0 15px rgba(125, 99, 163, 0.25);
+  --shadow-glow-interaction-strong: 0 0 25px rgba(125, 99, 163, 0.35);
+
+  --radius-none: 0;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
+
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+
+  /* Badge Styles */
+  --badge-font-family: var(--font-heading);
+  --badge-font-size: 0.625rem;
+  --badge-font-weight: var(--font-weight-normal);
+  --badge-text-transform: uppercase;
+  --badge-letter-spacing: 0.05em;
+  --badge-color: var(--color-text-primary);
+  --badge-bg: var(--color-interaction-600);
+  --badge-border-color: var(--color-interaction-600);
+  --badge-border-width: 0;
+  --badge-border-radius: var(--radius-sm);
+  --badge-padding-x: var(--spacing-sm);
+  --badge-padding-y: var(--spacing-xs);
+  --badge-vertical-align: super;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  cursor: pointer;
+}

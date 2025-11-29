@@ -55,11 +55,13 @@ export const VineyardSettingsModal = ({
 
             try {
               const formData = new FormData(e.currentTarget);
+              const laborHoursStr = formData.get('available_labor_hours') as string;
 
               const vineyardFormData: VineyardFormData = {
                 name: formData.get('name') as string,
                 location: formData.get('location') as string,
                 varieties: varieties,
+                available_labor_hours: laborHoursStr ? parseInt(laborHoursStr, 10) : null,
               };
 
               const currentVarieties = vineyardData.varieties || [];
@@ -87,6 +89,7 @@ export const VineyardSettingsModal = ({
                 name: vineyardFormData.name,
                 location: vineyardFormData.location,
                 varieties: vineyardFormData.varieties,
+                available_labor_hours: vineyardFormData.available_labor_hours,
                 updated_at: now,
               });
 
@@ -159,6 +162,20 @@ export const VineyardSettingsModal = ({
             <div className={styles.formHint}>Select from known varieties or add custom ones</div>
           </div>
 
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>AVAILABLE LABOR HOURS (WEEKLY)</label>
+            <input
+              type="number"
+              name="available_labor_hours"
+              className={styles.formInput}
+              defaultValue={vineyardData.available_labor_hours || ''}
+              placeholder="Hours per week"
+              min={0}
+              max={168}
+            />
+            <div className={styles.formHint}>Helps AI suggest manageable training systems</div>
+          </div>
+
           {formErrors.submit && <div className={styles.formError}>{formErrors.submit}</div>}
 
           <div className={styles.formActions}>
@@ -201,6 +218,7 @@ export const VineyardSettingsModal = ({
             name: pendingFormData.name,
             location: pendingFormData.location,
             varieties: pendingFormData.varieties,
+            available_labor_hours: pendingFormData.available_labor_hours,
             updated_at: now,
           });
           onClose();

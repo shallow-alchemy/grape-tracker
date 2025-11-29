@@ -20,6 +20,7 @@ const vineyardTable = table('vineyard')
     name: string(),
     location: string(),
     varieties: json(),
+    available_labor_hours: number().optional(), // Weekly hours available for vineyard work
     created_at: number(),
     updated_at: number(),
   })

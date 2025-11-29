@@ -23,6 +23,7 @@ type AITrainingHelperProps = {
   soilType?: string;
   sizeAcres?: number;
   vineCount: number;
+  availableLaborHours?: number | null;
   onSelectMethod: (method: string) => void;
 };
 
@@ -34,6 +35,7 @@ export const AITrainingHelper = ({
   soilType,
   sizeAcres,
   vineCount,
+  availableLaborHours,
   onSelectMethod,
 }: AITrainingHelperProps) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -60,6 +62,7 @@ export const AITrainingHelper = ({
           soil_type: soilType || null,
           size_acres: sizeAcres || null,
           vine_count: vineCount,
+          available_labor_hours: availableLaborHours || null,
         }),
       });
 

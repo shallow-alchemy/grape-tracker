@@ -1,199 +1,199 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.permissions = exports.builder = exports.schema = void 0;
-var zero_1 = require("@rocicorp/zero");
-var userTable = (0, zero_1.table)('user')
+import { createSchema, createBuilder, table, string, number, json, boolean, ANYONE_CAN, definePermissions } from '@rocicorp/zero';
+const userTable = table('user')
     .columns({
-    id: (0, zero_1.string)(), // Clerk ID as primary key
-    email: (0, zero_1.string)(),
-    display_name: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)().optional(),
-    role: (0, zero_1.string)(), // 'owner' | 'member'
-    onboarding_completed: (0, zero_1.boolean)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(), // Clerk ID as primary key
+    email: string(),
+    display_name: string(),
+    vineyard_id: string().optional(),
+    role: string(), // 'owner' | 'member'
+    onboarding_completed: boolean(),
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var vineyardTable = (0, zero_1.table)('vineyard')
+const vineyardTable = table('vineyard')
     .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    name: (0, zero_1.string)(),
-    location: (0, zero_1.string)(),
-    varieties: (0, zero_1.json)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(),
+    user_id: string(),
+    name: string(),
+    location: string(),
+    varieties: json(),
+    available_labor_hours: number().optional(), // Weekly hours available for vineyard work
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var blockTable = (0, zero_1.table)('block')
+const blockTable = table('block')
     .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    name: (0, zero_1.string)(),
-    location: (0, zero_1.string)(),
-    size_acres: (0, zero_1.number)(),
-    soil_type: (0, zero_1.string)(),
-    notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(),
+    user_id: string(),
+    name: string(),
+    location: string(),
+    size_acres: number(),
+    soil_type: string(),
+    notes: string(),
+    training_method: string().optional(),
+    training_method_other: string().optional(),
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var vineTable = (0, zero_1.table)('vine')
+const vineTable = table('vine')
     .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    block: (0, zero_1.string)(),
-    sequence_number: (0, zero_1.number)(),
-    variety: (0, zero_1.string)(),
-    planting_date: (0, zero_1.number)(),
-    health: (0, zero_1.string)(),
-    notes: (0, zero_1.string)(),
-    qr_generated: (0, zero_1.number)(),
-    training_method: (0, zero_1.string)().optional(),
-    training_method_other: (0, zero_1.string)().optional(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(),
+    user_id: string(),
+    block: string(),
+    sequence_number: number(),
+    variety: string(),
+    planting_date: number(),
+    health: string(),
+    notes: string(),
+    qr_generated: number(),
+    training_method: string().optional(),
+    training_method_other: string().optional(),
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var pruningLogTable = (0, zero_1.table)('pruning_log')
+const pruningLogTable = table('pruning_log')
     .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    vine_id: (0, zero_1.string)(),
-    date: (0, zero_1.number)(),
-    pruning_type: (0, zero_1.string)(),
-    spurs_left: (0, zero_1.number)().optional(),
-    canes_before: (0, zero_1.number)().optional(),
-    canes_after: (0, zero_1.number)().optional(),
-    notes: (0, zero_1.string)(),
-    photo_id: (0, zero_1.string)().optional(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(),
+    user_id: string(),
+    vine_id: string(),
+    date: number(),
+    pruning_type: string(),
+    spurs_left: number().optional(),
+    canes_before: number().optional(),
+    canes_after: number().optional(),
+    notes: string(),
+    photo_id: string().optional(),
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var vintageTable = (0, zero_1.table)('vintage')
+const vintageTable = table('vintage')
     .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)(),
-    vintage_year: (0, zero_1.number)(),
-    variety: (0, zero_1.string)(),
-    block_ids: (0, zero_1.json)(),
-    current_stage: (0, zero_1.string)(),
-    harvest_date: (0, zero_1.number)(),
-    harvest_weight_lbs: (0, zero_1.number)().optional(),
-    harvest_volume_gallons: (0, zero_1.number)().optional(),
-    grape_source: (0, zero_1.string)(),
-    supplier_name: (0, zero_1.string)().optional(),
-    notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(),
+    user_id: string(),
+    vineyard_id: string(),
+    vintage_year: number(),
+    variety: string(),
+    block_ids: json(),
+    current_stage: string(),
+    harvest_date: number(),
+    harvest_weight_lbs: number().optional(),
+    harvest_volume_gallons: number().optional(),
+    grape_source: string(),
+    supplier_name: string().optional(),
+    notes: string(),
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var wineTable = (0, zero_1.table)('wine')
+const wineTable = table('wine')
     .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    vintage_id: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)(),
-    name: (0, zero_1.string)(),
-    wine_type: (0, zero_1.string)(),
-    volume_gallons: (0, zero_1.number)(),
-    current_volume_gallons: (0, zero_1.number)(),
-    current_stage: (0, zero_1.string)(),
-    status: (0, zero_1.string)(),
-    last_tasting_notes: (0, zero_1.string)(),
-    blend_components: (0, zero_1.json)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(),
+    user_id: string(),
+    vintage_id: string(),
+    vineyard_id: string(),
+    name: string(),
+    wine_type: string(),
+    volume_gallons: number(),
+    current_volume_gallons: number(),
+    current_stage: string(),
+    status: string(),
+    last_tasting_notes: string(),
+    blend_components: json(),
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var stageHistoryTable = (0, zero_1.table)('stage_history')
+const stageHistoryTable = table('stage_history')
     .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    entity_id: (0, zero_1.string)(),
-    stage: (0, zero_1.string)(),
-    started_at: (0, zero_1.number)(),
-    completed_at: (0, zero_1.number)().optional(),
-    skipped: (0, zero_1.boolean)(),
-    notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(),
+    user_id: string(),
+    entity_type: string(),
+    entity_id: string(),
+    stage: string(),
+    started_at: number(),
+    completed_at: number().optional(),
+    skipped: boolean(),
+    notes: string(),
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var taskTemplateTable = (0, zero_1.table)('task_template')
+const taskTemplateTable = table('task_template')
     .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)(),
-    stage: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    wine_type: (0, zero_1.string)(),
-    name: (0, zero_1.string)(),
-    description: (0, zero_1.string)(),
-    frequency: (0, zero_1.string)(),
-    frequency_count: (0, zero_1.number)(),
-    frequency_unit: (0, zero_1.string)(),
-    default_enabled: (0, zero_1.boolean)(),
-    sort_order: (0, zero_1.number)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(),
+    user_id: string(),
+    vineyard_id: string(),
+    stage: string(),
+    entity_type: string(),
+    wine_type: string(),
+    name: string(),
+    description: string(),
+    frequency: string(),
+    frequency_count: number(),
+    frequency_unit: string(),
+    default_enabled: boolean(),
+    sort_order: number(),
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var taskTable = (0, zero_1.table)('task')
+const taskTable = table('task')
     .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    task_template_id: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    entity_id: (0, zero_1.string)(),
-    stage: (0, zero_1.string)(),
-    name: (0, zero_1.string)(),
-    description: (0, zero_1.string)(),
-    due_date: (0, zero_1.number)(),
-    completed_at: (0, zero_1.number)(),
-    completed_by: (0, zero_1.string)(),
-    notes: (0, zero_1.string)(),
-    skipped: (0, zero_1.boolean)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(),
+    user_id: string(),
+    task_template_id: string(),
+    entity_type: string(),
+    entity_id: string(),
+    stage: string(),
+    name: string(),
+    description: string(),
+    due_date: number(),
+    completed_at: number(),
+    completed_by: string(),
+    notes: string(),
+    skipped: boolean(),
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var measurementTable = (0, zero_1.table)('measurement')
+const measurementTable = table('measurement')
     .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    entity_id: (0, zero_1.string)(),
-    date: (0, zero_1.number)(),
-    stage: (0, zero_1.string)(),
-    ph: (0, zero_1.number)().optional(),
-    ta: (0, zero_1.number)().optional(),
-    brix: (0, zero_1.number)().optional(),
-    temperature: (0, zero_1.number)().optional(),
-    tasting_notes: (0, zero_1.string)(),
-    notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
+    id: string(),
+    user_id: string(),
+    entity_type: string(),
+    entity_id: string(),
+    date: number(),
+    stage: string(),
+    ph: number().optional(),
+    ta: number().optional(),
+    brix: number().optional(),
+    temperature: number().optional(),
+    tasting_notes: string(),
+    notes: string(),
+    created_at: number(),
+    updated_at: number(),
 })
     .primaryKey('id');
-var measurementRangeTable = (0, zero_1.table)('measurement_range')
+const measurementRangeTable = table('measurement_range')
     .columns({
-    id: (0, zero_1.string)(),
-    wine_type: (0, zero_1.string)(),
-    measurement_type: (0, zero_1.string)(),
-    min_value: (0, zero_1.number)(),
-    max_value: (0, zero_1.number)(),
-    ideal_min: (0, zero_1.number)(),
-    ideal_max: (0, zero_1.number)(),
-    low_warning: (0, zero_1.string)(),
-    high_warning: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
+    id: string(),
+    wine_type: string(),
+    measurement_type: string(),
+    min_value: number(),
+    max_value: number(),
+    ideal_min: number(),
+    ideal_max: number(),
+    low_warning: string(),
+    high_warning: string(),
+    created_at: number(),
 })
     .primaryKey('id');
-exports.schema = (0, zero_1.createSchema)({
+export const schema = createSchema({
     tables: [
         userTable,
         vineyardTable,
@@ -210,136 +210,136 @@ exports.schema = (0, zero_1.createSchema)({
     ],
 });
 // Builder for synced queries
-exports.builder = (0, zero_1.createBuilder)(exports.schema);
+export const builder = createBuilder(schema);
 // NOTE: Temporary ANYONE_CAN permissions until synced queries are fully deployed
 // This allows zero-cache to start but provides NO multi-user isolation
 // TODO: Replace with synced queries (see zero-queries/src/queries.ts)
-exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () {
+export const permissions = definePermissions(schema, () => {
     return {
         user: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         vineyard: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         block: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         vine: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         pruning_log: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         vintage: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         wine: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         stage_history: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         task_template: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         task: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         measurement: {
             row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
                 update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
                 },
-                delete: zero_1.ANYONE_CAN,
+                delete: ANYONE_CAN,
             },
         },
         measurement_range: {
             row: {
-                select: zero_1.ANYONE_CAN,
+                select: ANYONE_CAN,
                 insert: [],
                 update: {
                     preMutation: [],

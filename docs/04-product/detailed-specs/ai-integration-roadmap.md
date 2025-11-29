@@ -1,8 +1,8 @@
 # AI Integration Roadmap
 
-**Status**: Planning
+**Status**: Phase 3 Complete
 **Created**: 2024-11-29
-**Last Updated**: 2024-11-29
+**Last Updated**: 2025-11-29
 
 ## Vision
 
@@ -19,9 +19,9 @@ Deeply integrated AI guidance throughout Gilbert, grounded in our domain-specifi
 - [x] Basic prompt with context (varieties, soil, location, vine count)
 
 ### Current Limitations
-- AI uses general knowledge, not our knowledgebase docs
-- No RAG infrastructure
-- Limited context about user's operational goals
+- ~~AI uses general knowledge, not our knowledgebase docs~~ ✅ Fixed with RAG
+- ~~No RAG infrastructure~~ ✅ pgvector + embeddings deployed
+- ~~Limited context about user's operational goals (needs Phase 2 data model fields)~~ ✅ Fixed with Phase 2.1
 
 ---
 
@@ -31,12 +31,17 @@ Before building more AI features, we need richer data to provide context.
 
 ### 2.1 Vineyard/Block Level Fields
 
-| Field | Location | Purpose |
-|-------|----------|---------|
-| `production_goal` | vineyard or block | "quality_focused", "high_yield", "balanced" |
-| `experience_level` | vineyard | "beginner", "intermediate", "experienced" |
-| `observed_vigor` | block | "low", "medium", "high", "unknown" |
-| `available_labor_hours` | vineyard | Weekly hours available for vineyard work |
+| Field | Location | Purpose | Status |
+|-------|----------|---------|--------|
+| `available_labor_hours` | vineyard | Weekly hours available for vineyard work | ✅ Added |
+
+**Deferred fields** (will be part of future planning module):
+- `production_goal` - Needs concrete volume targets (gallons/bottles), not abstract enums
+- `experience_level` - Redundant with labor hours; less actionable
+- `observed_vigor` - Wrong abstraction (vigor varies per-vine, not per-block)
+
+Migration: `20251129000004_add_ai_context_fields.sql` (adds available_labor_hours)
+Migration: `20251129000005_remove_unused_ai_fields.sql` (removes premature fields)
 
 ### 2.2 Vine Health & Disease Tracking
 
@@ -107,9 +112,9 @@ Claude generates grounded response
 - [x] Build embedding CLI tool (`yarn embed-docs`)
 - [x] Create RAG query helper function in backend
 - [x] Wire training advisor to use RAG (graceful fallback if no embeddings)
-- [ ] Add pgvector extension to Railway Postgres (run migration)
-- [ ] Add OPENAI_API_KEY to Railway environment
-- [ ] Run `yarn embed-docs` to populate embeddings
+- [x] Add pgvector extension to Railway Postgres (using pgvector template)
+- [x] Add OPENAI_API_KEY to Railway environment
+- [x] Run `yarn embed-docs` to populate embeddings (752 chunks)
 
 ---
 
@@ -117,12 +122,12 @@ Claude generates grounded response
 
 ### 4.1 Training Method Advisor (Current)
 
-**Status**: Basic implementation complete
+**Status**: RAG-powered, deployed to staging
 
 **Enhancements needed**:
-- [ ] RAG integration for training system docs
-- [ ] Consider production goals in recommendations
-- [ ] Consider experience level (simpler systems for beginners)
+- [x] RAG integration for training system docs
+- [x] Consider available labor hours (`available_labor_hours` field)
+- [ ] Production volume targets (future planning module)
 
 **Knowledgebase docs used**:
 - `knowledgebase/training/*.md`

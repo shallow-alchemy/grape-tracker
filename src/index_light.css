@@ -1,0 +1,176 @@
+:root {
+  --color-primary-50: #f6fcf7;
+  --color-primary-100: #e3f7e7;
+  --color-primary-200: #c2edcd;
+  --color-primary-300: #9ddfb0;
+  --color-primary-400: #6fce8f;
+  --color-primary-500: #48b86f;
+  --color-primary-600: #379c59;
+  --color-primary-700: #2c7b47;
+  --color-primary-800: #245f39;
+  --color-primary-900: #1d4a2d;
+
+  --color-secondary-50: #fafafa;
+  --color-secondary-100: #f0f0f0;
+  --color-secondary-200: #dedede;
+  --color-secondary-300: #c1c1c1;
+  --color-secondary-400: #9c9c9c;
+  --color-secondary-500: #7a7a7a;
+  --color-secondary-600: #5f5f5f;
+  --color-secondary-700: #494949;
+  --color-secondary-800: #383838;
+  --color-secondary-900: #2a2a2a;
+
+  --color-accent-50: #f6fbf9;
+  --color-accent-100: #dbf3eb;
+  --color-accent-200: #b2e5d1;
+  --color-accent-300: #82d4b5;
+  --color-accent-400: #4fbd93;
+  --color-accent-500: #32a97e;
+  --color-accent-600: #258d68;
+  --color-accent-700: #1d7053;
+  --color-accent-800: #185744;
+  --color-accent-900: #124236;
+
+  --color-interaction-50: #f7f0fa;
+  --color-interaction-100: #eddcf4;
+  --color-interaction-200: #d6b6e9;
+  --color-interaction-300: #be92dc;
+  --color-interaction-400: #a066cd;
+  --color-interaction-500: #8549b8;
+  --color-interaction-600: #6b3a9d;
+  --color-interaction-700: #532e7a;
+  --color-interaction-800: #3f235d;
+  --color-interaction-900: #2f1a45;
+
+  --color-background: #ffffff;
+  --color-surface: #f7f9f8;
+  --color-surface-elevated: #f0f2f1;
+  --color-surface-hover: #e8ebe9;
+
+  --color-border: #d7ddd9;
+  --color-border-hover: #c5ccc8;
+  --color-border-focus: #48b86f;
+  --color-border-accent: #48b86f;
+
+  --color-text-primary: #1f2b21;
+  --color-text-secondary: #526556;
+  --color-text-muted: #8b998d;
+  --color-text-inverse: #ffffff;
+  --color-text-accent: #2e9e5c;
+
+  --color-success: #2e9e5c;
+  --color-error: #d64747;
+  --color-warning: #d18a15;
+  --color-info: #2563eb;
+
+  /* Fonts + Other Variables remain unchanged */
+
+  --font-heading: 'Poppins', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'Roboto Mono', monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  --spacing-px: 1px;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 0.75rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.25rem;
+  --spacing-2xl: 1.5rem;
+  --spacing-3xl: 2rem;
+  --spacing-4xl: 2.5rem;
+  --spacing-5xl: 3rem;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 15px rgba(58, 122, 58, 0.2);
+  --shadow-glow-strong: 0 0 25px rgba(58, 122, 58, 0.3);
+  --shadow-glow-interaction: 0 0 15px rgba(125, 99, 163, 0.25);
+  --shadow-glow-interaction-strong: 0 0 25px rgba(125, 99, 163, 0.35);
+
+  --radius-none: 0;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
+
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+
+  /* Badge Styles */
+  --badge-font-family: var(--font-heading);
+  --badge-font-size: 0.625rem;
+  --badge-font-weight: var(--font-weight-normal);
+  --badge-text-transform: uppercase;
+  --badge-letter-spacing: 0.05em;
+  --badge-color: var(--color-text-primary);
+  --badge-bg: var(--color-interaction-600);
+  --badge-border-color: var(--color-interaction-600);
+  --badge-border-width: 0;
+  --badge-border-radius: var(--radius-sm);
+  --badge-padding-x: var(--spacing-sm);
+  --badge-padding-y: var(--spacing-xs);
+  --badge-vertical-align: super;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  cursor: pointer;
+}

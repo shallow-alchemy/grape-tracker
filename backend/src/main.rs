@@ -109,6 +109,7 @@ struct TrainingRecommendationRequest {
     soil_type: Option<String>,
     size_acres: Option<f64>,
     vine_count: i32,
+    available_labor_hours: Option<i32>,
 }
 
 #[derive(Serialize)]
@@ -130,6 +131,7 @@ struct TrainingRecommendationResponse {
 struct RelevantChunk {
     content: String,
     source_path: String,
+    #[allow(dead_code)] // Useful for debugging/future filtering
     similarity: f64,
 }
 
@@ -589,6 +591,7 @@ async fn get_training_recommendation(
         payload.location.as_ref().map(|l| format!("Block position: {}", l)),
         payload.soil_type.as_ref().map(|s| format!("Soil type: {}", s)),
         payload.size_acres.map(|a| format!("Size: {} acres", a)),
+        payload.available_labor_hours.map(|h| format!("Labor hours/week: {}", h)),
     ]
     .into_iter()
     .flatten()
@@ -665,17 +668,17 @@ Respond with exactly 3 recommendations in this JSON format:
 Consider:
 1. The grape varieties being grown and their vigor characteristics
 2. Climate zone - infer from vineyard location (coordinates or place name) if provided. Consider Mediterranean, Continental, Maritime, High-Desert, or Humid-Subtropical climates.
-3. Ease of management for home growers
-4. Soil type and vigor implications
+3. Soil type and vigor implications
+4. Available labor hours - fewer hours means simpler, low-maintenance systems are preferred
 5. Any specific guidance from the reference documentation above
 
-Provide practical recommendations suitable for a home vineyard."#,
+Provide practical recommendations suitable for a home vineyard. For limited labor availability, favor simpler systems like Head Training or Four-Arm Kniffen."#,
         context_parts.join("\n"),
         knowledge_context
     );
 
     let request = AnthropicRequest {
-        model: "claude-sonnet-4-5-20250929".to_string(), // Temporarily using Sonnet 4.5 for testing (switch back to claude-3-5-haiku-20241022 for cost)
+        model: "claude-3-5-haiku-20241022".to_string(),
         max_tokens: 1024,
         messages: vec![AnthropicMessage {
             role: "user".to_string(),

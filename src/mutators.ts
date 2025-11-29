@@ -46,6 +46,7 @@ export const createMutators = () => ({
         name: string;
         location: string;
         varieties: ReadonlyJSONValue;
+        available_labor_hours?: number | null;
         created_at: number;
         updated_at: number;
       }
@@ -59,6 +60,7 @@ export const createMutators = () => ({
         name?: string;
         location?: string;
         varieties?: ReadonlyJSONValue;
+        available_labor_hours?: number | null;
         updated_at?: number;
       }
     ) => {

@@ -55,6 +55,7 @@ export type VineyardData = {
   name: string;
   location: string;
   varieties: string[];
+  available_labor_hours: number | null;
   created_at: number;
   updated_at: number;
 };
@@ -80,4 +81,5 @@ export type VineyardFormData = {
   name: string;
   location: string;
   varieties: string[];
+  available_labor_hours?: number | null;
 };

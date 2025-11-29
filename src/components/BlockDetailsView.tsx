@@ -155,6 +155,7 @@ export const BlockDetailsView = ({
               soilType={block.soilType || undefined}
               sizeAcres={block.sizeAcres || undefined}
               vineCount={vines.length}
+              availableLaborHours={vineyardData?.available_labor_hours}
               onSelectMethod={async (method) => {
                 await zero.mutate.block.update({
                   id: block.id,

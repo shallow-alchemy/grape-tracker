@@ -17,7 +17,7 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// schema.ts
+// schema.js
 var schema_exports = {};
 __export(schema_exports, {
   builder: () => builder,
@@ -44,6 +44,8 @@ var vineyardTable = (0, import_zero.table)("vineyard").columns({
   name: (0, import_zero.string)(),
   location: (0, import_zero.string)(),
   varieties: (0, import_zero.json)(),
+  available_labor_hours: (0, import_zero.number)().optional(),
+  // Weekly hours available for vineyard work
   created_at: (0, import_zero.number)(),
   updated_at: (0, import_zero.number)()
 }).primaryKey("id");
@@ -55,6 +57,8 @@ var blockTable = (0, import_zero.table)("block").columns({
   size_acres: (0, import_zero.number)(),
   soil_type: (0, import_zero.string)(),
   notes: (0, import_zero.string)(),
+  training_method: (0, import_zero.string)().optional(),
+  training_method_other: (0, import_zero.string)().optional(),
   created_at: (0, import_zero.number)(),
   updated_at: (0, import_zero.number)()
 }).primaryKey("id");
@@ -212,145 +216,142 @@ var schema = (0, import_zero.createSchema)({
   ]
 });
 var builder = (0, import_zero.createBuilder)(schema);
-var permissions = (0, import_zero.definePermissions)(
-  schema,
-  () => {
-    return {
-      user: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      vineyard: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      block: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      vine: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      pruning_log: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      vintage: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      wine: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      stage_history: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      task_template: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      task: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      measurement: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: import_zero.ANYONE_CAN,
-          update: {
-            preMutation: import_zero.ANYONE_CAN,
-            postMutation: import_zero.ANYONE_CAN
-          },
-          delete: import_zero.ANYONE_CAN
-        }
-      },
-      measurement_range: {
-        row: {
-          select: import_zero.ANYONE_CAN,
-          insert: [],
-          update: {
-            preMutation: [],
-            postMutation: []
-          },
-          delete: []
-        }
+var permissions = (0, import_zero.definePermissions)(schema, () => {
+  return {
+    user: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
       }
-    };
-  }
-);
+    },
+    vineyard: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
+      }
+    },
+    block: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
+      }
+    },
+    vine: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
+      }
+    },
+    pruning_log: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
+      }
+    },
+    vintage: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
+      }
+    },
+    wine: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
+      }
+    },
+    stage_history: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
+      }
+    },
+    task_template: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
+      }
+    },
+    task: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
+      }
+    },
+    measurement: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: import_zero.ANYONE_CAN,
+        update: {
+          preMutation: import_zero.ANYONE_CAN,
+          postMutation: import_zero.ANYONE_CAN
+        },
+        delete: import_zero.ANYONE_CAN
+      }
+    },
+    measurement_range: {
+      row: {
+        select: import_zero.ANYONE_CAN,
+        insert: [],
+        update: {
+          preMutation: [],
+          postMutation: []
+        },
+        delete: []
+      }
+    }
+  };
+});
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   builder,
