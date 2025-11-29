@@ -1,322 +1,359 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.permissions = exports.builder = exports.schema = void 0;
-const zero_1 = require("@rocicorp/zero");
-const userTable = (0, zero_1.table)('user')
-    .columns({
-    id: (0, zero_1.string)(), // Clerk ID as primary key
-    email: (0, zero_1.string)(),
-    display_name: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)().optional(),
-    role: (0, zero_1.string)(), // 'owner' | 'member'
-    onboarding_completed: (0, zero_1.boolean)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-const vineyardTable = (0, zero_1.table)('vineyard')
-    .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    name: (0, zero_1.string)(),
-    location: (0, zero_1.string)(),
-    varieties: (0, zero_1.json)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-const blockTable = (0, zero_1.table)('block')
-    .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    name: (0, zero_1.string)(),
-    location: (0, zero_1.string)(),
-    size_acres: (0, zero_1.number)(),
-    soil_type: (0, zero_1.string)(),
-    notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-const vineTable = (0, zero_1.table)('vine')
-    .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    block: (0, zero_1.string)(),
-    sequence_number: (0, zero_1.number)(),
-    variety: (0, zero_1.string)(),
-    planting_date: (0, zero_1.number)(),
-    health: (0, zero_1.string)(),
-    notes: (0, zero_1.string)(),
-    qr_generated: (0, zero_1.number)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-const vintageTable = (0, zero_1.table)('vintage')
-    .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)(),
-    vintage_year: (0, zero_1.number)(),
-    variety: (0, zero_1.string)(),
-    block_ids: (0, zero_1.json)(),
-    current_stage: (0, zero_1.string)(),
-    harvest_date: (0, zero_1.number)(),
-    harvest_weight_lbs: (0, zero_1.number)().optional(),
-    harvest_volume_gallons: (0, zero_1.number)().optional(),
-    grape_source: (0, zero_1.string)(),
-    supplier_name: (0, zero_1.string)().optional(),
-    notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-const wineTable = (0, zero_1.table)('wine')
-    .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    vintage_id: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)(),
-    name: (0, zero_1.string)(),
-    wine_type: (0, zero_1.string)(),
-    volume_gallons: (0, zero_1.number)(),
-    current_volume_gallons: (0, zero_1.number)(),
-    current_stage: (0, zero_1.string)(),
-    status: (0, zero_1.string)(),
-    last_tasting_notes: (0, zero_1.string)(),
-    blend_components: (0, zero_1.json)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-const stageHistoryTable = (0, zero_1.table)('stage_history')
-    .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    entity_id: (0, zero_1.string)(),
-    stage: (0, zero_1.string)(),
-    started_at: (0, zero_1.number)(),
-    completed_at: (0, zero_1.number)().optional(),
-    skipped: (0, zero_1.boolean)(),
-    notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-const taskTemplateTable = (0, zero_1.table)('task_template')
-    .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    vineyard_id: (0, zero_1.string)(),
-    stage: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    wine_type: (0, zero_1.string)(),
-    name: (0, zero_1.string)(),
-    description: (0, zero_1.string)(),
-    frequency: (0, zero_1.string)(),
-    frequency_count: (0, zero_1.number)(),
-    frequency_unit: (0, zero_1.string)(),
-    default_enabled: (0, zero_1.boolean)(),
-    sort_order: (0, zero_1.number)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-const taskTable = (0, zero_1.table)('task')
-    .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    task_template_id: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    entity_id: (0, zero_1.string)(),
-    stage: (0, zero_1.string)(),
-    name: (0, zero_1.string)(),
-    description: (0, zero_1.string)(),
-    due_date: (0, zero_1.number)(),
-    completed_at: (0, zero_1.number)(),
-    completed_by: (0, zero_1.string)(),
-    notes: (0, zero_1.string)(),
-    skipped: (0, zero_1.boolean)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-const measurementTable = (0, zero_1.table)('measurement')
-    .columns({
-    id: (0, zero_1.string)(),
-    user_id: (0, zero_1.string)(),
-    entity_type: (0, zero_1.string)(),
-    entity_id: (0, zero_1.string)(),
-    date: (0, zero_1.number)(),
-    stage: (0, zero_1.string)(),
-    ph: (0, zero_1.number)().optional(),
-    ta: (0, zero_1.number)().optional(),
-    brix: (0, zero_1.number)().optional(),
-    temperature: (0, zero_1.number)().optional(),
-    tasting_notes: (0, zero_1.string)(),
-    notes: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-    updated_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-const measurementRangeTable = (0, zero_1.table)('measurement_range')
-    .columns({
-    id: (0, zero_1.string)(),
-    wine_type: (0, zero_1.string)(),
-    measurement_type: (0, zero_1.string)(),
-    min_value: (0, zero_1.number)(),
-    max_value: (0, zero_1.number)(),
-    ideal_min: (0, zero_1.number)(),
-    ideal_max: (0, zero_1.number)(),
-    low_warning: (0, zero_1.string)(),
-    high_warning: (0, zero_1.string)(),
-    created_at: (0, zero_1.number)(),
-})
-    .primaryKey('id');
-exports.schema = (0, zero_1.createSchema)({
-    tables: [
-        userTable,
-        vineyardTable,
-        blockTable,
-        vineTable,
-        vintageTable,
-        wineTable,
-        stageHistoryTable,
-        taskTemplateTable,
-        taskTable,
-        measurementTable,
-        measurementRangeTable,
-    ],
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  builder: () => builder,
+  permissions: () => permissions,
+  schema: () => schema
 });
-// Builder for synced queries
-exports.builder = (0, zero_1.createBuilder)(exports.schema);
-// NOTE: Temporary ANYONE_CAN permissions until synced queries are fully deployed
-// This allows zero-cache to start but provides NO multi-user isolation
-// TODO: Replace with synced queries (see zero-queries/src/queries.ts)
-exports.permissions = (0, zero_1.definePermissions)(exports.schema, () => {
+module.exports = __toCommonJS(schema_exports);
+var import_zero = require("@rocicorp/zero");
+var userTable = (0, import_zero.table)("user").columns({
+  id: (0, import_zero.string)(),
+  // Clerk ID as primary key
+  email: (0, import_zero.string)(),
+  display_name: (0, import_zero.string)(),
+  vineyard_id: (0, import_zero.string)().optional(),
+  role: (0, import_zero.string)(),
+  // 'owner' | 'member'
+  onboarding_completed: (0, import_zero.boolean)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var vineyardTable = (0, import_zero.table)("vineyard").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  name: (0, import_zero.string)(),
+  location: (0, import_zero.string)(),
+  varieties: (0, import_zero.json)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var blockTable = (0, import_zero.table)("block").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  name: (0, import_zero.string)(),
+  location: (0, import_zero.string)(),
+  size_acres: (0, import_zero.number)(),
+  soil_type: (0, import_zero.string)(),
+  notes: (0, import_zero.string)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var vineTable = (0, import_zero.table)("vine").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  block: (0, import_zero.string)(),
+  sequence_number: (0, import_zero.number)(),
+  variety: (0, import_zero.string)(),
+  planting_date: (0, import_zero.number)(),
+  health: (0, import_zero.string)(),
+  notes: (0, import_zero.string)(),
+  qr_generated: (0, import_zero.number)(),
+  training_method: (0, import_zero.string)().optional(),
+  training_method_other: (0, import_zero.string)().optional(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var pruningLogTable = (0, import_zero.table)("pruning_log").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  vine_id: (0, import_zero.string)(),
+  date: (0, import_zero.number)(),
+  pruning_type: (0, import_zero.string)(),
+  spurs_left: (0, import_zero.number)().optional(),
+  canes_before: (0, import_zero.number)().optional(),
+  canes_after: (0, import_zero.number)().optional(),
+  notes: (0, import_zero.string)(),
+  photo_id: (0, import_zero.string)().optional(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var vintageTable = (0, import_zero.table)("vintage").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  vineyard_id: (0, import_zero.string)(),
+  vintage_year: (0, import_zero.number)(),
+  variety: (0, import_zero.string)(),
+  block_ids: (0, import_zero.json)(),
+  current_stage: (0, import_zero.string)(),
+  harvest_date: (0, import_zero.number)(),
+  harvest_weight_lbs: (0, import_zero.number)().optional(),
+  harvest_volume_gallons: (0, import_zero.number)().optional(),
+  grape_source: (0, import_zero.string)(),
+  supplier_name: (0, import_zero.string)().optional(),
+  notes: (0, import_zero.string)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var wineTable = (0, import_zero.table)("wine").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  vintage_id: (0, import_zero.string)(),
+  vineyard_id: (0, import_zero.string)(),
+  name: (0, import_zero.string)(),
+  wine_type: (0, import_zero.string)(),
+  volume_gallons: (0, import_zero.number)(),
+  current_volume_gallons: (0, import_zero.number)(),
+  current_stage: (0, import_zero.string)(),
+  status: (0, import_zero.string)(),
+  last_tasting_notes: (0, import_zero.string)(),
+  blend_components: (0, import_zero.json)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var stageHistoryTable = (0, import_zero.table)("stage_history").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  entity_type: (0, import_zero.string)(),
+  entity_id: (0, import_zero.string)(),
+  stage: (0, import_zero.string)(),
+  started_at: (0, import_zero.number)(),
+  completed_at: (0, import_zero.number)().optional(),
+  skipped: (0, import_zero.boolean)(),
+  notes: (0, import_zero.string)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var taskTemplateTable = (0, import_zero.table)("task_template").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  vineyard_id: (0, import_zero.string)(),
+  stage: (0, import_zero.string)(),
+  entity_type: (0, import_zero.string)(),
+  wine_type: (0, import_zero.string)(),
+  name: (0, import_zero.string)(),
+  description: (0, import_zero.string)(),
+  frequency: (0, import_zero.string)(),
+  frequency_count: (0, import_zero.number)(),
+  frequency_unit: (0, import_zero.string)(),
+  default_enabled: (0, import_zero.boolean)(),
+  sort_order: (0, import_zero.number)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var taskTable = (0, import_zero.table)("task").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  task_template_id: (0, import_zero.string)(),
+  entity_type: (0, import_zero.string)(),
+  entity_id: (0, import_zero.string)(),
+  stage: (0, import_zero.string)(),
+  name: (0, import_zero.string)(),
+  description: (0, import_zero.string)(),
+  due_date: (0, import_zero.number)(),
+  completed_at: (0, import_zero.number)(),
+  completed_by: (0, import_zero.string)(),
+  notes: (0, import_zero.string)(),
+  skipped: (0, import_zero.boolean)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var measurementTable = (0, import_zero.table)("measurement").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  entity_type: (0, import_zero.string)(),
+  entity_id: (0, import_zero.string)(),
+  date: (0, import_zero.number)(),
+  stage: (0, import_zero.string)(),
+  ph: (0, import_zero.number)().optional(),
+  ta: (0, import_zero.number)().optional(),
+  brix: (0, import_zero.number)().optional(),
+  temperature: (0, import_zero.number)().optional(),
+  tasting_notes: (0, import_zero.string)(),
+  notes: (0, import_zero.string)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var measurementRangeTable = (0, import_zero.table)("measurement_range").columns({
+  id: (0, import_zero.string)(),
+  wine_type: (0, import_zero.string)(),
+  measurement_type: (0, import_zero.string)(),
+  min_value: (0, import_zero.number)(),
+  max_value: (0, import_zero.number)(),
+  ideal_min: (0, import_zero.number)(),
+  ideal_max: (0, import_zero.number)(),
+  low_warning: (0, import_zero.string)(),
+  high_warning: (0, import_zero.string)(),
+  created_at: (0, import_zero.number)()
+}).primaryKey("id");
+var schema = (0, import_zero.createSchema)({
+  tables: [
+    userTable,
+    vineyardTable,
+    blockTable,
+    vineTable,
+    pruningLogTable,
+    vintageTable,
+    wineTable,
+    stageHistoryTable,
+    taskTemplateTable,
+    taskTable,
+    measurementTable,
+    measurementRangeTable
+  ]
+});
+var builder = (0, import_zero.createBuilder)(schema);
+var permissions = (0, import_zero.definePermissions)(
+  schema,
+  () => {
     return {
-        user: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
-                update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
-                delete: zero_1.ANYONE_CAN,
-            },
-        },
-        vineyard: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
-                update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
-                delete: zero_1.ANYONE_CAN,
-            },
-        },
-        block: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
-                update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
-                delete: zero_1.ANYONE_CAN,
-            },
-        },
-        vine: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
-                update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
-                delete: zero_1.ANYONE_CAN,
-            },
-        },
-        vintage: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
-                update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
-                delete: zero_1.ANYONE_CAN,
-            },
-        },
-        wine: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
-                update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
-                delete: zero_1.ANYONE_CAN,
-            },
-        },
-        stage_history: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
-                update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
-                delete: zero_1.ANYONE_CAN,
-            },
-        },
-        task_template: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
-                update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
-                delete: zero_1.ANYONE_CAN,
-            },
-        },
-        task: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
-                update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
-                delete: zero_1.ANYONE_CAN,
-            },
-        },
-        measurement: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: zero_1.ANYONE_CAN,
-                update: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
-                delete: zero_1.ANYONE_CAN,
-            },
-        },
-        measurement_range: {
-            row: {
-                select: zero_1.ANYONE_CAN,
-                insert: [],
-                update: {
-                    preMutation: [],
-                    postMutation: [],
-                },
-                delete: [],
-            },
-        },
+      user: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      vineyard: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      block: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      vine: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      pruning_log: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      vintage: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      wine: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      stage_history: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      task_template: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      task: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      measurement: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      measurement_range: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: [],
+          update: {
+            preMutation: [],
+            postMutation: []
+          },
+          delete: []
+        }
+      }
     };
+  }
+);
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  builder,
+  permissions,
+  schema
 });

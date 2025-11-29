@@ -50,6 +50,25 @@ const vineTable = table('vine')
     health: string(),
     notes: string(),
     qr_generated: number(),
+    training_method: string().optional(),
+    training_method_other: string().optional(),
+    created_at: number(),
+    updated_at: number(),
+  })
+  .primaryKey('id');
+
+const pruningLogTable = table('pruning_log')
+  .columns({
+    id: string(),
+    user_id: string(),
+    vine_id: string(),
+    date: number(),
+    pruning_type: string(),
+    spurs_left: number().optional(),
+    canes_before: number().optional(),
+    canes_after: number().optional(),
+    notes: string(),
+    photo_id: string().optional(),
     created_at: number(),
     updated_at: number(),
   })
@@ -190,6 +209,7 @@ export const schema = createSchema({
     vineyardTable,
     blockTable,
     vineTable,
+    pruningLogTable,
     vintageTable,
     wineTable,
     stageHistoryTable,
@@ -246,6 +266,17 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
         },
       },
       vine: {
+        row: {
+          select: ANYONE_CAN,
+          insert: ANYONE_CAN,
+          update: {
+            preMutation: ANYONE_CAN,
+            postMutation: ANYONE_CAN,
+          },
+          delete: ANYONE_CAN,
+        },
+      },
+      pruning_log: {
         row: {
           select: ANYONE_CAN,
           insert: ANYONE_CAN,

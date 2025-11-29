@@ -149,3 +149,14 @@ export const taskTemplates = syncedQueryWithContext(
     return builder.task_template;
   }
 );
+
+export const myPruningLogsByVine = syncedQueryWithContext(
+  'myPruningLogsByVine',
+  z.tuple([z.string()]),
+  (userID: string | undefined, vineId: string) => {
+    if (!userID) return builder.pruning_log.where('id', '___never_match___');
+    return builder.pruning_log
+      .where('user_id', userID)
+      .where('vine_id', vineId);
+  }
+);

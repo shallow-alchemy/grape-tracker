@@ -16,6 +16,21 @@ const mockVine = {
   health: 'Good',
   notes: 'Growing well, needs pruning',
   qr_generated: 1,
+  training_method: null,
+  training_method_other: null,
+};
+
+const mockVineWithTrainingMethod = {
+  ...mockVine,
+  id: 'vine-2',
+  training_method: 'BILATERAL_CORDON',
+};
+
+const mockVineWithOtherTrainingMethod = {
+  ...mockVine,
+  id: 'vine-3',
+  training_method: 'OTHER',
+  training_method_other: 'Custom trellis system',
 };
 
 const mockZero = {
@@ -24,8 +39,26 @@ const mockZero = {
       update: rs.fn().mockResolvedValue(undefined),
       delete: rs.fn().mockResolvedValue(undefined),
     },
+    pruning_log: {
+      insert: rs.fn().mockResolvedValue(undefined),
+    },
   },
 };
+
+const mockPruningLogs = [
+  {
+    id: 'pruning-1',
+    vine_id: 'vine-1',
+    date: new Date('2024-01-15').getTime(),
+    pruning_type: 'dormant',
+    spurs_left: 8,
+    canes_before: 12,
+    canes_after: 6,
+    notes: 'Winter pruning complete',
+    created_at: Date.now(),
+    updated_at: Date.now(),
+  },
+];
 
 rs.mock('./vineyard-hooks', () => ({
   useBlocks: () => [
@@ -33,6 +66,7 @@ rs.mock('./vineyard-hooks', () => ({
     { id: 'block-2', name: 'South Block' },
   ],
   useVineyard: () => ({ id: 'vineyard-1', name: 'Test Vineyard' }),
+  usePruningLogs: () => mockPruningLogs,
 }));
 
 rs.mock('../contexts/ZeroContext', () => ({
@@ -531,5 +565,125 @@ describe('VineDetailsView', () => {
 
       expect(navigateBack).toHaveBeenCalled();
     });
+  });
+
+  describe('training method', () => {
+    test('shows training and pruning section', () => {
+      render(
+        <VineDetailsView
+          vine={mockVine}
+          onUpdateSuccess={rs.fn()}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      expect(screen.getByText('TRAINING & PRUNING')).toBeInTheDocument();
+    });
+
+    test('shows training method label when set', () => {
+      render(
+        <VineDetailsView
+          vine={mockVineWithTrainingMethod}
+          onUpdateSuccess={rs.fn()}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      expect(screen.getByText('Bilateral Cordon')).toBeInTheDocument();
+    });
+
+    test('shows custom method field when OTHER is selected', () => {
+      render(
+        <VineDetailsView
+          vine={mockVineWithOtherTrainingMethod}
+          onUpdateSuccess={rs.fn()}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      expect(screen.getByText('CUSTOM METHOD')).toBeInTheDocument();
+      expect(screen.getByText('Custom trellis system')).toBeInTheDocument();
+    });
+
+    test.todo('user can change training method via inline edit');
+  });
+
+  describe('pruning log', () => {
+    test('shows log pruning button', () => {
+      render(
+        <VineDetailsView
+          vine={mockVine}
+          onUpdateSuccess={rs.fn()}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: /log pruning/i })).toBeInTheDocument();
+    });
+
+    test('shows recent pruning entries', () => {
+      render(
+        <VineDetailsView
+          vine={mockVine}
+          onUpdateSuccess={rs.fn()}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      expect(screen.getByText('Dormant')).toBeInTheDocument();
+      expect(screen.getByText('8 spurs')).toBeInTheDocument();
+    });
+
+    test('shows canes before and after when present', () => {
+      render(
+        <VineDetailsView
+          vine={mockVine}
+          onUpdateSuccess={rs.fn()}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      expect(screen.getByText(/12 → 6/)).toBeInTheDocument();
+    });
+
+    test('shows pruning notes when present', () => {
+      render(
+        <VineDetailsView
+          vine={mockVine}
+          onUpdateSuccess={rs.fn()}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      expect(screen.getByText('Winter pruning complete')).toBeInTheDocument();
+    });
+
+    test('opens pruning modal when log button clicked', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <VineDetailsView
+          vine={mockVine}
+          onUpdateSuccess={rs.fn()}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      const logButton = screen.getByRole('button', { name: /log pruning/i });
+      await user.click(logButton);
+
+      // Modal shows with form heading
+      expect(screen.getByRole('heading', { name: 'LOG PRUNING' })).toBeInTheDocument();
+    });
+
+    test.todo('closes pruning modal after successful submission');
   });
 });

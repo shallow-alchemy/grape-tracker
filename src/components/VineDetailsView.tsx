@@ -3,8 +3,9 @@ import QRCode from 'qrcode';
 import { FiSettings } from 'react-icons/fi';
 import { Modal } from './Modal';
 import { InlineEdit } from './InlineEdit';
+import { AddPruningModal } from './AddPruningModal';
 import { useZero } from '../contexts/ZeroContext';
-import { useBlocks, useVineyard } from './vineyard-hooks';
+import { useBlocks, useVineyard, usePruningLogs } from './vineyard-hooks';
 import { transformBlockData } from './vineyard-utils';
 import { generate3MF } from './vine-stake-3d';
 import styles from '../App.module.css';
@@ -16,6 +17,33 @@ const HEALTH_OPTIONS = [
   { value: 'POOR', label: 'POOR' },
   { value: 'DEAD', label: 'DEAD' },
 ];
+
+const TRAINING_METHOD_OPTIONS = [
+  { value: '', label: 'Not Set' },
+  { value: 'HEAD_TRAINING', label: 'Head Training (Goblet)' },
+  { value: 'BILATERAL_CORDON', label: 'Bilateral Cordon' },
+  { value: 'VERTICAL_CORDON', label: 'Vertical Cordon' },
+  { value: 'FOUR_ARM_KNIFFEN', label: 'Four-Arm Kniffen' },
+  { value: 'GENEVA_DOUBLE_CURTAIN', label: 'Geneva Double Curtain (GDC)' },
+  { value: 'UMBRELLA_KNIFFEN', label: 'Umbrella Kniffen' },
+  { value: 'CANE_PRUNED', label: 'Cane Pruned (Guyot)' },
+  { value: 'VSP', label: 'Vertical Shoot Positioning (VSP)' },
+  { value: 'SCOTT_HENRY', label: 'Scott-Henry' },
+  { value: 'LYRE', label: 'Lyre (U-Shape)' },
+  { value: 'OTHER', label: 'Other (Custom)' },
+];
+
+const PRUNING_TYPE_LABELS: Record<string, string> = {
+  dormant: 'Dormant',
+  summer: 'Summer',
+  corrective: 'Corrective',
+  training: 'Training',
+};
+
+const formatPruningDate = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 const calculateAge = (plantingDate: number | undefined): string => {
   if (!plantingDate) return 'Unknown';
@@ -52,11 +80,16 @@ export const VineDetailsView = ({
   const [showQRModal, setShowQRModal] = useState(false);
   const [showVineSettingsModal, setShowVineSettingsModal] = useState(false);
   const [showDeleteVineConfirmModal, setShowDeleteVineConfirmModal] = useState(false);
+  const [showAddPruningModal, setShowAddPruningModal] = useState(false);
 
   const zero = useZero();
   const blocksData = useBlocks();
   const vineyardData = useVineyard();
+  const pruningLogs = usePruningLogs(vine?.id || '');
   const blocks = blocksData.map(transformBlockData);
+
+  // Sort pruning logs by date descending (most recent first)
+  const sortedPruningLogs = [...pruningLogs].sort((a, b) => b.date - a.date);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const vineUrl = vine?.id ? `${window.location.origin}/vineyard/vine/${vine.id}` : '';
@@ -262,7 +295,83 @@ export const VineDetailsView = ({
         </div>
         <div className={styles.vineDetailsSection}>
           <h2 className={styles.sectionTitle}>TRAINING & PRUNING</h2>
-          <p className={styles.sectionPlaceholder}>No notes yet</p>
+          <InlineEdit
+            label="TRAINING METHOD"
+            value={vine?.training_method || ''}
+            type="select"
+            options={TRAINING_METHOD_OPTIONS}
+            formatDisplay={(method) => {
+              if (!method) return '';
+              const option = TRAINING_METHOD_OPTIONS.find((o) => o.value === method);
+              return option?.label || method;
+            }}
+            onSave={async (newMethod) => {
+              await zero.mutate.vine.update({
+                id: vine.id,
+                training_method: newMethod || null,
+                training_method_other: newMethod === 'OTHER' ? vine?.training_method_other : null,
+                updated_at: Date.now(),
+              });
+              onUpdateSuccess('Training method updated');
+            }}
+          />
+          {vine?.training_method === 'OTHER' && (
+            <InlineEdit
+              label="CUSTOM METHOD"
+              value={vine?.training_method_other || ''}
+              type="text"
+              placeholder="Describe your training system..."
+              onSave={async (newDescription) => {
+                await zero.mutate.vine.update({
+                  id: vine.id,
+                  training_method_other: newDescription,
+                  updated_at: Date.now(),
+                });
+                onUpdateSuccess('Custom training method updated');
+              }}
+            />
+          )}
+          <div className={styles.detailRow} style={{ marginTop: 'var(--space-4)' }}>
+            <button
+              type="button"
+              className={styles.formButtonSecondary}
+              onClick={() => setShowAddPruningModal(true)}
+            >
+              LOG PRUNING
+            </button>
+          </div>
+          {sortedPruningLogs.length > 0 ? (
+            <div className={styles.pruningLogList} style={{ marginTop: 'var(--space-3)' }}>
+              {sortedPruningLogs.slice(0, 5).map((log) => (
+                <div key={log.id} className={styles.pruningLogEntry}>
+                  <div className={styles.pruningLogHeader}>
+                    <span className={styles.pruningLogDate}>{formatPruningDate(log.date)}</span>
+                    <span className={styles.pruningLogType}>{PRUNING_TYPE_LABELS[log.pruning_type] || log.pruning_type}</span>
+                  </div>
+                  {(log.spurs_left != null || log.canes_before != null || log.canes_after != null) && (
+                    <div className={styles.pruningLogStats}>
+                      {log.spurs_left != null && <span>{log.spurs_left} spurs</span>}
+                      {log.canes_before != null && log.canes_after != null && (
+                        <span>Canes: {log.canes_before} → {log.canes_after}</span>
+                      )}
+                    </div>
+                  )}
+                  {log.notes && (
+                    <div className={styles.pruningLogNotes}>{log.notes}</div>
+                  )}
+                </div>
+              ))}
+              {sortedPruningLogs.length > 5 && (
+                <p className={styles.sectionPlaceholder}>
+                  + {sortedPruningLogs.length - 5} more entries
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className={styles.sectionPlaceholder} style={{ marginTop: 'var(--space-3)' }}>
+              No pruning records yet
+            </p>
+          )}
         </div>
         <div className={styles.vineDetailsSection}>
           <h2 className={styles.sectionTitle}>DISEASE NOTES</h2>
@@ -500,6 +609,13 @@ export const VineDetailsView = ({
           </div>
         )}
       </Modal>
+
+      <AddPruningModal
+        isOpen={showAddPruningModal}
+        onClose={() => setShowAddPruningModal(false)}
+        onSuccess={onUpdateSuccess}
+        vineId={vine?.id || ''}
+      />
     </div>
   );
 };

@@ -42,7 +42,7 @@ The manual phase is designed to capture rich data that enables powerful AI featu
 {
   training_method: 'HEAD_TRAINING' | 'BILATERAL_CORDON' | 'VERTICAL_CORDON' |
                    'FOUR_ARM_KNIFFEN' | 'GENEVA_DOUBLE_CURTAIN' | 'UMBRELLA_KNIFFEN' |
-                   'CANE_PRUNED' | 'VSP' | 'OTHER' | null,
+                   'CANE_PRUNED' | 'VSP' | 'SCOTT_HENRY' | 'LYRE' | 'OTHER' | null,
   training_method_other: string | null,  // Description when method = 'OTHER'
 }
 ```
@@ -59,6 +59,8 @@ The manual phase is designed to capture rich data that enables powerful AI featu
 | `UMBRELLA_KNIFFEN` | Umbrella Kniffen | `training/umbrella-system.md` |
 | `CANE_PRUNED` | Cane Pruned (Guyot) | `training/cane-pruning.md` |
 | `VSP` | Vertical Shoot Positioning | (common, well-known) |
+| `SCOTT_HENRY` | Scott-Henry | `training/scott-henry.md` |
+| `LYRE` | Lyre (U-Shape) | `training/lyre-system.md` |
 | `OTHER` | Other (Custom) | User-provided description |
 
 #### Pruning Log Table (New)

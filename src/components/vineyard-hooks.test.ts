@@ -1,6 +1,6 @@
 import { test, describe, expect, rs, afterEach } from '@rstest/core';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useVines, useBlocks, useVineyard } from './vineyard-hooks';
+import { useVines, useBlocks, useVineyard, usePruningLogs } from './vineyard-hooks';
 
 rs.mock('@clerk/clerk-react', () => ({
   useUser: () => ({ user: { id: 'test-user-id' } }),
@@ -45,6 +45,22 @@ const mockVineyardData = [
   },
 ];
 
+const mockPruningLogData = [
+  {
+    id: 'pruning-1',
+    user_id: 'test-user-id',
+    vine_id: 'vine-1',
+    date: new Date('2024-01-15').getTime(),
+    pruning_type: 'dormant',
+    spurs_left: 8,
+    canes_before: 12,
+    canes_after: 6,
+    notes: 'Winter pruning',
+    created_at: new Date().getTime(),
+    updated_at: new Date().getTime(),
+  },
+];
+
 rs.mock('../contexts/ZeroContext', () => ({
   useZero: rs.fn(() => ({})),
 }));
@@ -61,6 +77,9 @@ rs.mock('@rocicorp/zero/react', () => ({
     }
     if (queryName === 'myVineyards') {
       return [mockVineyardData];
+    }
+    if (queryName === 'myPruningLogsByVine') {
+      return [mockPruningLogData];
     }
     return [[]];
   }),
@@ -141,5 +160,43 @@ describe('vineyard-hooks', () => {
     });
 
     test.todo('cleans up subscription on unmount');
+  });
+
+  describe('usePruningLogs', () => {
+    test('returns pruning log data for specified vine', async () => {
+      const { result } = renderHook(() => usePruningLogs('vine-1'));
+
+      await waitFor(() => {
+        expect(result.current).toHaveLength(1);
+        expect(result.current[0].pruning_type).toBe('dormant');
+        expect(result.current[0].vine_id).toBe('vine-1');
+      });
+    });
+
+    test('returns empty array when no pruning logs exist', async () => {
+      const { useQuery } = require('@rocicorp/zero/react');
+      useQuery.mockReturnValueOnce([[]]);
+
+      const { result } = renderHook(() => usePruningLogs('vine-2'));
+
+      await waitFor(() => {
+        expect(result.current).toEqual([]);
+      });
+    });
+
+    test('includes all pruning log fields', async () => {
+      const { result } = renderHook(() => usePruningLogs('vine-1'));
+
+      await waitFor(() => {
+        const log = result.current[0];
+        expect(log.id).toBe('pruning-1');
+        expect(log.spurs_left).toBe(8);
+        expect(log.canes_before).toBe(12);
+        expect(log.canes_after).toBe(6);
+        expect(log.notes).toBe('Winter pruning');
+      });
+    });
+
+    test.todo('updates when new pruning logs are added');
   });
 });

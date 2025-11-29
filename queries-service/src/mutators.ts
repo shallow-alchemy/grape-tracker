@@ -209,6 +209,8 @@ export const createMutators = (authData: AuthData) => {
           health: string;
           notes: string;
           qr_generated: number;
+          training_method?: string | null;
+          training_method_other?: string | null;
           created_at: number;
           updated_at: number;
         }
@@ -230,6 +232,8 @@ export const createMutators = (authData: AuthData) => {
           health?: string;
           notes?: string;
           qr_generated?: number;
+          training_method?: string | null;
+          training_method_other?: string | null;
           updated_at?: number;
         }
       ) => {
@@ -247,6 +251,62 @@ export const createMutators = (authData: AuthData) => {
         const userID = requireAuth();
         await verifyOwnership(tx, 'vine', args.id, userID);
         await tx.mutate.vine.delete(args);
+      },
+    },
+
+    pruning_log: {
+      insert: async (
+        tx: Transaction<Schema>,
+        args: {
+          id: string;
+          user_id: string;
+          vine_id: string;
+          date: number;
+          pruning_type: string;
+          spurs_left?: number | null;
+          canes_before?: number | null;
+          canes_after?: number | null;
+          notes: string;
+          photo_id?: string | null;
+          created_at: number;
+          updated_at: number;
+        }
+      ) => {
+        const userID = requireAuth();
+        await tx.mutate.pruning_log.insert({
+          ...args,
+          user_id: userID,
+        });
+      },
+      update: async (
+        tx: Transaction<Schema>,
+        args: {
+          id: string;
+          vine_id?: string;
+          date?: number;
+          pruning_type?: string;
+          spurs_left?: number | null;
+          canes_before?: number | null;
+          canes_after?: number | null;
+          notes?: string;
+          photo_id?: string | null;
+          updated_at?: number;
+        }
+      ) => {
+        const userID = requireAuth();
+        await verifyOwnership(tx, 'pruning_log', args.id, userID);
+        await tx.mutate.pruning_log.update({
+          ...args,
+          updated_at: Date.now(),
+        });
+      },
+      delete: async (
+        tx: Transaction<Schema>,
+        args: { id: string }
+      ) => {
+        const userID = requireAuth();
+        await verifyOwnership(tx, 'pruning_log', args.id, userID);
+        await tx.mutate.pruning_log.delete(args);
       },
     },
 

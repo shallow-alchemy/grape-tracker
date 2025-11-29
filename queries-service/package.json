@@ -2,8 +2,8 @@
   "name": "queries-service",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
+    "dev": "yarn sync-schema && tsx watch src/index.ts",
+    "start": "yarn sync-schema && tsx src/index.ts",
     "sync-schema": "cp ../schema.ts ./schema.ts",
     "test": "npx vitest run",
     "test:watch": "npx vitest"

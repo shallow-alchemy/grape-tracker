@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
-import { myVines, myBlocks, myVineyards, myVintages, myWines, myMeasurements, myTasks, activeWines } from '../shared/queries';
+import { myVines, myBlocks, myVineyards, myVintages, myWines, myMeasurements, myTasks, activeWines, myPruningLogsByVine } from '../shared/queries';
 import { type VineDataRaw, type BlockDataRaw, type VineyardData } from './vineyard-types';
 
 export const useVines = () => {
@@ -107,4 +107,32 @@ export const useActiveWines = () => {
   }
 
   return activeWinesData && activeWinesData.length > 0 ? activeWinesData : lastActiveWinesRef.current;
+};
+
+export type PruningLogData = {
+  id: string;
+  user_id: string;
+  vine_id: string;
+  date: number;
+  pruning_type: string;
+  spurs_left: number | null;
+  canes_before: number | null;
+  canes_after: number | null;
+  notes: string;
+  photo_id: string | null;
+  created_at: number;
+  updated_at: number;
+};
+
+export const usePruningLogs = (vineId: string) => {
+  const { user } = useUser();
+  const [pruningData] = useQuery(myPruningLogsByVine(user?.id, vineId) as any) as any;
+  const lastPruningRef = useRef<PruningLogData[]>([]);
+
+  // Remember last valid data to prevent flash during Zero reconnection
+  if (pruningData && pruningData.length > 0) {
+    lastPruningRef.current = pruningData;
+  }
+
+  return (pruningData && pruningData.length > 0 ? pruningData : lastPruningRef.current) as PruningLogData[];
 };

@@ -31,6 +31,7 @@ import {
   myMeasurements,
   myMeasurementsByEntity,
   measurementRanges,
+  myPruningLogsByVine,
 } from './queries.js';
 
 const app = new Hono();
@@ -73,6 +74,7 @@ const validatedQueries = {
   [myMeasurements.queryName]: withValidation(myMeasurements),
   [myMeasurementsByEntity.queryName]: withValidation(myMeasurementsByEntity),
   [measurementRanges.queryName]: withValidation(measurementRanges),
+  [myPruningLogsByVine.queryName]: withValidation(myPruningLogsByVine),
 };
 
 // Extract user ID from request headers

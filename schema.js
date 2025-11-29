@@ -49,6 +49,24 @@ var vineTable = (0, zero_1.table)('vine')
     health: (0, zero_1.string)(),
     notes: (0, zero_1.string)(),
     qr_generated: (0, zero_1.number)(),
+    training_method: (0, zero_1.string)().optional(),
+    training_method_other: (0, zero_1.string)().optional(),
+    created_at: (0, zero_1.number)(),
+    updated_at: (0, zero_1.number)(),
+})
+    .primaryKey('id');
+var pruningLogTable = (0, zero_1.table)('pruning_log')
+    .columns({
+    id: (0, zero_1.string)(),
+    user_id: (0, zero_1.string)(),
+    vine_id: (0, zero_1.string)(),
+    date: (0, zero_1.number)(),
+    pruning_type: (0, zero_1.string)(),
+    spurs_left: (0, zero_1.number)().optional(),
+    canes_before: (0, zero_1.number)().optional(),
+    canes_after: (0, zero_1.number)().optional(),
+    notes: (0, zero_1.string)(),
+    photo_id: (0, zero_1.string)().optional(),
     created_at: (0, zero_1.number)(),
     updated_at: (0, zero_1.number)(),
 })
@@ -181,6 +199,7 @@ exports.schema = (0, zero_1.createSchema)({
         vineyardTable,
         blockTable,
         vineTable,
+        pruningLogTable,
         vintageTable,
         wineTable,
         stageHistoryTable,
@@ -200,10 +219,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         user: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
+                insert: zero_1.ANYONE_CAN,
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -214,10 +230,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         vineyard: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
+                insert: zero_1.ANYONE_CAN,
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -228,10 +241,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         block: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
+                insert: zero_1.ANYONE_CAN,
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -242,10 +252,18 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         vine: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: {
+                insert: zero_1.ANYONE_CAN,
+                update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
                 },
+                delete: zero_1.ANYONE_CAN,
+            },
+        },
+        pruning_log: {
+            row: {
+                select: zero_1.ANYONE_CAN,
+                insert: zero_1.ANYONE_CAN,
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -256,10 +274,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         vintage: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
+                insert: zero_1.ANYONE_CAN,
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -270,10 +285,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         wine: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
+                insert: zero_1.ANYONE_CAN,
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -284,10 +296,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         stage_history: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
+                insert: zero_1.ANYONE_CAN,
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -298,10 +307,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         task_template: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
+                insert: zero_1.ANYONE_CAN,
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -312,10 +318,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         task: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
+                insert: zero_1.ANYONE_CAN,
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
@@ -326,10 +329,7 @@ exports.permissions = (0, zero_1.definePermissions)(exports.schema, function () 
         measurement: {
             row: {
                 select: zero_1.ANYONE_CAN,
-                insert: {
-                    preMutation: zero_1.ANYONE_CAN,
-                    postMutation: zero_1.ANYONE_CAN,
-                },
+                insert: zero_1.ANYONE_CAN,
                 update: {
                     preMutation: zero_1.ANYONE_CAN,
                     postMutation: zero_1.ANYONE_CAN,
