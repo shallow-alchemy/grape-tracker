@@ -533,6 +533,226 @@ describe('AddVineModal', () => {
     });
   });
 
+  describe('training method', () => {
+    test('displays training method dropdown', () => {
+      render(
+        <AddVineModal
+          isOpen={true}
+          onClose={rs.fn()}
+          onSuccess={rs.fn()}
+        />
+      );
+
+      expect(screen.getByText('TRAINING METHOD (OPTIONAL)')).toBeInTheDocument();
+    });
+
+    test('shows all training method options', () => {
+      render(
+        <AddVineModal
+          isOpen={true}
+          onClose={rs.fn()}
+          onSuccess={rs.fn()}
+        />
+      );
+
+      expect(screen.getByText('Not Set')).toBeInTheDocument();
+      expect(screen.getByText('Bilateral Cordon')).toBeInTheDocument();
+      expect(screen.getByText('Vertical Shoot Positioning (VSP)')).toBeInTheDocument();
+      expect(screen.getByText('Scott-Henry')).toBeInTheDocument();
+      expect(screen.getByText('Lyre (U-Shape)')).toBeInTheDocument();
+      expect(screen.getByText('Other (Custom)')).toBeInTheDocument();
+    });
+
+    test('creates vine with training method when selected', async () => {
+      const user = userEvent.setup();
+      const onClose = rs.fn();
+      const onSuccess = rs.fn();
+
+      render(
+        <AddVineModal
+          isOpen={true}
+          onClose={onClose}
+          onSuccess={onSuccess}
+        />
+      );
+
+      const blockSelect = screen.getAllByRole('combobox')[0];
+      await user.selectOptions(blockSelect, 'block-1');
+
+      const varietySelect = screen.getAllByRole('combobox')[1];
+      await user.selectOptions(varietySelect, 'Cabernet Sauvignon');
+
+      // Select training method - it's the 4th combobox (block, variety, health, training)
+      const trainingSelect = screen.getAllByRole('combobox')[3];
+      await user.selectOptions(trainingSelect, 'VSP');
+
+      const submitButton = screen.getByRole('button', { name: /create vine/i });
+      await user.click(submitButton);
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(mockVineInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          training_method: 'VSP',
+          training_method_other: null,
+        })
+      );
+    });
+
+    test('creates vine with null training method when not selected', async () => {
+      const user = userEvent.setup();
+      const onClose = rs.fn();
+      const onSuccess = rs.fn();
+
+      render(
+        <AddVineModal
+          isOpen={true}
+          onClose={onClose}
+          onSuccess={onSuccess}
+        />
+      );
+
+      const blockSelect = screen.getAllByRole('combobox')[0];
+      await user.selectOptions(blockSelect, 'block-1');
+
+      const varietySelect = screen.getAllByRole('combobox')[1];
+      await user.selectOptions(varietySelect, 'Cabernet Sauvignon');
+
+      const submitButton = screen.getByRole('button', { name: /create vine/i });
+      await user.click(submitButton);
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(mockVineInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          training_method: null,
+          training_method_other: null,
+        })
+      );
+    });
+
+    test('shows custom training field when OTHER is selected', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <AddVineModal
+          isOpen={true}
+          onClose={rs.fn()}
+          onSuccess={rs.fn()}
+        />
+      );
+
+      // Initially, custom field should not be visible
+      expect(screen.queryByText('CUSTOM TRAINING METHOD')).not.toBeInTheDocument();
+
+      // Select OTHER
+      const trainingSelect = screen.getAllByRole('combobox')[3];
+      await user.selectOptions(trainingSelect, 'OTHER');
+
+      // Now custom field should be visible
+      expect(screen.getByText('CUSTOM TRAINING METHOD')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Describe your training system...')).toBeInTheDocument();
+    });
+
+    test('hides custom training field when switching from OTHER', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <AddVineModal
+          isOpen={true}
+          onClose={rs.fn()}
+          onSuccess={rs.fn()}
+        />
+      );
+
+      // Select OTHER
+      const trainingSelect = screen.getAllByRole('combobox')[3];
+      await user.selectOptions(trainingSelect, 'OTHER');
+
+      expect(screen.getByText('CUSTOM TRAINING METHOD')).toBeInTheDocument();
+
+      // Switch to a different option
+      await user.selectOptions(trainingSelect, 'VSP');
+
+      expect(screen.queryByText('CUSTOM TRAINING METHOD')).not.toBeInTheDocument();
+    });
+
+    test('creates vine with custom training description when OTHER is selected', async () => {
+      const user = userEvent.setup();
+      const onClose = rs.fn();
+      const onSuccess = rs.fn();
+
+      render(
+        <AddVineModal
+          isOpen={true}
+          onClose={onClose}
+          onSuccess={onSuccess}
+        />
+      );
+
+      const blockSelect = screen.getAllByRole('combobox')[0];
+      await user.selectOptions(blockSelect, 'block-1');
+
+      const varietySelect = screen.getAllByRole('combobox')[1];
+      await user.selectOptions(varietySelect, 'Cabernet Sauvignon');
+
+      // Select OTHER
+      const trainingSelect = screen.getAllByRole('combobox')[3];
+      await user.selectOptions(trainingSelect, 'OTHER');
+
+      // Fill in custom description
+      const customInput = screen.getByPlaceholderText('Describe your training system...');
+      await user.type(customInput, 'My custom trellis system');
+
+      const submitButton = screen.getByRole('button', { name: /create vine/i });
+      await user.click(submitButton);
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(mockVineInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          training_method: 'OTHER',
+          training_method_other: 'My custom trellis system',
+        })
+      );
+    });
+
+    test('resets custom training state when modal is cancelled', async () => {
+      const user = userEvent.setup();
+      const onClose = rs.fn();
+
+      const { rerender } = render(
+        <AddVineModal
+          isOpen={true}
+          onClose={onClose}
+          onSuccess={rs.fn()}
+        />
+      );
+
+      // Select OTHER
+      const trainingSelect = screen.getAllByRole('combobox')[3];
+      await user.selectOptions(trainingSelect, 'OTHER');
+
+      expect(screen.getByText('CUSTOM TRAINING METHOD')).toBeInTheDocument();
+
+      // Click cancel
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      await user.click(cancelButton);
+
+      // Re-open modal
+      rerender(
+        <AddVineModal
+          isOpen={true}
+          onClose={onClose}
+          onSuccess={rs.fn()}
+        />
+      );
+
+      // Custom field should not be visible (state was reset)
+      expect(screen.queryByText('CUSTOM TRAINING METHOD')).not.toBeInTheDocument();
+    });
+  });
+
   describe('optional fields', () => {
     test('creates vine with notes when provided', async () => {
       const user = userEvent.setup();

@@ -4,8 +4,9 @@ import { FiSettings } from 'react-icons/fi';
 import { Modal } from './Modal';
 import { InlineEdit } from './InlineEdit';
 import { AddPruningModal } from './AddPruningModal';
+import { EditPruningModal } from './EditPruningModal';
 import { useZero } from '../contexts/ZeroContext';
-import { useBlocks, useVineyard, usePruningLogs } from './vineyard-hooks';
+import { useBlocks, useVineyard, usePruningLogs, type PruningLogData } from './vineyard-hooks';
 import { transformBlockData } from './vineyard-utils';
 import { generate3MF } from './vine-stake-3d';
 import styles from '../App.module.css';
@@ -81,6 +82,7 @@ export const VineDetailsView = ({
   const [showVineSettingsModal, setShowVineSettingsModal] = useState(false);
   const [showDeleteVineConfirmModal, setShowDeleteVineConfirmModal] = useState(false);
   const [showAddPruningModal, setShowAddPruningModal] = useState(false);
+  const [editingPruningLog, setEditingPruningLog] = useState<PruningLogData | null>(null);
 
   const zero = useZero();
   const blocksData = useBlocks();
@@ -342,8 +344,14 @@ export const VineDetailsView = ({
           </div>
           {sortedPruningLogs.length > 0 ? (
             <div className={styles.pruningLogList} style={{ marginTop: 'var(--space-3)' }}>
-              {sortedPruningLogs.slice(0, 5).map((log) => (
-                <div key={log.id} className={styles.pruningLogEntry}>
+              {sortedPruningLogs.map((log) => (
+                <button
+                  key={log.id}
+                  type="button"
+                  className={styles.pruningLogEntry}
+                  onClick={() => setEditingPruningLog(log)}
+                  title="Click to edit"
+                >
                   <div className={styles.pruningLogHeader}>
                     <span className={styles.pruningLogDate}>{formatPruningDate(log.date)}</span>
                     <span className={styles.pruningLogType}>{PRUNING_TYPE_LABELS[log.pruning_type] || log.pruning_type}</span>
@@ -359,13 +367,8 @@ export const VineDetailsView = ({
                   {log.notes && (
                     <div className={styles.pruningLogNotes}>{log.notes}</div>
                   )}
-                </div>
+                </button>
               ))}
-              {sortedPruningLogs.length > 5 && (
-                <p className={styles.sectionPlaceholder}>
-                  + {sortedPruningLogs.length - 5} more entries
-                </p>
-              )}
             </div>
           ) : (
             <p className={styles.sectionPlaceholder} style={{ marginTop: 'var(--space-3)' }}>
@@ -615,6 +618,13 @@ export const VineDetailsView = ({
         onClose={() => setShowAddPruningModal(false)}
         onSuccess={onUpdateSuccess}
         vineId={vine?.id || ''}
+      />
+
+      <EditPruningModal
+        isOpen={editingPruningLog !== null}
+        onClose={() => setEditingPruningLog(null)}
+        onSuccess={onUpdateSuccess}
+        pruningLog={editingPruningLog}
       />
     </div>
   );

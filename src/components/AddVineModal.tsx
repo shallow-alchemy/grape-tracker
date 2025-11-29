@@ -7,6 +7,21 @@ import { useVines, useBlocks, useVineyard } from './vineyard-hooks';
 import { transformBlockData, validateVineForm, generateBatchVineIds } from './vineyard-utils';
 import styles from '../App.module.css';
 
+const TRAINING_METHOD_OPTIONS = [
+  { value: '', label: 'Not Set' },
+  { value: 'HEAD_TRAINING', label: 'Head Training (Goblet)' },
+  { value: 'BILATERAL_CORDON', label: 'Bilateral Cordon' },
+  { value: 'VERTICAL_CORDON', label: 'Vertical Cordon' },
+  { value: 'FOUR_ARM_KNIFFEN', label: 'Four-Arm Kniffen' },
+  { value: 'GENEVA_DOUBLE_CURTAIN', label: 'Geneva Double Curtain (GDC)' },
+  { value: 'UMBRELLA_KNIFFEN', label: 'Umbrella Kniffen' },
+  { value: 'CANE_PRUNED', label: 'Cane Pruned (Guyot)' },
+  { value: 'VSP', label: 'Vertical Shoot Positioning (VSP)' },
+  { value: 'SCOTT_HENRY', label: 'Scott-Henry' },
+  { value: 'LYRE', label: 'Lyre (U-Shape)' },
+  { value: 'OTHER', label: 'Other (Custom)' },
+];
+
 type AddVineModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -20,6 +35,7 @@ export const AddVineModal = ({
 }: AddVineModalProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCustomTraining, setShowCustomTraining] = useState(false);
 
   const { user } = useUser();
   const zero = useZero();
@@ -40,6 +56,9 @@ export const AddVineModal = ({
         onSubmit={async (e) => {
           e.preventDefault();
           const formData = new FormData(e.currentTarget);
+          const trainingMethod = formData.get('trainingMethod') as string;
+          const trainingMethodOther = formData.get('trainingMethodOther') as string;
+
           const vineData: VineFormData = {
             block: formData.get('block') as string,
             variety: formData.get('variety') as string,
@@ -74,6 +93,8 @@ export const AddVineModal = ({
                 health: vineData.health,
                 notes: vineData.notes || '',
                 qr_generated: 0,
+                training_method: trainingMethod || null,
+                training_method_other: trainingMethod === 'OTHER' ? trainingMethodOther : null,
                 created_at: now,
                 updated_at: now,
               });
@@ -176,6 +197,33 @@ export const AddVineModal = ({
           {formErrors.health && <div className={styles.formError}>{formErrors.health}</div>}
         </div>
         <div className={styles.formGroup}>
+          <label className={styles.formLabel}>TRAINING METHOD (OPTIONAL)</label>
+          <select
+            name="trainingMethod"
+            className={styles.formSelect}
+            defaultValue=""
+            onChange={(e) => setShowCustomTraining(e.target.value === 'OTHER')}
+          >
+            {TRAINING_METHOD_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <div className={styles.formHint}>How vines are trained on trellis/support</div>
+        </div>
+        {showCustomTraining && (
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>CUSTOM TRAINING METHOD</label>
+            <input
+              type="text"
+              name="trainingMethodOther"
+              className={styles.formInput}
+              placeholder="Describe your training system..."
+            />
+          </div>
+        )}
+        <div className={styles.formGroup}>
           <label className={styles.formLabel}>PLANTING NOTES (OPTIONAL)</label>
           <textarea
             name="notes"
@@ -193,6 +241,7 @@ export const AddVineModal = ({
               onClose();
               setFormErrors({});
               setIsSubmitting(false);
+              setShowCustomTraining(false);
             }}
             disabled={isSubmitting}
           >

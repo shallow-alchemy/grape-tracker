@@ -49,7 +49,7 @@ const mockPruningLogs = [
   {
     id: 'pruning-1',
     vine_id: 'vine-1',
-    date: new Date('2024-01-15').getTime(),
+    date: new Date('2024-01-15T12:00:00').getTime(),  // Use noon to avoid timezone issues
     pruning_type: 'dormant',
     spurs_left: 8,
     canes_before: 12,
@@ -665,7 +665,7 @@ describe('VineDetailsView', () => {
       expect(screen.getByText('Winter pruning complete')).toBeInTheDocument();
     });
 
-    test('opens pruning modal when log button clicked', async () => {
+    test('opens add pruning modal when log button clicked', async () => {
       const user = userEvent.setup();
 
       render(
@@ -682,6 +682,44 @@ describe('VineDetailsView', () => {
 
       // Modal shows with form heading
       expect(screen.getByRole('heading', { name: 'LOG PRUNING' })).toBeInTheDocument();
+    });
+
+    test('opens edit pruning modal when entry clicked', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <VineDetailsView
+          vine={mockVine}
+          onUpdateSuccess={rs.fn()}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      // Click on the pruning entry (find it by the date text inside)
+      const pruningDate = screen.getByText('Jan 15, 2024');
+      const pruningEntry = pruningDate.closest('button');
+      await user.click(pruningEntry!);
+
+      // Edit modal shows
+      expect(screen.getByRole('heading', { name: 'EDIT PRUNING LOG' })).toBeInTheDocument();
+    });
+
+    test('pruning entries are clickable buttons', () => {
+      render(
+        <VineDetailsView
+          vine={mockVine}
+          onUpdateSuccess={rs.fn()}
+          onDeleteSuccess={rs.fn()}
+          navigateBack={rs.fn()}
+        />
+      );
+
+      // Find the pruning entry by date text and verify it's in a button
+      const pruningDate = screen.getByText('Jan 15, 2024');
+      const pruningEntry = pruningDate.closest('button');
+      expect(pruningEntry).not.toBeNull();
+      expect(pruningEntry!.tagName).toBe('BUTTON');
     });
 
     test.todo('closes pruning modal after successful submission');
