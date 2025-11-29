@@ -68,6 +68,7 @@ type VineDetailsViewProps = {
   onUpdateSuccess: (message: string) => void;
   onDeleteSuccess: (message: string) => void;
   navigateBack: () => void;
+  originBlockId?: string;
 };
 
 export const VineDetailsView = ({
@@ -75,6 +76,7 @@ export const VineDetailsView = ({
   onUpdateSuccess,
   onDeleteSuccess,
   navigateBack,
+  originBlockId,
 }: VineDetailsViewProps) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,6 +99,16 @@ export const VineDetailsView = ({
   const vineUrl = vine?.id ? `${window.location.origin}/vineyard/vine/${vine.id}` : '';
   const vineDisplayId = vine?.sequence_number != null ? vine.sequence_number.toString().padStart(3, '0') : '';
 
+  // Compute back button label based on navigation origin
+  const getBackLabel = () => {
+    if (originBlockId) {
+      const originBlock = blocks.find((b) => b.id === originBlockId);
+      return originBlock ? `BACK TO ${originBlock.name.toUpperCase()}` : 'BACK TO BLOCK';
+    }
+    return 'BACK TO VINEYARD';
+  };
+  const backLabel = getBackLabel();
+
   useEffect(() => {
     if (showQRModal && canvasRef.current && vineUrl) {
       QRCode.toCanvas(canvasRef.current, vineUrl, {
@@ -114,7 +126,7 @@ export const VineDetailsView = ({
     return (
       <div className={styles.vineDetails}>
         <button className={styles.backButton} onClick={navigateBack} aria-label="back">
-          {'<'} BACK TO VINES
+          {'<'} {backLabel}
         </button>
         <div className={styles.vineDetailsHeader}>
           <h1 className={styles.vineDetailsTitle}>VINE NOT FOUND</h1>
@@ -181,7 +193,7 @@ export const VineDetailsView = ({
   return (
     <div className={styles.vineDetails}>
       <button className={styles.backButton} onClick={navigateBack}>
-        {'<'} BACK TO VINES
+        {'<'} {backLabel}
       </button>
       <div className={styles.vineDetailsHeader}>
         <h1 className={styles.vineDetailsTitle}>VINE {vine?.block}-{vineDisplayId}</h1>

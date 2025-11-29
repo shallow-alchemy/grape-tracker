@@ -400,6 +400,8 @@ describe('vineyard-utils', () => {
         size_acres: 5.5,
         soil_type: 'Clay loam',
         notes: 'Excellent drainage',
+        training_method: 'BILATERAL_CORDON',
+        training_method_other: null,
         created_at: Date.now(),
         updated_at: Date.now(),
       };
@@ -412,6 +414,8 @@ describe('vineyard-utils', () => {
       expect(result.sizeAcres).toBe(5.5);
       expect(result.soilType).toBe('Clay loam');
       expect(result.notes).toBe('Excellent drainage');
+      expect(result.trainingMethod).toBe('BILATERAL_CORDON');
+      expect(result.trainingMethodOther).toBeNull();
     });
 
     test('handles all block fields correctly', () => {
@@ -423,6 +427,8 @@ describe('vineyard-utils', () => {
         size_acres: 3.2,
         soil_type: 'Sandy',
         notes: 'Needs irrigation',
+        training_method: null,
+        training_method_other: null,
         created_at: Date.now(),
         updated_at: Date.now(),
       };
@@ -436,6 +442,8 @@ describe('vineyard-utils', () => {
         sizeAcres: 3.2,
         soilType: 'Sandy',
         notes: 'Needs irrigation',
+        trainingMethod: null,
+        trainingMethodOther: null,
       });
     });
   });

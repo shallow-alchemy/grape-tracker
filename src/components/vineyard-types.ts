@@ -31,6 +31,8 @@ export type BlockData = {
   sizeAcres: number;
   soilType: string;
   notes: string;
+  trainingMethod: string | null;
+  trainingMethodOther: string | null;
 };
 
 export type BlockDataRaw = {
@@ -41,6 +43,8 @@ export type BlockDataRaw = {
   size_acres: number;
   soil_type: string;
   notes: string;
+  training_method: string | null;
+  training_method_other: string | null;
   created_at: number;
   updated_at: number;
 };

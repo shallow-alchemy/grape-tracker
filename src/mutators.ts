@@ -80,6 +80,8 @@ export const createMutators = () => ({
         size_acres: number;
         soil_type: string;
         notes: string;
+        training_method?: string | undefined;
+        training_method_other?: string | undefined;
         created_at: number;
         updated_at: number;
       }
@@ -92,9 +94,11 @@ export const createMutators = () => ({
         id: string;
         name?: string;
         location?: string;
-        size_acres?: number;
+        size_acres?: number | undefined;
         soil_type?: string;
         notes?: string;
+        training_method?: string | undefined;
+        training_method_other?: string | undefined;
         updated_at?: number;
       }
     ) => {

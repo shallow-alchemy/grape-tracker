@@ -99,6 +99,56 @@ struct AlertSettingsResponse {
     updated_at: i64,
 }
 
+// AI Training Recommendation types
+#[derive(Deserialize)]
+struct TrainingRecommendationRequest {
+    block_name: String,
+    varieties: Vec<String>,
+    location: Option<String>,
+    vineyard_location: Option<String>,
+    soil_type: Option<String>,
+    size_acres: Option<f64>,
+    vine_count: i32,
+}
+
+#[derive(Serialize)]
+struct TrainingRecommendation {
+    method: String,
+    method_label: String,
+    confidence: String,
+    reasoning: String,
+}
+
+#[derive(Serialize)]
+struct TrainingRecommendationResponse {
+    recommendations: Vec<TrainingRecommendation>,
+    context_summary: String,
+}
+
+// Anthropic API types
+#[derive(Serialize)]
+struct AnthropicRequest {
+    model: String,
+    max_tokens: i32,
+    messages: Vec<AnthropicMessage>,
+}
+
+#[derive(Serialize)]
+struct AnthropicMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Deserialize)]
+struct AnthropicResponse {
+    content: Vec<AnthropicContent>,
+}
+
+#[derive(Deserialize)]
+struct AnthropicContent {
+    text: String,
+}
+
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
@@ -135,6 +185,7 @@ async fn main() {
         .route("/weather", get(get_weather))
         .route("/alert-settings/:vineyard_id/:alert_type", get(get_alert_settings))
         .route("/alert-settings/:vineyard_id/:alert_type", post(update_alert_settings))
+        .route("/ai/training-recommendation", post(get_training_recommendation))
         .layer(cors)
         .with_state(state);
 
@@ -481,4 +532,162 @@ async fn update_alert_settings(
         settings: result.settings,
         updated_at: result.updated_at,
     }))
+}
+
+async fn get_training_recommendation(
+    Json(payload): Json<TrainingRecommendationRequest>,
+) -> Result<Json<TrainingRecommendationResponse>, StatusCode> {
+    let anthropic_api_key = std::env::var("ANTHROPIC_API_KEY")
+        .map_err(|_| {
+            tracing::error!("ANTHROPIC_API_KEY not set");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let client = reqwest::Client::new();
+
+    // Build context for the AI
+    let varieties_str = if payload.varieties.is_empty() {
+        "unknown varieties".to_string()
+    } else {
+        payload.varieties.join(", ")
+    };
+
+    let context_parts: Vec<String> = vec![
+        Some(format!("Block: {}", payload.block_name)),
+        Some(format!("Varieties: {}", varieties_str)),
+        Some(format!("Vine count: {}", payload.vine_count)),
+        payload.vineyard_location.as_ref().map(|l| format!("Vineyard location: {}", l)),
+        payload.location.as_ref().map(|l| format!("Block position: {}", l)),
+        payload.soil_type.as_ref().map(|s| format!("Soil type: {}", s)),
+        payload.size_acres.map(|a| format!("Size: {} acres", a)),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+
+    let context_summary = context_parts.join(" • ");
+
+    let prompt = format!(
+        r#"You are a viticulture expert helping a home vineyard grower choose a training method for their grape vines.
+
+Context about this vineyard block:
+{}
+
+Available training methods (use these exact codes):
+- HEAD_TRAINING: Head Training (Goblet) - Traditional bush vine, no trellis needed
+- BILATERAL_CORDON: Bilateral Cordon - Two permanent arms on a wire
+- VERTICAL_CORDON: Vertical Cordon - Single vertical trunk with horizontal arms
+- FOUR_ARM_KNIFFEN: Four-Arm Kniffen - Simple, low-maintenance system
+- GENEVA_DOUBLE_CURTAIN: Geneva Double Curtain (GDC) - High-vigor vine management
+- UMBRELLA_KNIFFEN: Umbrella Kniffen - Arching canes from high head
+- CANE_PRUNED: Cane Pruned (Guyot) - Annual cane renewal
+- VSP: Vertical Shoot Positioning - Most common commercial system
+- SCOTT_HENRY: Scott-Henry - Divided canopy for high vigor
+- LYRE: Lyre (U-Shape) - Open canopy for air circulation
+
+Respond with exactly 3 recommendations in this JSON format:
+{{
+  "recommendations": [
+    {{
+      "method": "METHOD_CODE",
+      "method_label": "Human Readable Name",
+      "confidence": "high" or "medium" or "low",
+      "reasoning": "Brief 1-2 sentence explanation"
+    }}
+  ]
+}}
+
+Consider:
+1. The grape varieties being grown and their vigor characteristics
+2. Climate zone - infer from vineyard location (coordinates or place name) if provided. Consider Mediterranean, Continental, Maritime, High-Desert, or Humid-Subtropical climates.
+3. Ease of management for home growers
+4. Soil type and vigor implications
+
+Provide practical recommendations suitable for a home vineyard."#,
+        context_parts.join("\n")
+    );
+
+    let request = AnthropicRequest {
+        model: "claude-3-5-haiku-20241022".to_string(),
+        max_tokens: 1024,
+        messages: vec![AnthropicMessage {
+            role: "user".to_string(),
+            content: prompt,
+        }],
+    };
+
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", &anthropic_api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&request)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to call Anthropic API: {}", e);
+            StatusCode::BAD_GATEWAY
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        tracing::error!("Anthropic API error: {} - {}", status, body);
+        return Err(StatusCode::BAD_GATEWAY);
+    }
+
+    let anthropic_response: AnthropicResponse = response
+        .json()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to parse Anthropic response: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let ai_text = anthropic_response
+        .content
+        .first()
+        .map(|c| c.text.clone())
+        .unwrap_or_default();
+
+    // Parse the JSON from AI response
+    let recommendations = parse_ai_recommendations(&ai_text);
+
+    Ok(Json(TrainingRecommendationResponse {
+        recommendations,
+        context_summary,
+    }))
+}
+
+fn parse_ai_recommendations(text: &str) -> Vec<TrainingRecommendation> {
+    // Try to extract JSON from the response
+    let json_start = text.find('{');
+    let json_end = text.rfind('}');
+
+    if let (Some(start), Some(end)) = (json_start, json_end) {
+        let json_str = &text[start..=end];
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(json_str) {
+            if let Some(recs) = parsed.get("recommendations").and_then(|r| r.as_array()) {
+                return recs
+                    .iter()
+                    .filter_map(|r| {
+                        Some(TrainingRecommendation {
+                            method: r.get("method")?.as_str()?.to_string(),
+                            method_label: r.get("method_label")?.as_str()?.to_string(),
+                            confidence: r.get("confidence")?.as_str()?.to_string(),
+                            reasoning: r.get("reasoning")?.as_str()?.to_string(),
+                        })
+                    })
+                    .collect();
+            }
+        }
+    }
+
+    // Fallback if parsing fails
+    vec![TrainingRecommendation {
+        method: "VSP".to_string(),
+        method_label: "Vertical Shoot Positioning".to_string(),
+        confidence: "medium".to_string(),
+        reasoning: "VSP is a versatile, widely-used system suitable for most grape varieties and manageable for home growers.".to_string(),
+    }]
 }

@@ -3,13 +3,12 @@ import { useLocation } from 'wouter';
 import styles from '../App.module.css';
 import { useVines } from './vineyard-hooks';
 import { VineDetailsView } from './VineDetailsView';
+import { BlockDetailsView } from './BlockDetailsView';
 import { VineyardViewHeader } from './VineyardViewHeader';
 import { VineyardViewVineList } from './VineyardViewVineList';
 import { AddVineModal } from './AddVineModal';
 import { AddBlockModal } from './AddBlockModal';
-import { DeleteBlockConfirmModal } from './DeleteBlockConfirmModal';
 import { VineyardSettingsModal } from './VineyardSettingsModal';
-import { BlockSettingsModal } from './BlockSettingsModal';
 import { QRScanner } from './QRScanner';
 
 export const VineyardView = ({
@@ -24,11 +23,8 @@ export const VineyardView = ({
   const [selectedVine, setSelectedVine] = useState<string | null>(initialVineId || null);
   const [showAddVineModal, setShowAddVineModal] = useState(false);
   const [showAddBlockModal, setShowAddBlockModal] = useState(false);
-  const [showEditBlockModal, setShowEditBlockModal] = useState(false);
-  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [showVineyardSettingsModal, setShowVineyardSettingsModal] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<string | null>(initialBlockId || null);
-  const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showScanner, setShowScanner] = useState(false);
 
@@ -43,6 +39,8 @@ export const VineyardView = ({
 
   const navigateToVine = (vineId: string) => {
     sessionStorage.setItem('internalNav', 'true');
+    // Store origin for back button label - check if we're navigating from a block
+    sessionStorage.setItem('vineNavOrigin', selectedBlock || 'vineyard');
     setSelectedVine(vineId);
     setLocation(`/vineyard/vine/${vineId}`);
   };
@@ -74,17 +72,35 @@ export const VineyardView = ({
   };
 
   const handleGearIconClick = () => {
-    if (selectedBlock) return setShowEditBlockModal(true);
     setShowVineyardSettingsModal(true);
   };
 
+  // Show BlockDetailsView when a block is selected
+  if (selectedBlock) {
+    return (
+      <BlockDetailsView
+        blockId={selectedBlock}
+        onUpdateSuccess={showSuccessMessage}
+        onDeleteSuccess={(message) => {
+          showSuccessMessage(message);
+          navigateToVineyard();
+        }}
+        navigateBack={navigateBack}
+        navigateToVine={navigateToVine}
+      />
+    );
+  }
+
   if (selectedVine) {
+    const vineNavOrigin = sessionStorage.getItem('vineNavOrigin');
+    const originBlockId = vineNavOrigin && vineNavOrigin !== 'vineyard' ? vineNavOrigin : undefined;
     return (
       <VineDetailsView
         vine={foundVine}
         onUpdateSuccess={showSuccessMessage}
         onDeleteSuccess={showSuccessMessage}
         navigateBack={navigateBack}
+        originBlockId={originBlockId}
       />
     );
   }
@@ -105,7 +121,7 @@ export const VineyardView = ({
           {successMessage}
         </div>
       )}
-      <VineyardViewVineList selectedBlock={selectedBlock} navigateToVine={navigateToVine} />
+      <VineyardViewVineList selectedBlock={selectedBlock} navigateToVine={navigateToVine} navigateToBlock={navigateToBlock} />
 
       <AddVineModal
         isOpen={showAddVineModal}
@@ -122,32 +138,10 @@ export const VineyardView = ({
         onSuccess={showSuccessMessage}
       />
 
-      <DeleteBlockConfirmModal
-        isOpen={showDeleteConfirmModal}
-        onClose={() => {
-          setShowDeleteConfirmModal(false);
-          setDeleteBlockId(null);
-        }}
-        deleteBlockId={deleteBlockId}
-        onSuccess={showSuccessMessage}
-      />
-
       <VineyardSettingsModal
         isOpen={showVineyardSettingsModal}
         onClose={() => setShowVineyardSettingsModal(false)}
         onSuccess={showSuccessMessage}
-      />
-
-      <BlockSettingsModal
-        isOpen={showEditBlockModal}
-        onClose={() => setShowEditBlockModal(false)}
-        selectedBlock={selectedBlock}
-        onSuccess={showSuccessMessage}
-        onDeleteClick={(blockId) => {
-          setDeleteBlockId(blockId);
-          setShowEditBlockModal(false);
-          setShowDeleteConfirmModal(true);
-        }}
       />
 
       {showScanner && <QRScanner onClose={() => setShowScanner(false)} />}

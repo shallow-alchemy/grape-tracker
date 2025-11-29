@@ -34,6 +34,8 @@ const blockTable = table('block')
     size_acres: number(),
     soil_type: string(),
     notes: string(),
+    training_method: string().optional(),
+    training_method_other: string().optional(),
     created_at: number(),
     updated_at: number(),
   })

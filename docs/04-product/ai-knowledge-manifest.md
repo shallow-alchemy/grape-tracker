@@ -11,10 +11,10 @@ For feature priorities and which features consume which knowledge, see the [Deve
 | Domain | Status | Count |
 |--------|--------|-------|
 | Climate & Regions | ✅ Complete | 5/5 |
-| Training Systems | ✅ Complete (core) | 8 complete, 4 planned |
-| Soil Science | ⏳ Not Started | 0/3 |
-| Varietals | ⏳ Not Started | 0/40+ |
-| Seasonal Management | ⏳ Not Started | 0/6 |
+| Training Systems | ✅ Complete | 12/12 |
+| Soil Science | 🟡 In Progress | 1/3 |
+| Varietals | ✅ Complete | 30 profiles |
+| Seasonal Management | ✅ Complete | 6/6 |
 | Pest & Disease | ⏳ Not Started | 0/8 |
 | Wine Production | ⏳ Not Started | 0/7 |
 | Planning & Calculations | ⏳ Not Started | 0/5 |
@@ -44,9 +44,9 @@ Regional reference data for varietal selection and site assessment. All major US
 
 ---
 
-### Training Systems ✅ COMPLETE (Core Set)
+### Training Systems ✅ COMPLETE
 
-Establishment and management guides for vine training methods.
+Establishment and management guides for vine training methods. All common systems documented plus selection guide.
 
 | Logical Name | Status | Actual Filename |
 |--------------|--------|-----------------|
@@ -58,83 +58,112 @@ Establishment and management guides for vine training methods.
 | `training/umbrella` | ✅ Complete | `The_Complete_Guide_to_Umbrella_Grape_Training_Systems_for_Eastern_US_Growers.md` |
 | `training/cane-pruning` | ✅ Complete | `Cane_Pruning_for_High_Head_Wine_Grapes__A_California_Grower_s_Guide.md` |
 | `training/california-divided-canopy` | ✅ Complete | `California_Divided_Canopy_Systems_for_Wine_Grapes__A_Practical_Guide.md` |
-
-**Planned (not yet documented):**
-
-| Logical Name | Status | Purpose |
-|--------------|--------|---------|
-| `training/vsp` | ⏳ Planned | Vertical Shoot Positioning — common for premium wine grapes |
-| `training/scott-henry` | ⏳ Planned | Divided canopy alternative to GDC |
-| `training/lyre` | ⏳ Planned | European divided canopy (U-System) |
-| `training/selection-guide` | ⏳ Planned | Decision framework for choosing training system |
+| `training/vsp` | ✅ Complete | `Vertical_Shoot_Positioning__A_Complete_Guide_for_Small-Scale_Grape_Growers.md` |
+| `training/scott-henry` | ✅ Complete | `Scott-Henry_Training_System__A_Complete_Guide_for_Small-Scale_Grape_Growers.md` |
+| `training/lyre` | ✅ Complete | `Lyre_Training_System__A_Complete_Guide_for_Small-Scale_Grape_Growers.md` |
+| `training/selection-guide` | ✅ Complete | `Training_System_Selection_Guide.md` |
 
 ---
 
-### Soil Science ⏳ NOT STARTED
-
-| Logical Name | Status | Purpose |
-|--------------|--------|---------|
-| `soil/fundamentals` | ⏳ Planned | pH, drainage, texture, organic matter basics |
-| `soil/amendments` | ⏳ Planned | How to adjust pH, improve drainage, add nutrients |
-| `soil/problem-soils` | ⏳ Planned | High pH, salinity, compaction, shallow depth, hardpan |
-
----
-
-### Varietals ⏳ NOT STARTED
-
-Individual grape variety profiles. This will be an extensive library built over time.
-
-**Each varietal doc should contain:**
-- Climate requirements (GDD, frost tolerance, heat needs)
-- Vigor characteristics
-- Disease susceptibility
-- Ripening timing and indicators
-- Expected flavor profile by climate type
-- Blending compatibility
-- Common rootstock pairings
-- Winemaking considerations
-- Small-scale growing notes
-
-**Priority varietals (suggested first batch):**
-
-| Category | Varietals |
-|----------|-----------|
-| Bordeaux Reds | Cabernet Sauvignon, Cabernet Franc, Merlot, Petit Verdot, Malbec |
-| Burgundy | Pinot Noir, Chardonnay |
-| Rhône | Syrah/Shiraz, Grenache, Mourvèdre, Viognier, Roussanne, Marsanne |
-| California Classics | Zinfandel, Petite Sirah |
-| Mediterranean | Tempranillo, Sangiovese, Nebbiolo, Barbera |
-| Aromatic Whites | Riesling, Gewürztraminer, Sauvignon Blanc, Pinot Gris/Grigio |
-| Other Whites | Sémillon, Albariño, Verdejo, Vermentino |
-
-**Cold-hardy hybrids (for continental/cold climates):**
-- Marquette, Frontenac, La Crescent, Brianna, St. Croix
-- Itasca, Petite Pearl, Crimson Pearl
-
-**Disease-resistant hybrids (for humid climates):**
-- Chambourcin, Vidal Blanc, Seyval Blanc, Traminette
-- Chardonel, Cayuga White, Norton/Cynthiana
-
-**American/Muscadine:**
-- Concord, Niagara, Catawba
-- Carlos, Noble, Scuppernong
-
----
-
-### Seasonal Management ⏳ NOT STARTED
+### Seasonal Management ✅ COMPLETE
 
 Time-specific guidance for vineyard tasks throughout the growing cycle.
 
-| Logical Name | Status | Timing | Key Topics |
-|--------------|--------|--------|------------|
-| `seasonal/dormant-season` | ⏳ Planned | Nov–Feb | Pruning timing, winter protection, planning |
-| `seasonal/bud-break` | ⏳ Planned | Mar–Apr | Frost protection, shoot thinning, early spray |
-| `seasonal/bloom-fruit-set` | ⏳ Planned | May–Jun | Canopy management, disease prevention, crop thinning |
-| `seasonal/veraison-ripening` | ⏳ Planned | Jul–Aug | Bird protection, irrigation decisions, monitoring |
-| `seasonal/harvest` | ⏳ Planned | Aug–Oct | Timing decisions, indicators, logistics |
-| `seasonal/post-harvest` | ⏳ Planned | Oct–Nov | Vine nutrition, preparing for dormancy |
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `seasonal/dormant-season` | ✅ Complete | `Dormant_Season_Vineyard_Management__A_Practical_Guide_for_Small-Scale_Growers.md` |
+| `seasonal/bud-break` | ✅ Complete | `Vineyard_Management_Through_Bud_Break__A_Phenological_Guide.md` |
+| `seasonal/bloom-fruit-set` | ✅ Complete | `Managing_Your_Vineyard_from_Bloom_Through_Berry_Set__A_Phenological_Guide.md` |
+| `seasonal/veraison-ripening` | ✅ Complete | `Vineyard_Management_from_Veraison_Through_Harvest__A_Complete_Guide.md` |
+| `seasonal/harvest` | ✅ Complete | `Harvest_Period_Vineyard_Management_for_Small-Scale_Wine_Grape_Growers.md` |
+| `seasonal/post-harvest` | ✅ Complete | `Post-Harvest_Vineyard_Management__A_Phenological_Guide_for_Small-Scale_Growers.md` |
 
-**Note:** Timing varies significantly by region. Each doc should include regional adjustments.
+---
+
+### Soil Science 🟡 IN PROGRESS
+
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `soil/fundamentals` | ✅ Complete | `Soil_Fundamentals_for_Small-Scale_Grape_Growers__Science-Backed_Guidance_for_Vineyard_Site_Assessment_and_Soil_Management.md` |
+| `soil/amendments` | ⏳ Planned | — |
+| `soil/problem-soils` | ⏳ Planned | — |
+
+---
+
+### Varietals ✅ COMPLETE
+
+Individual grape variety profiles covering major wine grape categories.
+
+#### Bordeaux Reds (5 individual + 1 compilation)
+
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `varietal/cabernet-sauvignon` | ✅ Complete | `Cabernet_Sauvignon_Varietal_Profile.md` |
+| `varietal/cabernet-franc` | ✅ Complete | `Cabernet_Franc_Varietal_Profile.md` |
+| `varietal/merlot` | ✅ Complete | `Merlot_Varietal_Profile.md` |
+| `varietal/petit-verdot` | ✅ Complete | `Petit_Verdot_Varietal_Profile.md` |
+| `varietal/malbec` | ✅ Complete | `Malbec_Varietal_Profile.md` |
+| `varietal/bordeaux-compilation` | ✅ Complete | `Bordeaux_Red_Grape_Varietal_Profiles__Comprehensive_Technical_Database.md` |
+
+#### Burgundy (2 individual + 1 compilation)
+
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `varietal/pinot-noir` | ✅ Complete | `Pinot_Noir_Varietal_Profile.md` |
+| `varietal/chardonnay` | ✅ Complete | `Chardonnay_Varietal_Profile.md` |
+| `varietal/burgundy-compilation` | ✅ Complete | `Pinot_Noir_and_Chardonnay__Complete_Varietal_Profiles_for_Vineyard_Management.md` |
+
+#### Rhône (6 individual + 1 compilation)
+
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `varietal/syrah` | ✅ Complete | `Syrah_Varietal_Profile.md` |
+| `varietal/grenache` | ✅ Complete | `Grenache_Varietal_Profile.md` |
+| `varietal/mourvedre` | ✅ Complete | `Mourvedre_Varietal_Profile.md` |
+| `varietal/viognier` | ✅ Complete | `Viognier_Varietal_Profile.md` |
+| `varietal/roussanne` | ✅ Complete | `Roussanne_Varietal_Profile.md` |
+| `varietal/marsanne` | ✅ Complete | `Marsanne_Varietal_Profile.md` |
+| `varietal/rhone-compilation` | ✅ Complete | `Rhône_Grape_Varieties__Comprehensive_Viticulture_and_Winemaking_Profiles.md` |
+
+#### California Classics (2)
+
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `varietal/zinfandel` | ✅ Complete | `Zinfandel_Varietal_Profile.md` |
+| `varietal/petite-sirah` | ✅ Complete | `Petite_Sirah_Varietal_Profile.md` |
+
+#### Aromatic Whites (4 individual + 1 compilation)
+
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `varietal/riesling` | ✅ Complete | `Riesling_Varietal_Profile.md` |
+| `varietal/gewurztraminer` | ✅ Complete | `Gewurztraminer_Varietal_Profile.md` |
+| `varietal/sauvignon-blanc` | ✅ Complete | `Sauvignon_Blanc_Varietal_Profile.md` |
+| `varietal/muscat-blanc` | ✅ Complete | `Muscat_Blanc_Varietal_Profile.md` |
+| `varietal/aromatics-compilation` | ✅ Complete | `Aromatic_White_Grapes__A_Complete_Viticulture_and_Winemaking_Guide.md` |
+
+#### American & Muscadine (6 individual + 1 compilation)
+
+| Logical Name | Status | Actual Filename |
+|--------------|--------|-----------------|
+| `varietal/concord` | ✅ Complete | `Concord_Varietal_Profile.md` |
+| `varietal/niagara` | ✅ Complete | `Niagara_Varietal_Profile.md` |
+| `varietal/catawba` | ✅ Complete | `Catawba_Varietal_Profile.md` |
+| `varietal/carlos` | ✅ Complete | `Carlos_Varietal_Profile.md` |
+| `varietal/noble` | ✅ Complete | `Noble_Varietal_Profile.md` |
+| `varietal/scuppernong` | ✅ Complete | `Scuppernong_Varietal_Profile.md` |
+| `varietal/american-muscadine-compilation` | ✅ Complete | `American_Native_Grapes_and_Muscadines_Varietal_Profiles.md` |
+
+#### Planned Varietals
+
+The following varietals may be added as needed:
+
+| Category | Varietals |
+|----------|-----------|
+| Mediterranean | Tempranillo, Sangiovese, Nebbiolo, Barbera |
+| Other Whites | Sémillon, Albariño, Verdejo, Vermentino, Pinot Gris/Grigio |
+| Cold-Hardy Hybrids | Marquette, Frontenac, La Crescent, Brianna, St. Croix, Itasca, Petite Pearl, Crimson Pearl |
+| Disease-Resistant Hybrids | Chambourcin, Vidal Blanc, Seyval Blanc, Traminette, Chardonel, Cayuga White, Norton/Cynthiana |
 
 ---
 

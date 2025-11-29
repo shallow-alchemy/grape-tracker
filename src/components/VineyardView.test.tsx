@@ -246,9 +246,10 @@ describe('VineyardView', () => {
       const title = screen.getByRole('heading', { name: /vineyard/i });
       await user.click(title);
 
-      // Click on a block in the dropdown
-      const northBlock = await screen.findByText('North Block');
-      await user.click(northBlock);
+      // Click on a block in the dropdown (use getAllByText and select the dropdown item)
+      const northBlocks = await screen.findAllByText('North Block');
+      // The first one should be the dropdown item
+      await user.click(northBlocks[0]);
 
       await waitFor(() => {
         expect(mockSetLocation).toHaveBeenCalledWith(expect.stringContaining('/vineyard/block/'));

@@ -663,6 +663,45 @@
   overflow-y: auto;
 }
 
+.sectionLabel {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  padding: var(--spacing-xs) 0;
+  margin-top: var(--spacing-sm);
+}
+
+.sectionLabel:first-child {
+  margin-top: 0;
+}
+
+.blocksSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.blockCards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.blockVinesList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-sm);
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: var(--spacing-xs);
+}
+
+@media (min-width: 768px) {
+  .blockVinesList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .vineItem {
   display: flex;
   align-items: center;
@@ -977,6 +1016,79 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   font-style: italic;
+  margin: 0;
+}
+
+.aiHelperSection {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.aiContextSummary {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+}
+
+.aiLabel {
+  color: var(--color-primary);
+  margin-right: var(--spacing-xs);
+}
+
+.aiRecommendations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.aiRecommendationCard {
+  padding: var(--spacing-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.aiRecommendationHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.aiRecommendationRank {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-lg);
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+.aiRecommendationMethod {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  flex: 1;
+}
+
+.aiRecommendationConfidence {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+
+.aiRecommendationReasoning {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
   margin: 0;
 }
 
@@ -1844,6 +1956,20 @@
     overflow-y: visible;
     flex: none;
     align-items: start;
+  }
+
+  .vineList .sectionLabel {
+    grid-column: 1 / -1;
+  }
+
+  .vineList .blocksSection {
+    grid-column: 1 / -1;
+  }
+
+  .blockCards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
   }
 
   .vineDetails {

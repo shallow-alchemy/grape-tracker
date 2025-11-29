@@ -197,3 +197,30 @@ The theme can be adapted by modifying **`src/index.css`**:
 3. **Interactive elements**: Highest contrast and prominence
 
 This design system creates a cohesive, authentic 80s terminal experience while maintaining modern usability standards and professional appearance suitable for contemporary applications.
+
+## Content & Terminology Guidelines
+
+### Industry Terminology
+Use proper viticulture and winemaking terminology in UI text. This respects users' expertise and creates a more professional, credible experience.
+
+| Avoid | Use Instead | Notes |
+|-------|-------------|-------|
+| "location and conditions" | **terroir** | The complete natural environment including soil, climate, topography, and microclimate |
+| "grape type" | **variety** or **varietal** | The specific cultivar (e.g., Cabernet Sauvignon, Chardonnay) |
+| "sugar level" | **Brix** | Industry-standard measurement of sugar content |
+| "sourness/acid level" | **TA** (titratable acidity) | Standard acidity measurement |
+| "color change" | **veraison** | The stage when grapes begin to ripen and change color |
+| "vine shape/structure" | **training system** | How vines are trained to grow (e.g., VSP, cordon) |
+| "cutting back" | **pruning** | Removing vine growth for health and production |
+
+### AI Feature Language
+When features use AI/ML behind the scenes, prefer understated language:
+- Avoid: "AI-powered", "machine learning", "intelligent"
+- Prefer: Simply describe the benefit without emphasizing the technology
+- Example: "Get recommendations" rather than "Get AI-powered recommendations"
+
+### Voice & Tone
+- **Professional but approachable**: Respect users' expertise without being stuffy
+- **Concise**: Terminal aesthetic favors brevity
+- **Action-oriented**: Use imperative verbs for buttons and commands
+- **Uppercase labels**: Match terminal aesthetic for field labels and section headers

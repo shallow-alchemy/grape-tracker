@@ -78,6 +78,8 @@ export const transformBlockData = (block: BlockDataRaw): BlockData => ({
   sizeAcres: block.size_acres,
   soilType: block.soil_type,
   notes: block.notes,
+  trainingMethod: block.training_method,
+  trainingMethodOther: block.training_method_other,
 });
 
 export const filterVinesByBlock = (vines: VineDataRaw[], blockId: string | null): VineDataRaw[] => {
