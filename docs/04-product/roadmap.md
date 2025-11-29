@@ -1,6 +1,6 @@
 # Gilbert - Development Roadmap
 
-**Last Updated:** Nov 28, 2025
+**Last Updated:** Nov 29, 2025
 **Version:** 2.0 - Restructured
 
 This roadmap prioritizes **vineyard and winery features first**, then operational enhancements. AI-powered features reference the [AI Knowledge Manifest](./ai-knowledge-manifest.md) for knowledge dependencies.
@@ -33,7 +33,7 @@ All previously completed features remain unchanged. See [Completed Features Arch
 - ✅ Vintage management (full CRUD, cascade delete)
 - ✅ Wine production (stages, tasks, measurements, blends)
 - ✅ User data isolation (JWT auth, custom mutators)
-- ✅ 698 frontend tests, 12 backend tests
+- ✅ 746 frontend tests, 12 backend tests
 
 ---
 
@@ -42,17 +42,20 @@ All previously completed features remain unchanged. See [Completed Features Arch
 Core features for tracking and managing vines in the field.
 
 ### Priority 1: Training & Pruning System 🤖
-**Status:** 🔲 Not Started
+**Status:** 🟡 Core Complete, AI Features Pending
 **AI Knowledge:** ✅ Ready (8 training system docs complete)
 
 Track how each vine is trained and pruned. AI provides guidance based on training method.
 
 **Core Features:**
-- [ ] Training method field per vine (dropdown)
-- [ ] Available methods: Head Training, Vertical Cordon, Bilateral Cordon, Four-Arm Kniffen, GDC, Umbrella, Cane Pruned, VSP
-- [ ] Track pruning dates per vine
-- [ ] Cane/spur count tracking
-- [ ] Database schema: `training_method` enum, `pruning_log` table
+- [x] Training method field per vine (dropdown with 11 methods + custom)
+- [x] Available methods: Head Training, Vertical Cordon, Bilateral Cordon, Four-Arm Kniffen, GDC, Umbrella, Cane Pruned, VSP, Scott-Henry, Lyre, Other
+- [x] Track pruning dates per vine (pruning log with edit/delete)
+- [x] Cane/spur count tracking (before/after canes, spurs left)
+- [x] Database schema: `training_method` on vine table, `pruning_log` table
+- [x] Inline editing for training method on vine details
+- [x] Training method selection on vine creation
+- [x] Scrollable pruning log list with max height
 
 **AI-Powered Features:**
 - [ ] Training method selection helper (recommends based on variety, climate, vigor)
@@ -104,9 +107,7 @@ Visual documentation for vines. Shared infrastructure with winery photos.
 - [x] Click-to-edit planting date
 - [x] Real-time save indicators
 - [x] Inline validation
-
-**Future Enhancement:**
-- [ ] Click-to-edit training method (after Priority 1)
+- [x] Click-to-edit training method
 
 ---
 
@@ -592,7 +593,7 @@ The `wine.status` field is redundant with `wine.current_stage`. Derive status fr
 ### Testing Infrastructure
 - ✅ RSTest + React Testing Library setup
 - ✅ Test isolation for reliable runs
-- ✅ 698 passing tests (frontend) + 12 passing tests (backend)
+- ✅ 746 passing tests (frontend) + 12 passing tests (backend)
 - 🔄 E2E testing with Playwright (in progress)
 
 ### Weather & Alerts

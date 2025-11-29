@@ -25,7 +25,7 @@ Documents in `docs/04-product/detailed-specs/` are **implementation references**
 
 ### Critical Technical Knowledge
 4. **[Zero Provider](src/contexts/ZeroContext.tsx)** - Uses Zero's built-in provider with Clerk auth
-5. **[Test Coverage Status](docs/05-testing/test-coverage-status.md)** - 91% coverage (696 passing, 72 todo)
+5. **[Test Coverage Status](docs/05-testing/test-coverage-status.md)** - 91% coverage (746 passing, 74 todo)
 6. **[Code Standards](docs/engineering-principles.md)** - Fat arrows, named exports, CSS Modules
 7. **[Testing Guide](docs/05-testing/testing-guide.md)** - rstest, mocking, React hooks, best practices
 
@@ -71,13 +71,14 @@ Documents in `docs/04-product/detailed-specs/` are **implementation references**
 - ✅ Weather alerts system
 - ✅ Zero sync with custom mutators
 - ✅ User data isolation via JWT auth
-- ✅ 91% test coverage (696 tests)
+- ✅ Training & pruning system (core features)
+- ✅ 91% test coverage (746 tests)
 
 ### Active Development
 See `docs/04-product/roadmap.md` for current priorities:
 - Organization & multi-tenancy
 - Photo management
-- Training & pruning system
+- Training & pruning AI features
 - Analytics & insights
 
 ### Branch Info
