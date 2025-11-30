@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
 import { getBackendUrl } from '../../config';
-import { myStageHistoryByEntity, myMeasurementsByEntity } from '../../shared/queries';
+import { myStageHistoryByEntity, myMeasurementsByEntity, myMeasurementAnalysisByMeasurement } from '../../shared/queries';
 import { useWines, useVintages } from '../vineyard-hooks';
 import { EditWineModal } from './EditWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
@@ -61,6 +61,15 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const measurements = [...cachedMeasurements].sort((a, b) => b.date - a.date);
   const latestMeasurement = measurements[0];
 
+  // Query for cached AI analysis for the latest measurement
+  const [cachedAnalysisData] = useQuery(
+    myMeasurementAnalysisByMeasurement(user?.id, latestMeasurement?.id || '')
+  ) as any;
+
+  // Track Zero sync state: undefined = still syncing, [] = synced but no data
+  const analysisCacheSynced = cachedAnalysisData !== undefined;
+  const hasCachedAnalysis = Array.isArray(cachedAnalysisData) && cachedAnalysisData.length > 0;
+
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showStageModal, setShowStageModal] = useState(false);
@@ -75,6 +84,32 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   } | null>(null);
   const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
   const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
+
+  // Load cached analysis from Zero when available
+  useEffect(() => {
+    if (hasCachedAnalysis && !aiAnalysis) {
+      const cached = cachedAnalysisData[0];
+      setAiAnalysis({
+        summary: cached.summary,
+        metrics: cached.metrics || [],
+        projections: cached.projections || null,
+        recommendations: cached.recommendations || [],
+      });
+    }
+  }, [hasCachedAnalysis, cachedAnalysisData, aiAnalysis]);
+
+  // Clear analysis when measurement changes
+  const lastMeasurementIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (latestMeasurement?.id && latestMeasurement.id !== lastMeasurementIdRef.current) {
+      // Measurement changed - clear local state so we load from cache
+      if (lastMeasurementIdRef.current !== null) {
+        setAiAnalysis(null);
+        setAiAnalysisError(null);
+      }
+      lastMeasurementIdRef.current = latestMeasurement.id;
+    }
+  }, [latestMeasurement?.id]);
 
   if (!wine) {
     return (
@@ -114,7 +149,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const daysInStage = getDaysInStage();
 
   const fetchAiAnalysis = async () => {
-    if (!latestMeasurement || !wine) return;
+    if (!latestMeasurement || !wine || !user?.id) return;
 
     setAiAnalysisLoading(true);
     setAiAnalysisError(null);
@@ -124,6 +159,8 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          user_id: user.id,
+          measurement_id: latestMeasurement.id,
           wine_name: wine.name,
           variety: vintage?.variety || 'Unknown',
           blend_components: isBlend ? wine.blend_components : null,
@@ -151,6 +188,8 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
 
       const data = await response.json();
       setAiAnalysis(data);
+      // Wait a moment for Zero to sync the cached analysis
+      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (err) {
       setAiAnalysisError('Failed to get AI analysis. Please try again.');
       console.error('AI analysis error:', err);
@@ -425,8 +464,8 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
             )}
           </div>
 
-          {/* AI Analysis Button */}
-          {!aiAnalysis && (
+          {/* AI Analysis Button - only show after Zero syncs and confirms no cached analysis */}
+          {!aiAnalysis && analysisCacheSynced && !hasCachedAnalysis && (
             <button
               type="button"
               className={styles.aiAnalysisButton}
@@ -446,13 +485,6 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
             <div className={styles.aiInsightsSection}>
               <div className={styles.aiInsightsHeader}>
                 <span>✨ AI INSIGHTS</span>
-                <button
-                  type="button"
-                  className={styles.aiAnalysisClose}
-                  onClick={() => setAiAnalysis(null)}
-                >
-                  CLEAR
-                </button>
               </div>
 
               {aiAnalysis.projections && (

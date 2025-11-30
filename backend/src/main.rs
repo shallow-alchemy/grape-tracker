@@ -206,6 +206,8 @@ struct TrainingRecommendationResponse {
 // Measurement Guidance types
 #[derive(Deserialize)]
 struct MeasurementGuidanceRequest {
+    user_id: String,                    // For caching
+    measurement_id: String,             // FK to measurement table
     wine_name: String,
     variety: String,                    // Primary variety or "Blend"
     blend_components: Option<Vec<String>>, // For blends
@@ -223,7 +225,7 @@ struct MeasurementData {
     date: i64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Clone)]
 struct MetricAssessment {
     name: String,
     value: Option<f64>,
@@ -231,12 +233,14 @@ struct MetricAssessment {
     analysis: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct MeasurementGuidanceResponse {
     summary: String,
     metrics: Vec<MetricAssessment>,
     projections: Option<String>,
     recommendations: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    from_cache: Option<bool>,
 }
 
 // RAG types for document embeddings
@@ -1589,6 +1593,35 @@ async fn get_measurement_guidance(
     State(state): State<AppState>,
     Json(payload): Json<MeasurementGuidanceRequest>,
 ) -> Result<Json<MeasurementGuidanceResponse>, StatusCode> {
+    // First, check if we have a cached analysis for this measurement
+    let existing: Option<(String, serde_json::Value, Option<String>, serde_json::Value)> = sqlx::query_as(
+        r#"
+        SELECT summary, metrics, projections, recommendations
+        FROM measurement_analysis
+        WHERE user_id = $1 AND measurement_id = $2
+        LIMIT 1
+        "#
+    )
+    .bind(&payload.user_id)
+    .bind(&payload.measurement_id)
+    .fetch_optional(&state.db)
+    .await
+    .unwrap_or(None);
+
+    if let Some((summary, metrics_json, projections, recommendations_json)) = existing {
+        // Return cached analysis
+        let metrics: Vec<MetricAssessment> = serde_json::from_value(metrics_json).unwrap_or_default();
+        let recommendations: Vec<String> = serde_json::from_value(recommendations_json).unwrap_or_default();
+
+        return Ok(Json(MeasurementGuidanceResponse {
+            summary,
+            metrics,
+            projections,
+            recommendations,
+            from_cache: Some(true),
+        }));
+    }
+
     let anthropic_api_key = std::env::var("ANTHROPIC_API_KEY")
         .map_err(|_| {
             tracing::error!("ANTHROPIC_API_KEY not set");
@@ -1781,8 +1814,36 @@ Keep analyses concise but specific to the variety and stage."#,
         .unwrap_or_default();
 
     // Parse the JSON response
-    let guidance = parse_measurement_guidance_response(&ai_text);
+    let mut guidance = parse_measurement_guidance_response(&ai_text);
 
+    // Store the analysis in the database
+    let now = chrono::Utc::now().timestamp_millis();
+    let id = uuid::Uuid::new_v4().to_string();
+    let metrics_json = serde_json::to_value(&guidance.metrics).unwrap_or_default();
+    let recommendations_json = serde_json::to_value(&guidance.recommendations).unwrap_or_default();
+
+    let result = sqlx::query(
+        r#"
+        INSERT INTO measurement_analysis (id, user_id, measurement_id, summary, metrics, projections, recommendations, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        "#
+    )
+    .bind(&id)
+    .bind(&payload.user_id)
+    .bind(&payload.measurement_id)
+    .bind(&guidance.summary)
+    .bind(&metrics_json)
+    .bind(&guidance.projections)
+    .bind(&recommendations_json)
+    .bind(now)
+    .execute(&state.db)
+    .await;
+
+    if let Err(e) = result {
+        tracing::warn!("Failed to store measurement analysis: {}", e);
+    }
+
+    guidance.from_cache = Some(false);
     Ok(Json(guidance))
 }
 
@@ -1847,6 +1908,7 @@ fn parse_measurement_guidance_response(text: &str) -> MeasurementGuidanceRespons
                 metrics,
                 projections,
                 recommendations,
+                from_cache: None,
             };
         }
     }
@@ -1857,6 +1919,7 @@ fn parse_measurement_guidance_response(text: &str) -> MeasurementGuidanceRespons
         metrics: vec![],
         projections: None,
         recommendations: vec![],
+        from_cache: None,
     }
 }
 

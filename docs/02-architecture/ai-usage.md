@@ -102,6 +102,8 @@ This document tracks all AI API calls in the application for cost monitoring and
 **Request Payload**:
 ```json
 {
+  "user_id": "user_xxx",
+  "measurement_id": "measurement_xxx",
   "wine_name": "2024 Cabernet Sauvignon",
   "variety": "Cabernet Sauvignon",
   "blend_components": null,
@@ -117,9 +119,9 @@ This document tracks all AI API calls in the application for cost monitoring and
 }
 ```
 
-**Response**: Summary, per-metric status (good/warning/concern), projections, and actionable recommendations.
+**Response**: Summary, per-metric status (good/warning/concern), projections, and actionable recommendations. Includes `from_cache: true/false`.
 
-**Caching**: None - each request is unique based on current measurements.
+**Caching**: Per-measurement - analysis stored in `measurement_analysis` table. Only calls AI if no cached analysis exists for the measurement. Frontend loads cached analysis via Zero sync.
 
 **Paywall Priority**: High - called on-demand but likely frequent during active fermentation.
 
@@ -139,8 +141,9 @@ This document tracks all AI API calls in the application for cost monitoring and
 
 ### Implemented
 - **Weekly caching for seasonal tasks**: Tasks stored in DB, only regenerated weekly
+- **Per-measurement caching for measurement guidance**: Analysis stored in `measurement_analysis` table, never regenerated for same measurement
 - **Free weather API**: Open-Meteo Historical Weather API is free for non-commercial use
-- **Efficient model selection**: Using claude-3-5-haiku for seasonal tasks (cheaper than Sonnet)
+- **Efficient model selection**: Using claude-3-5-haiku for seasonal tasks and measurement guidance (cheaper than Sonnet)
 
 ### Planned
 - [ ] Add user-level rate limiting

@@ -171,3 +171,14 @@ export const mySeasonalTasksByWeek = syncedQueryWithContext(
       .where('week_start', weekStart);
   }
 );
+
+export const myMeasurementAnalysisByMeasurement = syncedQueryWithContext(
+  'myMeasurementAnalysisByMeasurement',
+  z.tuple([z.string()]),
+  (userID: string | undefined, measurementId: string) => {
+    if (!userID) return builder.measurement_analysis.where('id', '___never_match___');
+    return builder.measurement_analysis
+      .where('user_id', userID)
+      .where('measurement_id', measurementId);
+  }
+);

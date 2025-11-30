@@ -222,6 +222,19 @@ const seasonalTaskTable = table('seasonal_task')
   })
   .primaryKey('id');
 
+const measurementAnalysisTable = table('measurement_analysis')
+  .columns({
+    id: string(),
+    user_id: string(),
+    measurement_id: string(),  // FK to measurement table
+    summary: string(),
+    metrics: json(),           // Array of { name, value, status, analysis }
+    projections: string().optional(),
+    recommendations: json(),   // Array of strings
+    created_at: number(),
+  })
+  .primaryKey('id');
+
 export const schema = createSchema({
   tables: [
     userTable,
@@ -237,6 +250,7 @@ export const schema = createSchema({
     measurementTable,
     measurementRangeTable,
     seasonalTaskTable,
+    measurementAnalysisTable,
   ],
 });
 
@@ -385,6 +399,17 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
         },
       },
       seasonal_task: {
+        row: {
+          select: ANYONE_CAN,
+          insert: ANYONE_CAN,
+          update: {
+            preMutation: ANYONE_CAN,
+            postMutation: ANYONE_CAN,
+          },
+          delete: ANYONE_CAN,
+        },
+      },
+      measurement_analysis: {
         row: {
           select: ANYONE_CAN,
           insert: ANYONE_CAN,

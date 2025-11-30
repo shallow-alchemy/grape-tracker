@@ -216,6 +216,19 @@ var seasonalTaskTable = (0, import_zero.table)("seasonal_task").columns({
   created_at: (0, import_zero.number)(),
   updated_at: (0, import_zero.number)()
 }).primaryKey("id");
+var measurementAnalysisTable = (0, import_zero.table)("measurement_analysis").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  measurement_id: (0, import_zero.string)(),
+  // FK to measurement table
+  summary: (0, import_zero.string)(),
+  metrics: (0, import_zero.json)(),
+  // Array of { name, value, status, analysis }
+  projections: (0, import_zero.string)().optional(),
+  recommendations: (0, import_zero.json)(),
+  // Array of strings
+  created_at: (0, import_zero.number)()
+}).primaryKey("id");
 var schema = (0, import_zero.createSchema)({
   tables: [
     userTable,
@@ -230,7 +243,8 @@ var schema = (0, import_zero.createSchema)({
     taskTable,
     measurementTable,
     measurementRangeTable,
-    seasonalTaskTable
+    seasonalTaskTable,
+    measurementAnalysisTable
   ]
 });
 var builder = (0, import_zero.createBuilder)(schema);
@@ -371,6 +385,17 @@ var permissions = (0, import_zero.definePermissions)(
         }
       },
       seasonal_task: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      measurement_analysis: {
         row: {
           select: import_zero.ANYONE_CAN,
           insert: import_zero.ANYONE_CAN,
