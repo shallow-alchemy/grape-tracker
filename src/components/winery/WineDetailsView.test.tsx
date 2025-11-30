@@ -24,7 +24,7 @@ const mockBlendWine = {
   id: 'wine-2',
   name: 'House Blend',
   wine_type: 'red',
-  current_stage: 'oak_aging',
+  current_stage: 'aging',
   status: 'aging',
   current_volume_gallons: 10,
   volume_gallons: 12,
@@ -60,7 +60,7 @@ const mockStageHistory = [
     id: 'history-2',
     entity_type: 'wine',
     entity_id: 'wine-1',
-    stage: 'primary',
+    stage: 'crush',
     started_at: now - 86400000 * 10, // 10 days ago
     completed_at: now - 86400000 * 5, // completed 5 days ago
   },
@@ -164,6 +164,9 @@ rs.mock('./TaskListView', () => ({
 
 rs.mock('react-icons/fi', () => ({
   FiSettings: () => <span data-testid="settings-icon">⚙</span>,
+  FiCheck: () => <span data-testid="check-icon">✓</span>,
+  FiAlertTriangle: () => <span data-testid="alert-icon">⚠</span>,
+  FiX: () => <span data-testid="x-icon">✕</span>,
 }));
 
 describe('WineDetailsView', () => {
@@ -250,11 +253,11 @@ describe('WineDetailsView', () => {
   });
 
   describe('blend information', () => {
-    test('shows blend varieties for blend wines', () => {
+    test('shows varieties label for blend wines', () => {
       mockWineData = [mockBlendWine];
       render(<WineDetailsView wineId="wine-2" onBack={() => {}} />);
 
-      expect(screen.getByText(/Multi-Vintage Blend/)).toBeInTheDocument();
+      expect(screen.getByText('VARIETIES')).toBeInTheDocument();
     });
 
     test('displays blend component percentages', () => {
@@ -265,10 +268,10 @@ describe('WineDetailsView', () => {
       expect(screen.getByText(/40%/)).toBeInTheDocument();
     });
 
-    test('displays source vintage for non-blend wines', () => {
+    test('displays variety label for non-blend wines', () => {
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
-      expect(screen.getByText('SOURCE VINTAGE')).toBeInTheDocument();
+      expect(screen.getByText('VARIETY')).toBeInTheDocument();
     });
   });
 
@@ -302,7 +305,7 @@ describe('WineDetailsView', () => {
     test('renders mark complete button', () => {
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
-      expect(screen.getByText('Mark Complete →')).toBeInTheDocument();
+      expect(screen.getByText('mark complete →')).toBeInTheDocument();
     });
 
     test('renders settings button', () => {
@@ -329,7 +332,7 @@ describe('WineDetailsView', () => {
 
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
-      const completeButton = screen.getByText('Mark Complete →');
+      const completeButton = screen.getByText('mark complete →');
       await user.click(completeButton);
 
       expect(screen.getByTestId('stage-transition-modal')).toBeInTheDocument();
@@ -352,21 +355,21 @@ describe('WineDetailsView', () => {
     test('formats underscored stages correctly', () => {
       mockWineData = [{
         ...mockWine,
-        current_stage: 'oak_aging',
+        current_stage: 'malolactic_fermentation',
       }];
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
-      expect(screen.getByText('OAK AGING')).toBeInTheDocument();
+      expect(screen.getByText('MALOLACTIC FERMENTATION')).toBeInTheDocument();
     });
 
     test('handles single word stages', () => {
       mockWineData = [{
         ...mockWine,
-        current_stage: 'bottled',
+        current_stage: 'bottling',
       }];
       render(<WineDetailsView wineId="wine-1" onBack={() => {}} />);
 
-      expect(screen.getByText('BOTTLED')).toBeInTheDocument();
+      expect(screen.getByText('BOTTLING')).toBeInTheDocument();
     });
   });
 

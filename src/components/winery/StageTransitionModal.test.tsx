@@ -124,11 +124,13 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 
       expect(screen.getByText('Crush')).toBeInTheDocument();
-      expect(screen.getByText('Primary Fermentation')).toBeInTheDocument();
+      // Next stage after crush for red wine is Pre-Fermentation (optional)
+      expect(screen.getByText('Pre-Fermentation')).toBeInTheDocument();
     });
 
     test('shows current and next stage for vintages', () => {
@@ -155,7 +157,8 @@ describe('StageTransitionModal', () => {
           onSuccess={() => {}}
           entityType="wine"
           entityId="wine-1"
-          currentStage="bottling"
+          currentStage="bottle_aging"
+          wineType="red"
         />
       );
 
@@ -173,6 +176,7 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 
@@ -211,14 +215,16 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 
       const dropdown = screen.getByRole('combobox');
-      await user.selectOptions(dropdown, 'racking');
+      // Skip from crush to aging (skipping pre_fermentation, primary_fermentation, press, mlf = 4 stages)
+      await user.selectOptions(dropdown, 'aging');
 
       // Should show how many stages are being skipped
-      expect(screen.getByText(/skip 2 stages/i)).toBeInTheDocument();
+      expect(screen.getByText(/skip 4 stages/i)).toBeInTheDocument();
     });
   });
 
@@ -232,6 +238,7 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 
@@ -251,6 +258,7 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 
@@ -269,6 +277,7 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 
@@ -289,6 +298,7 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 
@@ -308,6 +318,7 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 
@@ -331,6 +342,7 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 
@@ -340,11 +352,11 @@ describe('StageTransitionModal', () => {
       // Wait for async operations
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Should call advanceStage with correct parameters
+      // Should call advanceStage with correct parameters (next stage for red wine after crush is pre_fermentation)
       expect(mockAdvanceStage).toHaveBeenCalledWith(
         'crush',
         expect.objectContaining({
-          toStage: 'primary_fermentation',
+          toStage: 'pre_fermentation',
           notes: '',
           skipCurrentStage: false,
         })
@@ -399,6 +411,7 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 
@@ -429,6 +442,7 @@ describe('StageTransitionModal', () => {
           entityType="wine"
           entityId="wine-1"
           currentStage="crush"
+          wineType="red"
         />
       );
 

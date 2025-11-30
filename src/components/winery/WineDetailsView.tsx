@@ -11,7 +11,7 @@ import { useWines, useVintages } from '../vineyard-hooks';
 import { EditWineModal } from './EditWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
 import { AddMeasurementModal } from './AddMeasurementModal';
-import { getStagesForEntity } from './stages';
+import { getStagesForWineType, type WineType } from './stages';
 import styles from '../../App.module.css';
 
 const formatWineStatus = (status: string): string => {
@@ -342,7 +342,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
 
   const expandedStageHistory = (() => {
     const expanded: ExpandedStageHistoryEntry[] = [];
-    const wineStages = getStagesForEntity('wine');
+    const wineStages = getStagesForWineType((wine?.wine_type || 'red') as WineType);
 
     for (let i = 0; i < stageHistory.length; i++) {
       const current = stageHistory[i];

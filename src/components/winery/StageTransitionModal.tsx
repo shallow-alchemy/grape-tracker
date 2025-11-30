@@ -3,6 +3,7 @@ import { Modal } from '../Modal';
 import { useStageTransition } from './useStageTransition';
 import {
   type EntityType,
+  type WineType,
   getNextStage,
   getSkippableStages,
   getStageMetadata,
@@ -31,8 +32,11 @@ export const StageTransitionModal = ({
 }: StageTransitionModalProps) => {
   const { advanceStage, isLoading, error: hookError } = useStageTransition(entityType, entityId, wineType);
 
-  const nextStage = getNextStage(currentStage, entityType);
-  const skippableStages = getSkippableStages(currentStage, entityType);
+  // Cast wineType for type safety - defaults to undefined for vintages
+  const typedWineType = wineType as WineType | undefined;
+
+  const nextStage = getNextStage(currentStage, entityType, typedWineType);
+  const skippableStages = getSkippableStages(currentStage, entityType, typedWineType);
   const currentMeta = getStageMetadata(currentStage, entityType);
 
   const [selectedStage, setSelectedStage] = useState(nextStage?.value || '');
@@ -61,7 +65,7 @@ export const StageTransitionModal = ({
 
     if (result.success) {
       const selectedMeta = getStageMetadata(selectedStage, entityType);
-      const skippedCount = getSkippedStageCount(currentStage, selectedStage, entityType);
+      const skippedCount = getSkippedStageCount(currentStage, selectedStage, entityType, typedWineType);
 
       let message = `Advanced to ${selectedMeta?.label || selectedStage}`;
       if (skippedCount > 0) {
@@ -110,7 +114,7 @@ export const StageTransitionModal = ({
   }
 
   const selectedMeta = getStageMetadata(selectedStage, entityType);
-  const skippedCount = getSkippedStageCount(currentStage, selectedStage, entityType);
+  const skippedCount = getSkippedStageCount(currentStage, selectedStage, entityType, typedWineType);
 
   return (
     <Modal

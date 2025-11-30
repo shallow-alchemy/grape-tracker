@@ -141,8 +141,20 @@ Tracks wine production from vintages.
 }
 ```
 
-**Stage Constants** (wine):
-- `crush`, `primary_fermentation`, `secondary_fermentation`, `racking`, `oaking`, `aging`, `bottling`
+**Stage Constants** (wine) - 11-stage winemaking process:
+- `crush` - Grapes crushed, juice extracted
+- `pre_fermentation` - Cold soak (reds), cold settle (whites), pressing (whites)
+- `primary_fermentation` - Alcoholic fermentation (sugar to alcohol)
+- `press` - Separate wine from skins/seeds (post-ferment for reds)
+- `malolactic_fermentation` - Convert malic to lactic acid (softens wine)
+- `aging` - Bulk aging in barrel, tank, or carboy
+- `racking` - Transfer wine off sediment (lees)
+- `fining_filtering` - Clarification and stabilization
+- `blending` - Combine lots for balance and complexity
+- `bottling` - Wine packaged in bottles
+- `bottle_aging` - Post-bottling maturation
+
+**Stage Applicability by Wine Type**: Not all stages apply to all wine types. See `src/components/winery/stages.ts` for the complete applicability matrix. Hidden stages are not shown to users for that wine type.
 
 ### `stage_history` Table
 

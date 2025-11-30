@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useZero } from '../../contexts/ZeroContext';
 import { myVintages } from '../../shared/queries';
 import { Modal } from '../Modal';
+import { getStagesForWineType, type WineType } from './stages';
 import styles from '../../App.module.css';
 
 type AddWineModalProps = {
@@ -202,6 +203,19 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
 
   const selectedVintage = vintages.find(v => v.id === formData.vintageId);
 
+  // Get applicable stages for the selected wine type
+  const applicableStages = useMemo(() => {
+    return getStagesForWineType(formData.wineType as WineType);
+  }, [formData.wineType]);
+
+  // Reset stage to crush if current stage is not applicable for new wine type
+  useEffect(() => {
+    const isCurrentStageValid = applicableStages.some(s => s.value === formData.currentStage);
+    if (!isCurrentStageValid) {
+      setFormData(prev => ({ ...prev, currentStage: 'crush' }));
+    }
+  }, [applicableStages, formData.currentStage]);
+
   return (
     <Modal isOpen={isOpen} title="ADD WINE" onClose={handleClose}>
       <form className={styles.vineForm} onSubmit={handleSubmit}>
@@ -372,13 +386,11 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
             value={formData.currentStage}
             onChange={(e) => setFormData({ ...formData, currentStage: e.target.value })}
           >
-            <option value="crush">Crush</option>
-            <option value="primary_fermentation">Primary Fermentation</option>
-            <option value="secondary_fermentation">Secondary Fermentation</option>
-            <option value="racking">Racking</option>
-            <option value="oaking">Oaking</option>
-            <option value="aging">Aging</option>
-            <option value="bottling">Bottling</option>
+            {applicableStages.map((stage) => (
+              <option key={stage.value} value={stage.value}>
+                {stage.label}
+              </option>
+            ))}
           </select>
         </div>
 
