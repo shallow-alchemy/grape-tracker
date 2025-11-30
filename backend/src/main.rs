@@ -39,6 +39,35 @@ struct DailyForecast {
     weather_code: Vec<i32>,
 }
 
+// Historical Weather API types (Open-Meteo Archive)
+#[derive(Deserialize)]
+struct HistoricalWeatherResponse {
+    daily: HistoricalDaily,
+}
+
+#[derive(Deserialize)]
+struct HistoricalDaily {
+    time: Vec<String>,
+    temperature_2m_max: Vec<f64>,
+    temperature_2m_min: Vec<f64>,
+    #[serde(default)]
+    snowfall_sum: Vec<f64>,
+    #[serde(default)]
+    precipitation_sum: Vec<f64>,
+}
+
+// Calculated weather metrics for AI context
+#[derive(Debug)]
+struct SeasonalWeatherContext {
+    total_snowfall_inches: f64,
+    first_snow_date: Option<String>,
+    coldest_temp_f: i32,
+    coldest_date: Option<String>,
+    last_freeze_date: Option<String>,  // Last day below 32F
+    gdd_base50: f64,  // Growing degree days (base 50F)
+    days_analyzed: usize,
+}
+
 #[derive(Deserialize)]
 struct NominatimResponse {
     address: NominatimAddress,
@@ -320,6 +349,171 @@ fn weather_code_to_condition(code: i32) -> String {
         _ => "UNKNOWN",
     }
     .to_string()
+}
+
+/// Fetch historical weather data and calculate season-appropriate metrics.
+/// For fall/winter (Sep-Feb): tracks snowfall and freeze dates
+/// For spring/summer (Mar-Aug): tracks GDD and last freeze
+async fn fetch_seasonal_weather_context(
+    latitude: f64,
+    longitude: f64,
+    current_month: u32,
+) -> Option<SeasonalWeatherContext> {
+    let client = reqwest::Client::new();
+    let today = chrono::Local::now().date_naive();
+
+    // Determine start date based on season
+    let start_date = match current_month {
+        // Fall/Winter: start from September 1
+        9..=12 | 1..=2 => {
+            let year = if current_month >= 9 { today.year() } else { today.year() - 1 };
+            chrono::NaiveDate::from_ymd_opt(year, 9, 1)?
+        }
+        // Spring/Summer: start from March 1
+        3..=8 => {
+            chrono::NaiveDate::from_ymd_opt(today.year(), 3, 1)?
+        }
+        _ => return None,
+    };
+
+    // End date is 5 days ago (historical API has ~5 day delay)
+    let end_date = today - chrono::Duration::days(5);
+
+    if end_date <= start_date {
+        return None;
+    }
+
+    let url = format!(
+        "https://archive-api.open-meteo.com/v1/archive?latitude={}&longitude={}&start_date={}&end_date={}&daily=temperature_2m_max,temperature_2m_min,snowfall_sum,precipitation_sum&timezone=auto&temperature_unit=celsius",
+        latitude, longitude,
+        start_date.format("%Y-%m-%d"),
+        end_date.format("%Y-%m-%d")
+    );
+
+    tracing::info!("Fetching historical weather: {} to {}", start_date, end_date);
+
+    let response = client.get(&url).send().await.ok()?;
+
+    if !response.status().is_success() {
+        tracing::warn!("Historical weather API returned {}", response.status());
+        return None;
+    }
+
+    let data: HistoricalWeatherResponse = response.json().await.ok()?;
+
+    // Calculate metrics
+    let mut total_snowfall_cm = 0.0;
+    let mut first_snow_date: Option<String> = None;
+    let mut coldest_temp_c = f64::MAX;
+    let mut coldest_date: Option<String> = None;
+    let mut last_freeze_date: Option<String> = None;
+    let mut gdd_base50 = 0.0;
+
+    let freeze_threshold_c = 0.0; // 32F = 0C
+
+    for i in 0..data.daily.time.len() {
+        let date = &data.daily.time[i];
+        let temp_max = data.daily.temperature_2m_max.get(i).copied().unwrap_or(0.0);
+        let temp_min = data.daily.temperature_2m_min.get(i).copied().unwrap_or(0.0);
+        let snowfall = data.daily.snowfall_sum.get(i).copied().unwrap_or(0.0);
+
+        // Track snowfall
+        if snowfall > 0.0 {
+            total_snowfall_cm += snowfall;
+            if first_snow_date.is_none() {
+                first_snow_date = Some(date.clone());
+            }
+        }
+
+        // Track coldest temperature
+        if temp_min < coldest_temp_c {
+            coldest_temp_c = temp_min;
+            coldest_date = Some(date.clone());
+        }
+
+        // Track freeze dates (below 32F/0C)
+        if temp_min <= freeze_threshold_c {
+            last_freeze_date = Some(date.clone());
+        }
+
+        // Calculate GDD (base 50F = 10C)
+        let avg_temp_c = (temp_max + temp_min) / 2.0;
+        let base_c = 10.0; // 50F
+        if avg_temp_c > base_c {
+            gdd_base50 += avg_temp_c - base_c;
+        }
+    }
+
+    // Convert to imperial
+    let total_snowfall_inches = total_snowfall_cm / 2.54;
+    let coldest_temp_f = if coldest_temp_c < f64::MAX {
+        celsius_to_fahrenheit(coldest_temp_c)
+    } else {
+        32
+    };
+
+    // Convert GDD from Celsius to Fahrenheit base
+    let gdd_base50_f = gdd_base50 * 1.8;
+
+    Some(SeasonalWeatherContext {
+        total_snowfall_inches,
+        first_snow_date,
+        coldest_temp_f,
+        coldest_date,
+        last_freeze_date,
+        gdd_base50: gdd_base50_f,
+        days_analyzed: data.daily.time.len(),
+    })
+}
+
+/// Format the weather context into a human-readable string for the AI prompt
+fn format_weather_context(ctx: &SeasonalWeatherContext, current_month: u32) -> String {
+    let mut parts = Vec::new();
+
+    match current_month {
+        // Fall/Winter messaging
+        9..=12 | 1..=2 => {
+            if ctx.total_snowfall_inches > 0.1 {
+                parts.push(format!(
+                    "Snowfall this season: {:.1} inches (first snow: {})",
+                    ctx.total_snowfall_inches,
+                    ctx.first_snow_date.as_deref().unwrap_or("unknown")
+                ));
+            } else {
+                parts.push("No snow yet this season".to_string());
+            }
+
+            if let Some(freeze_date) = &ctx.last_freeze_date {
+                parts.push(format!(
+                    "Last freeze (≤32°F): {} (coldest: {}°F on {})",
+                    freeze_date,
+                    ctx.coldest_temp_f,
+                    ctx.coldest_date.as_deref().unwrap_or("unknown")
+                ));
+            } else {
+                parts.push(format!("No hard freeze yet (coldest: {}°F)", ctx.coldest_temp_f));
+            }
+        }
+        // Spring/Summer messaging
+        3..=8 => {
+            if let Some(freeze_date) = &ctx.last_freeze_date {
+                parts.push(format!("Last freeze (≤32°F): {}", freeze_date));
+            } else {
+                parts.push("No freezes since March 1".to_string());
+            }
+
+            parts.push(format!("Growing degree days (base 50°F): {:.0}", ctx.gdd_base50));
+        }
+        _ => {}
+    }
+
+    if parts.is_empty() {
+        return String::new();
+    }
+
+    format!("\n\nHistorical Weather Data (past {} days):\n- {}",
+        ctx.days_analyzed,
+        parts.join("\n- "))
 }
 
 async fn get_weather(
@@ -692,6 +886,23 @@ async fn get_seasonal_tasks(
         _ => None,
     };
 
+    // Try to extract coordinates for historical weather lookup
+    let coordinates = payload.vineyard_location
+        .as_ref()
+        .and_then(|loc| parse_coordinates(loc));
+
+    // Fetch historical weather context if we have coordinates
+    let weather_context = if let Some((lat, lon)) = coordinates {
+        fetch_seasonal_weather_context(lat, lon, current_date.month()).await
+    } else {
+        None
+    };
+
+    let weather_context_str = weather_context
+        .as_ref()
+        .map(|ctx| format_weather_context(ctx, current_date.month()))
+        .unwrap_or_default();
+
     // Determine approximate season based on month (Northern Hemisphere default)
     let season_hint = match current_date.month() {
         12 | 1 | 2 => "dormant season (winter)",
@@ -764,9 +975,9 @@ Context:
 - Approximate season: {}
 - Location: {}
 - Varieties grown: {}
-{}
+{}{}
 
-Based on this timing and the reference documentation, provide a prioritized list of 3-5 vineyard tasks the grower should focus on right now.
+Based on this timing, historical weather data, and the reference documentation, provide a prioritized list of 3-5 vineyard tasks the grower should focus on right now.
 
 Respond with JSON in this exact format:
 {{
@@ -775,23 +986,25 @@ Respond with JSON in this exact format:
     {{
       "priority": 1,
       "task": "Short task name",
-      "timing": "When to do this (e.g., 'This week', 'Before bud break', 'When shoots reach 6 inches')",
-      "details": "1-2 sentence explanation of what to do and why"
+      "timing": "When to do this - use ACTUAL weather conditions if available (e.g., 'This week since no snow yet', 'Completed - frost already occurred')",
+      "details": "1-2 sentence explanation of what to do and why, referencing actual conditions when relevant"
     }}
   ],
-  "weather_note": "Optional note about weather considerations, or null if not applicable"
+  "weather_note": "Optional note about weather considerations based on actual historical data, or null if not applicable"
 }}
 
 Important guidelines:
 1. Tasks should be actionable and specific to this time of year
 2. Consider the varieties - some have specific needs
 3. Prioritize by urgency - what must be done now vs. can wait
-4. Reference the documentation for timing cues (e.g., soil temperature, phenological stages)
-5. For home growers, focus on essential tasks rather than commercial-scale operations"#,
+4. Use the historical weather data to give accurate timing advice (e.g., if snow has already fallen, don't say "before first snow")
+5. Reference the documentation for timing cues (e.g., soil temperature, phenological stages)
+6. For home growers, focus on essential tasks rather than commercial-scale operations"#,
         month, day,
         season_hint,
         resolved_location.as_deref().unwrap_or("unspecified location"),
         varieties_str,
+        weather_context_str,
         knowledge_context
     );
 

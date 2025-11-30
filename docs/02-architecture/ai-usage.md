@@ -16,6 +16,12 @@ This document tracks all AI API calls in the application for cost monitoring and
 - **Billing**: https://platform.openai.com/settings/organization/billing/overview
 - **API Keys**: https://platform.openai.com/api-keys
 
+### Open-Meteo (Free)
+- **Documentation**: https://open-meteo.com/
+- **Historical Weather API**: https://open-meteo.com/en/docs/historical-weather-api
+- **Forecast API**: https://open-meteo.com/en/docs
+- **Cost**: Free for non-commercial use (no API key required)
+
 ---
 
 ## AI Endpoints
@@ -50,15 +56,20 @@ This document tracks all AI API calls in the application for cost monitoring and
 
 ### 2. `/ai/seasonal-tasks` (POST)
 
-**Purpose**: Generates weekly seasonal vineyard tasks based on location and varieties.
+**Purpose**: Generates weekly seasonal vineyard tasks based on location, varieties, and historical weather data.
 
 **Frontend**: `src/components/dashboard/SeasonalTaskCard.tsx`
 
 **API Calls**:
-| Provider | Model | Purpose |
-|----------|-------|---------|
+| Provider | Model/Endpoint | Purpose |
+|----------|----------------|---------|
+| Open-Meteo | Historical Weather API | Fetch season-to-date weather (snowfall, temps, GDD) |
 | OpenAI | text-embedding-3-small | RAG query embeddings |
-| Anthropic | claude-sonnet-4-20250514 | Generate seasonal tasks |
+| Anthropic | claude-3-5-haiku-20241022 | Generate seasonal tasks |
+
+**Weather Metrics Calculated**:
+- **Fall/Winter**: Snowfall totals, first snow date, coldest temp, last freeze date
+- **Spring/Summer**: Last freeze date, Growing Degree Days (base 50F)
 
 **Request Payload**:
 ```json
@@ -90,6 +101,8 @@ This document tracks all AI API calls in the application for cost monitoring and
 
 ### Implemented
 - **Weekly caching for seasonal tasks**: Tasks stored in DB, only regenerated weekly
+- **Free weather API**: Open-Meteo Historical Weather API is free for non-commercial use
+- **Efficient model selection**: Using claude-3-5-haiku for seasonal tasks (cheaper than Sonnet)
 
 ### Planned
 - [ ] Add user-level rate limiting
