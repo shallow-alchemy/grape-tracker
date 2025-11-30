@@ -5,7 +5,7 @@ import { useLocation } from 'wouter';
 import { FiSettings, FiCheck, FiAlertTriangle, FiX } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { getBackendUrl } from '../../config';
-import { myStageHistoryByEntity, myMeasurementsByEntity, myMeasurementAnalysisByMeasurement, myMeasurementAnalyses } from '../../shared/queries';
+import { myStageHistoryByEntity, myMeasurementsByEntity, myMeasurementAnalysisByMeasurement, myMeasurementAnalyses, myTasksByEntity } from '../../shared/queries';
 import { MeasurementChart } from './MeasurementChart';
 import { useWines, useVintages } from '../vineyard-hooks';
 import { EditWineModal } from './EditWineModal';
@@ -72,6 +72,14 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   // Query for all measurement analyses (for chart tooltips)
   const [allAnalysesData] = useQuery(myMeasurementAnalyses(user?.id)) as any;
   const allAnalyses = Array.isArray(allAnalysesData) ? allAnalysesData : [];
+
+  // Query for tasks to check which recommendations have been converted
+  const [tasksData] = useQuery(myTasksByEntity(user?.id, 'wine', wineId)) as any;
+  const tasksFromRecommendations = new Set(
+    (tasksData || [])
+      .filter((t: any) => t.notes === 'Created from AI recommendation')
+      .map((t: any) => t.description)
+  );
 
   // Track Zero sync state: undefined = still syncing, [] = synced but no data
   const analysisCacheSynced = cachedAnalysisData !== undefined;
@@ -250,6 +258,41 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
     }
   };
 
+  // Create a task from an AI recommendation
+  const createTaskFromRecommendation = async (recommendation: string) => {
+    if (!user?.id || !wine) return;
+
+    try {
+      const now = Date.now();
+      // Set due date to 3 days from now
+      const dueDate = now + (3 * 24 * 60 * 60 * 1000);
+
+      await zero.mutate.task.insert({
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        task_template_id: null as any,
+        entity_type: 'wine',
+        entity_id: wineId,
+        stage: wine.current_stage,
+        name: recommendation.length > 60 ? recommendation.slice(0, 57) + '...' : recommendation,
+        description: recommendation,
+        due_date: dueDate,
+        completed_at: null as any,
+        completed_by: '',
+        notes: 'Created from AI recommendation',
+        skipped: false,
+        created_at: now,
+        updated_at: now,
+      });
+
+      setSuccessMessage('Task created!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      setAiAnalysisError('Failed to create task');
+    }
+  };
+
   if (!wine) {
     return (
       <div className={styles.paddingContainer}>
@@ -361,12 +404,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
       </div>
 
       <div className={styles.detailSection}>
-        <div className={styles.stageHeaderRow}>
-          <div className={`${styles.sectionHeader} ${styles.sectionHeaderNoMargin}`}>CURRENT STAGE</div>
-          <button onClick={() => setShowStageModal(true)} className={styles.markCompleteButton}>
-            Mark Complete →
-          </button>
-        </div>
+        <div className={styles.sectionHeader}>CURRENT STAGE</div>
         <div className={styles.currentStageDisplay}>
           {formatStage(wine.current_stage)}
           {daysInStage !== null && (
@@ -374,13 +412,15 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
               ({daysInStage} {daysInStage === 1 ? 'day' : 'days'})
             </span>
           )}
+          <button onClick={() => setShowStageModal(true)} className={styles.markCompleteButtonInline}>
+            mark complete →
+          </button>
         </div>
       </div>
 
       <div className={styles.wineDetailsRow}>
         <div className={styles.wineDetailsMain}>
           <div className={styles.detailSection}>
-            <div className={styles.sectionHeader}>WINE DETAILS</div>
             <div className={styles.detailGrid}>
               <div className={styles.detailItem}>
                 <div className={styles.detailLabel}>TYPE</div>
@@ -423,35 +463,40 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
           </div>
         </div>
 
-        <div className={styles.aiOutlookPanel}>
-          <div className={styles.aiOutlookPanelHeader}>PROJECTION</div>
-          <div className={styles.aiOutlookPanelText}>
+        {/* Next Steps - actionable list next to wine details */}
+        <div className={styles.nextStepsPanel}>
+          <div className={styles.nextStepsPanelHeader}>NEXT STEPS</div>
+          <div className={styles.nextStepsPanelText}>
             {aiAnalysisLoading ? (
               <span className={styles.aiOutlookLoading}>Analyzing measurements...</span>
-            ) : aiAnalysis?.projections ? (
-              aiAnalysis.projections
+            ) : aiAnalysis && aiAnalysis.recommendations.length > 0 ? (
+              <ul className={styles.nextStepsList}>
+                {aiAnalysis.recommendations.map((rec, idx) => (
+                  <li key={idx}>
+                    {rec}
+                    {tasksFromRecommendations.has(rec) ? (
+                      <span className={styles.taskCreatedCheck}>
+                        <FiCheck size={14} /> Task created
+                      </span>
+                    ) : (
+                      <button
+                        className={styles.makeTaskLink}
+                        onClick={() => createTaskFromRecommendation(rec)}
+                      >
+                        Make a task →
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
             ) : !latestMeasurement ? (
-              <span className={styles.aiOutlookEmpty}>Add measurements to receive AI-powered projections for this wine.</span>
+              <span className={styles.nextStepsEmpty}>Add measurements</span>
             ) : (
-              <span className={styles.aiOutlookEmpty}>Waiting for analysis...</span>
+              <span className={styles.nextStepsEmpty}>Waiting for analysis...</span>
             )}
           </div>
         </div>
       </div>
-
-      {/* AI Recommendations - shown above Latest Measurements */}
-      {aiAnalysis && aiAnalysis.recommendations.length > 0 && (
-        <div className={styles.aiInsightsSection}>
-          <div className={styles.aiInsightsHeader}>
-            <span>NEXT STEPS</span>
-          </div>
-          <ul className={styles.aiInsightList}>
-            {aiAnalysis.recommendations.map((rec, idx) => (
-              <li key={idx}>{rec}</li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {latestMeasurement && (
         <div className={styles.detailSection}>
@@ -637,13 +682,29 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
             <div className={styles.errorMessage}>{aiAnalysisError}</div>
           )}
 
-          {/* Measurement History Chart */}
+          {/* Measurement History Chart with Projection */}
           {measurements.length > 0 && (
             <>
               <div className={styles.sectionHeader} style={{ marginTop: 'var(--spacing-md)' }}>
                 MEASUREMENT HISTORY
               </div>
-              <MeasurementChart measurements={measurements} analyses={allAnalyses} />
+              <div className={styles.chartWithProjection}>
+                <div className={styles.chartMain}>
+                  <MeasurementChart measurements={measurements} analyses={allAnalyses} />
+                </div>
+                <div className={styles.chartProjectionPanel}>
+                  <div className={styles.chartProjectionHeader}>PROJECTION</div>
+                  <div className={styles.chartProjectionText}>
+                    {aiAnalysisLoading ? (
+                      <span className={styles.aiOutlookLoading}>Analyzing...</span>
+                    ) : aiAnalysis?.projections ? (
+                      aiAnalysis.projections
+                    ) : (
+                      <span className={styles.aiOutlookEmpty}>Waiting for analysis...</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </>
           )}
         </div>

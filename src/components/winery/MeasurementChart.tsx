@@ -51,10 +51,33 @@ const formatStage = (stage: string): string => {
 
 // Map dataKey to display name and metric lookup name
 const metricConfig: Record<string, { label: string; lookupName: string; color: string; unit: string; decimals: number }> = {
-  ph: { label: 'pH', lookupName: 'ph', color: '#65a165', unit: '', decimals: 2 },          // Green
-  ta: { label: 'TA', lookupName: 'ta', color: '#6ba3d6', unit: ' g/L', decimals: 1 },      // Blue
-  brix: { label: 'Brix', lookupName: 'brix', color: '#d4a85c', unit: '°', decimals: 1 },   // Amber
-  temperature: { label: 'Temp', lookupName: 'temperature', color: '#d66b6b', unit: '°F', decimals: 0 }, // Red
+  ph: { label: 'pH', lookupName: 'ph', color: '#ba68c8', unit: '', decimals: 2 },          // Purple (pH indicator)
+  ta: { label: 'TA', lookupName: 'ta', color: '#ffab00', unit: ' g/L', decimals: 1 },      // Amber
+  brix: { label: 'Brix', lookupName: 'brix', color: '#00bfa5', unit: '°', decimals: 1 },   // Teal
+  temperature: { label: 'Temp', lookupName: 'temperature', color: '#ff5252', unit: '°F', decimals: 0 }, // Bright red (heat)
+};
+
+// Typical winemaking ranges for normalization
+// pH: 2.9-4.0 (lower = more acidic)
+// TA: 4-10 g/L (higher = more acidic)
+const ACIDITY_RANGES = {
+  ph: { min: 2.9, max: 4.0 },
+  ta: { min: 4, max: 10 },
+};
+
+// Normalize pH and TA to a 0-100 "acidity" scale
+// pH is inverted (lower pH = higher acidity = higher on scale)
+// TA is normal (higher TA = higher acidity = higher on scale)
+const normalizeAcidity = (value: number | null, type: 'ph' | 'ta'): number | null => {
+  if (value === null) return null;
+  const range = ACIDITY_RANGES[type];
+  if (type === 'ph') {
+    // Invert pH: low pH (2.9) = 100, high pH (4.0) = 0
+    return ((range.max - value) / (range.max - range.min)) * 100;
+  } else {
+    // Normal TA: low TA (4) = 0, high TA (10) = 100
+    return ((value - range.min) / (range.max - range.min)) * 100;
+  }
 };
 
 // Custom tooltip component - shows only the hovered metric
@@ -72,8 +95,17 @@ const CustomTooltip = ({
 }) => {
   if (!active || !payload || payload.length === 0 || !hoveredMetric) return null;
 
+  // Map metric names to their dataKeys (pH and TA use normalized acidity values)
+  const dataKeyMap: Record<string, string> = {
+    ph: 'phAcidity',
+    ta: 'taAcidity',
+    brix: 'brix',
+    temperature: 'temperature',
+  };
+
   // Find the series matching the hovered metric
-  const hoveredSeries = payload.find(p => p.dataKey === hoveredMetric);
+  const targetDataKey = dataKeyMap[hoveredMetric] || hoveredMetric;
+  const hoveredSeries = payload.find(p => p.dataKey === targetDataKey);
   if (!hoveredSeries) return null;
 
   const data = hoveredSeries.payload;
@@ -133,18 +165,18 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
       .map(m => ({
         ...m,
         dateLabel: formatDate(m.date),
+        // Add normalized acidity values for pH and TA
+        phAcidity: normalizeAcidity(m.ph, 'ph'),
+        taAcidity: normalizeAcidity(m.ta, 'ta'),
       }));
   }, [measurements]);
 
   // Calculate domains for each metric
   const domains = useMemo(() => {
-    const phValues = measurements.filter(m => m.ph !== null).map(m => m.ph!);
-    const taValues = measurements.filter(m => m.ta !== null).map(m => m.ta!);
     const brixValues = measurements.filter(m => m.brix !== null).map(m => m.brix!);
 
     return {
-      ph: phValues.length ? [Math.min(...phValues) - 0.2, Math.max(...phValues) + 0.2] : [2.8, 4.2],
-      ta: taValues.length ? [Math.min(...taValues) - 0.5, Math.max(...taValues) + 0.5] : [4, 10],
+      acidity: [0, 100], // Normalized acidity scale
       brix: brixValues.length ? [Math.min(0, Math.min(...brixValues) - 1), Math.max(...brixValues) + 2] : [-2, 30],
       temp: [30, 110], // Fixed scale centered on 70°F for fermentation temps
     };
@@ -169,7 +201,7 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
   return (
     <div className={styles.chartContainer}>
       <ResponsiveContainer width="100%" height={300}>
-        <ComposedChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
+        <ComposedChart data={chartData} margin={{ top: 0, right: 20, left: -20, bottom: 40 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#2d3d2d" />
 
           <XAxis
@@ -179,16 +211,16 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
             tickLine={{ stroke: '#65a165' }}
           />
 
-          {/* pH axis - left */}
-          {hasData.ph && (
+          {/* Acidity axis - left (shared by pH and TA, normalized 0-100) */}
+          {(hasData.ph || hasData.ta) && (
             <YAxis
-              yAxisId="ph"
+              yAxisId="acidity"
               orientation="left"
-              domain={domains.ph}
-              stroke={metricConfig.ph.color}
-              tick={{ fill: metricConfig.ph.color, fontSize: 10 }}
-              tickLine={{ stroke: metricConfig.ph.color }}
-              label={{ value: 'pH', angle: -90, position: 'insideLeft', fill: metricConfig.ph.color, fontSize: 11 }}
+              domain={domains.acidity}
+              stroke="#8fbe8f"
+              tick={{ fill: '#8fbe8f', fontSize: 10 }}
+              tickLine={{ stroke: '#8fbe8f' }}
+              tickFormatter={() => ''} // Hide tick labels since it's a relative scale
             />
           )}
 
@@ -201,7 +233,6 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
               stroke={metricConfig.brix.color}
               tick={{ fill: metricConfig.brix.color, fontSize: 10 }}
               tickLine={{ stroke: metricConfig.brix.color }}
-              label={{ value: 'Brix°', angle: 90, position: 'insideRight', fill: metricConfig.brix.color, fontSize: 11 }}
             />
           )}
 
@@ -227,9 +258,9 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
 
           {hasData.ph && (
             <Line
-              yAxisId="ph"
+              yAxisId="acidity"
               type="monotone"
-              dataKey="ph"
+              dataKey="phAcidity"
               name="pH"
               stroke={metricConfig.ph.color}
               strokeWidth={2}
@@ -247,9 +278,9 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
 
           {hasData.ta && (
             <Line
-              yAxisId="ph"
+              yAxisId="acidity"
               type="monotone"
-              dataKey="ta"
+              dataKey="taAcidity"
               name="TA (g/L)"
               stroke={metricConfig.ta.color}
               strokeWidth={2}
@@ -273,6 +304,7 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
               name="Brix"
               stroke={metricConfig.brix.color}
               strokeWidth={2}
+              strokeDasharray="5 5"
               dot={{ fill: metricConfig.brix.color, strokeWidth: 0, r: 4, cursor: 'pointer' }}
               activeDot={{
                 r: 6,
@@ -291,10 +323,10 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
               type="monotone"
               dataKey="temperature"
               name="Temp (°F)"
-              stroke={metricConfig.temperature.color}
-              strokeWidth={1}
+              stroke="none"
               fill={metricConfig.temperature.color}
               fillOpacity={0.15}
+              legendType="rect"
               dot={{ fill: metricConfig.temperature.color, strokeWidth: 0, r: 3, cursor: 'pointer' }}
               activeDot={{
                 r: 5,
