@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
-import { FiSettings } from 'react-icons/fi';
+import { FiSettings, FiCheck, FiAlertTriangle, FiX } from 'react-icons/fi';
+import { useZero } from '../../contexts/ZeroContext';
 import { getBackendUrl } from '../../config';
 import { myStageHistoryByEntity, myMeasurementsByEntity, myMeasurementAnalysisByMeasurement, myMeasurementAnalyses } from '../../shared/queries';
 import { MeasurementChart } from './MeasurementChart';
@@ -26,6 +27,7 @@ type WineDetailsViewProps = {
 export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const { user } = useUser();
   const [, setLocation] = useLocation();
+  const zero = useZero();
   const allWinesData = useWines();
   const wine = allWinesData.find((w: any) => w.id === wineId);
 
@@ -80,6 +82,10 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const [showStageModal, setShowStageModal] = useState(false);
   const [showMeasurementModal, setShowMeasurementModal] = useState(false);
 
+  // Inline measurement editing state
+  const [editingField, setEditingField] = useState<'ph' | 'ta' | 'brix' | 'temperature' | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+
   // AI Analysis state
   const [aiAnalysis, setAiAnalysis] = useState<{
     summary: string;
@@ -90,70 +96,8 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
   const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
 
-  // Load cached analysis from Zero when available
-  useEffect(() => {
-    if (hasCachedAnalysis && !aiAnalysis) {
-      const cached = cachedAnalysisData[0];
-      setAiAnalysis({
-        summary: cached.summary,
-        metrics: cached.metrics || [],
-        projections: cached.projections || null,
-        recommendations: cached.recommendations || [],
-      });
-    }
-  }, [hasCachedAnalysis, cachedAnalysisData, aiAnalysis]);
-
-  // Clear analysis when measurement changes
-  const lastMeasurementIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (latestMeasurement?.id && latestMeasurement.id !== lastMeasurementIdRef.current) {
-      // Measurement changed - clear local state so we load from cache
-      if (lastMeasurementIdRef.current !== null) {
-        setAiAnalysis(null);
-        setAiAnalysisError(null);
-      }
-      lastMeasurementIdRef.current = latestMeasurement.id;
-    }
-  }, [latestMeasurement?.id]);
-
-  if (!wine) {
-    return (
-      <div className={styles.paddingContainer}>
-        <div className={styles.errorMessage}>WINE NOT FOUND</div>
-        <button className={styles.actionButton} onClick={onBack}>
-          BACK TO LIST
-        </button>
-      </div>
-    );
-  }
-
-  const formatDate = (timestamp: number): string => {
-    if (!timestamp) return '—';
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const formatStage = (stage: string): string => {
-    return stage
-      .split('_')
-      .map(word => word.toUpperCase())
-      .join(' ');
-  };
-
-  const getDaysInStage = (): number | null => {
-    if (!currentStageHistory) return null;
-    const now = Date.now();
-    const days = Math.floor((now - currentStageHistory.started_at) / (1000 * 60 * 60 * 24));
-    return days;
-  };
-
-  const daysInStage = getDaysInStage();
-
-  const fetchAiAnalysis = async () => {
+  // Fetch AI analysis for current measurement
+  const fetchAiAnalysis = useCallback(async () => {
     if (!latestMeasurement || !wine || !user?.id) return;
 
     setAiAnalysisLoading(true);
@@ -197,15 +141,151 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
 
       const data = await response.json();
       setAiAnalysis(data);
-      // Wait a moment for Zero to sync the cached analysis
-      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (err) {
       setAiAnalysisError('Failed to get AI analysis. Please try again.');
       console.error('AI analysis error:', err);
     } finally {
       setAiAnalysisLoading(false);
     }
+  }, [latestMeasurement, wine, user?.id, vintage?.variety, isBlend, measurements]);
+
+  // Load cached analysis from Zero when available
+  useEffect(() => {
+    if (hasCachedAnalysis && !aiAnalysis) {
+      const cached = cachedAnalysisData[0];
+      setAiAnalysis({
+        summary: cached.summary,
+        metrics: cached.metrics || [],
+        projections: cached.projections || null,
+        recommendations: cached.recommendations || [],
+      });
+    }
+  }, [hasCachedAnalysis, cachedAnalysisData, aiAnalysis]);
+
+  // Track measurement changes and auto-trigger AI analysis
+  const lastMeasurementIdRef = useRef<string | null>(null);
+  const hasFetchedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (latestMeasurement?.id && latestMeasurement.id !== lastMeasurementIdRef.current) {
+      // Measurement changed - clear local state so we load from cache
+      if (lastMeasurementIdRef.current !== null) {
+        setAiAnalysis(null);
+        setAiAnalysisError(null);
+      }
+      lastMeasurementIdRef.current = latestMeasurement.id;
+    }
+  }, [latestMeasurement?.id]);
+
+  // Auto-fetch AI analysis when we have a measurement but no cached analysis
+  useEffect(() => {
+    if (
+      latestMeasurement?.id &&
+      analysisCacheSynced &&
+      !hasCachedAnalysis &&
+      !aiAnalysis &&
+      !aiAnalysisLoading &&
+      !hasFetchedRef.current.has(latestMeasurement.id)
+    ) {
+      hasFetchedRef.current.add(latestMeasurement.id);
+      fetchAiAnalysis();
+    }
+  }, [latestMeasurement?.id, analysisCacheSynced, hasCachedAnalysis, aiAnalysis, aiAnalysisLoading, fetchAiAnalysis]);
+
+  // Handle inline measurement edit
+  const startEditing = (field: 'ph' | 'ta' | 'brix' | 'temperature', currentValue: number) => {
+    setEditingField(field);
+    setEditValue(currentValue.toString());
   };
+
+  const cancelEditing = () => {
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  const saveMeasurementEdit = async () => {
+    if (!editingField || !latestMeasurement) return;
+
+    const newValue = parseFloat(editValue);
+    if (isNaN(newValue)) {
+      cancelEditing();
+      return;
+    }
+
+    // Check if value actually changed
+    if (latestMeasurement[editingField] === newValue) {
+      cancelEditing();
+      return;
+    }
+
+    try {
+      // Update the measurement
+      await zero.mutate.measurement.update({
+        id: latestMeasurement.id,
+        [editingField]: newValue,
+      });
+
+      // Delete cached AI analysis to trigger re-analysis
+      if (cachedAnalysisData?.[0]?.id) {
+        await zero.mutate.measurement_analysis.delete({ id: cachedAnalysisData[0].id });
+      }
+
+      // Clear local state to trigger re-fetch
+      setAiAnalysis(null);
+      hasFetchedRef.current.delete(latestMeasurement.id);
+
+      cancelEditing();
+    } catch (err) {
+      console.error('Failed to update measurement:', err);
+      setAiAnalysisError('Failed to update measurement');
+      cancelEditing();
+    }
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      saveMeasurementEdit();
+    } else if (e.key === 'Escape') {
+      cancelEditing();
+    }
+  };
+
+  if (!wine) {
+    return (
+      <div className={styles.paddingContainer}>
+        <div className={styles.errorMessage}>WINE NOT FOUND</div>
+        <button className={styles.actionButton} onClick={onBack}>
+          BACK TO LIST
+        </button>
+      </div>
+    );
+  }
+
+  const formatDate = (timestamp: number): string => {
+    if (!timestamp) return '—';
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const formatStage = (stage: string): string => {
+    return stage
+      .split('_')
+      .map(word => word.toUpperCase())
+      .join(' ');
+  };
+
+  const getDaysInStage = (): number | null => {
+    if (!currentStageHistory) return null;
+    const now = Date.now();
+    const days = Math.floor((now - currentStageHistory.started_at) / (1000 * 60 * 60 * 24));
+    return days;
+  };
+
+  const daysInStage = getDaysInStage();
 
   type ExpandedStageHistoryEntry = {
     id: string;
@@ -343,12 +423,20 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
           </div>
         </div>
 
-        {aiAnalysis?.projections && (
-          <div className={styles.aiOutlookPanel}>
-            <div className={styles.aiOutlookPanelHeader}>PROJECTION</div>
-            <div className={styles.aiOutlookPanelText}>{aiAnalysis.projections}</div>
+        <div className={styles.aiOutlookPanel}>
+          <div className={styles.aiOutlookPanelHeader}>PROJECTION</div>
+          <div className={styles.aiOutlookPanelText}>
+            {aiAnalysisLoading ? (
+              <span className={styles.aiOutlookLoading}>Analyzing measurements...</span>
+            ) : aiAnalysis?.projections ? (
+              aiAnalysis.projections
+            ) : !latestMeasurement ? (
+              <span className={styles.aiOutlookEmpty}>Add measurements to receive AI-powered projections for this wine.</span>
+            ) : (
+              <span className={styles.aiOutlookEmpty}>Waiting for analysis...</span>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* AI Recommendations - shown above Latest Measurements */}
@@ -380,13 +468,32 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
               <div className={styles.measurementCard}>
                 <div className={styles.measurementCardHeader}>
                   <div className={styles.measurementCardLabel}>PH</div>
-                  <div className={styles.measurementCardValue}>{latestMeasurement.ph}</div>
+                  {editingField === 'ph' ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      className={styles.measurementCardInput}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={saveMeasurementEdit}
+                      onKeyDown={handleEditKeyDown}
+                      autoFocus
+                    />
+                  ) : (
+                    <div
+                      className={styles.measurementCardValueEditable}
+                      onClick={() => startEditing('ph', latestMeasurement.ph!)}
+                    >
+                      {latestMeasurement.ph}
+                    </div>
+                  )}
                   {aiAnalysis && (() => {
                     const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'ph');
                     if (!metric) return null;
+                    const StatusIcon = metric.status === 'good' ? FiCheck : metric.status === 'warning' ? FiAlertTriangle : FiX;
                     return (
                       <span className={`${styles.aiMetricBadge} ${styles[`aiMetricBadge${metric.status.charAt(0).toUpperCase() + metric.status.slice(1)}`]}`}>
-                        {metric.status.toUpperCase()}
+                        <StatusIcon size={14} />
                       </span>
                     );
                   })()}
@@ -403,13 +510,32 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
               <div className={styles.measurementCard}>
                 <div className={styles.measurementCardHeader}>
                   <div className={styles.measurementCardLabel}>TA</div>
-                  <div className={styles.measurementCardValue}>{latestMeasurement.ta} G/L</div>
+                  {editingField === 'ta' ? (
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.measurementCardInput}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={saveMeasurementEdit}
+                      onKeyDown={handleEditKeyDown}
+                      autoFocus
+                    />
+                  ) : (
+                    <div
+                      className={styles.measurementCardValueEditable}
+                      onClick={() => startEditing('ta', latestMeasurement.ta!)}
+                    >
+                      {latestMeasurement.ta} G/L
+                    </div>
+                  )}
                   {aiAnalysis && (() => {
                     const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'ta');
                     if (!metric) return null;
+                    const StatusIcon = metric.status === 'good' ? FiCheck : metric.status === 'warning' ? FiAlertTriangle : FiX;
                     return (
                       <span className={`${styles.aiMetricBadge} ${styles[`aiMetricBadge${metric.status.charAt(0).toUpperCase() + metric.status.slice(1)}`]}`}>
-                        {metric.status.toUpperCase()}
+                        <StatusIcon size={14} />
                       </span>
                     );
                   })()}
@@ -426,13 +552,32 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
               <div className={styles.measurementCard}>
                 <div className={styles.measurementCardHeader}>
                   <div className={styles.measurementCardLabel}>BRIX</div>
-                  <div className={styles.measurementCardValue}>{latestMeasurement.brix}°</div>
+                  {editingField === 'brix' ? (
+                    <input
+                      type="number"
+                      step="0.1"
+                      className={styles.measurementCardInput}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={saveMeasurementEdit}
+                      onKeyDown={handleEditKeyDown}
+                      autoFocus
+                    />
+                  ) : (
+                    <div
+                      className={styles.measurementCardValueEditable}
+                      onClick={() => startEditing('brix', latestMeasurement.brix!)}
+                    >
+                      {latestMeasurement.brix}°
+                    </div>
+                  )}
                   {aiAnalysis && (() => {
                     const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'brix');
                     if (!metric) return null;
+                    const StatusIcon = metric.status === 'good' ? FiCheck : metric.status === 'warning' ? FiAlertTriangle : FiX;
                     return (
                       <span className={`${styles.aiMetricBadge} ${styles[`aiMetricBadge${metric.status.charAt(0).toUpperCase() + metric.status.slice(1)}`]}`}>
-                        {metric.status.toUpperCase()}
+                        <StatusIcon size={14} />
                       </span>
                     );
                   })()}
@@ -449,13 +594,32 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
               <div className={styles.measurementCard}>
                 <div className={styles.measurementCardHeader}>
                   <div className={styles.measurementCardLabel}>TEMP</div>
-                  <div className={styles.measurementCardValue}>{latestMeasurement.temperature}°F</div>
+                  {editingField === 'temperature' ? (
+                    <input
+                      type="number"
+                      step="1"
+                      className={styles.measurementCardInput}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={saveMeasurementEdit}
+                      onKeyDown={handleEditKeyDown}
+                      autoFocus
+                    />
+                  ) : (
+                    <div
+                      className={styles.measurementCardValueEditable}
+                      onClick={() => startEditing('temperature', latestMeasurement.temperature!)}
+                    >
+                      {latestMeasurement.temperature}°F
+                    </div>
+                  )}
                   {aiAnalysis && (() => {
                     const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'temperature');
                     if (!metric) return null;
+                    const StatusIcon = metric.status === 'good' ? FiCheck : metric.status === 'warning' ? FiAlertTriangle : FiX;
                     return (
                       <span className={`${styles.aiMetricBadge} ${styles[`aiMetricBadge${metric.status.charAt(0).toUpperCase() + metric.status.slice(1)}`]}`}>
-                        {metric.status.toUpperCase()}
+                        <StatusIcon size={14} />
                       </span>
                     );
                   })()}
@@ -468,18 +632,6 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
               </div>
             )}
           </div>
-
-          {/* AI Analysis Button - only show after Zero syncs and confirms no cached analysis */}
-          {!aiAnalysis && analysisCacheSynced && !hasCachedAnalysis && (
-            <button
-              type="button"
-              className={styles.aiAnalysisButton}
-              onClick={fetchAiAnalysis}
-              disabled={aiAnalysisLoading}
-            >
-              {aiAnalysisLoading ? 'ANALYZING...' : '✨ GET AI ANALYSIS'}
-            </button>
-          )}
 
           {aiAnalysisError && (
             <div className={styles.errorMessage}>{aiAnalysisError}</div>

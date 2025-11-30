@@ -4297,6 +4297,38 @@
   font-weight: 600;
 }
 
+.measurementCardValueEditable {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.15s ease;
+}
+
+.measurementCardValueEditable:hover {
+  background-color: var(--color-border-primary);
+}
+
+.measurementCardInput {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-primary);
+  border-radius: 3px;
+  padding: 2px 4px;
+  width: 4rem;
+  outline: none;
+}
+
+.measurementCardInput:focus {
+  box-shadow: 0 0 0 2px var(--color-primary-dim);
+}
+
 .measurementCardAnalysis {
   font-size: 0.75rem;
   line-height: 1.4;
@@ -4374,6 +4406,16 @@
   font-size: 0.85rem;
   line-height: 1.6;
   color: var(--color-text-primary);
+}
+
+.aiOutlookLoading {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.aiOutlookEmpty {
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 @media (max-width: 900px) {

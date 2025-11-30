@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
+import { FiCheck, FiAlertTriangle, FiX } from 'react-icons/fi';
 import {
-  LineChart,
+  ComposedChart,
   Line,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -102,11 +104,14 @@ const CustomTooltip = ({
         <span className={styles.chartTooltipValue}>
           {value.toFixed(config.decimals)}{config.unit}
         </span>
-        {metricAnalysis && (
-          <span className={`${styles.chartTooltipAnalysisBadge} ${styles[`chartTooltipBadge${metricAnalysis.status.charAt(0).toUpperCase() + metricAnalysis.status.slice(1)}`]}`}>
-            {metricAnalysis.status.toUpperCase()}
-          </span>
-        )}
+        {metricAnalysis && (() => {
+          const StatusIcon = metricAnalysis.status === 'good' ? FiCheck : metricAnalysis.status === 'warning' ? FiAlertTriangle : FiX;
+          return (
+            <span className={`${styles.chartTooltipAnalysisBadge} ${styles[`chartTooltipBadge${metricAnalysis.status.charAt(0).toUpperCase() + metricAnalysis.status.slice(1)}`]}`}>
+              <StatusIcon size={12} />
+            </span>
+          );
+        })()}
       </div>
 
       {metricAnalysis && (
@@ -136,13 +141,12 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
     const phValues = measurements.filter(m => m.ph !== null).map(m => m.ph!);
     const taValues = measurements.filter(m => m.ta !== null).map(m => m.ta!);
     const brixValues = measurements.filter(m => m.brix !== null).map(m => m.brix!);
-    const tempValues = measurements.filter(m => m.temperature !== null).map(m => m.temperature!);
 
     return {
       ph: phValues.length ? [Math.min(...phValues) - 0.2, Math.max(...phValues) + 0.2] : [2.8, 4.2],
       ta: taValues.length ? [Math.min(...taValues) - 0.5, Math.max(...taValues) + 0.5] : [4, 10],
       brix: brixValues.length ? [Math.min(0, Math.min(...brixValues) - 1), Math.max(...brixValues) + 2] : [-2, 30],
-      temp: tempValues.length ? [Math.min(...tempValues) - 5, Math.max(...tempValues) + 5] : [50, 90],
+      temp: [30, 110], // Fixed scale centered on 70°F for fermentation temps
     };
   }, [measurements]);
 
@@ -165,7 +169,7 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
   return (
     <div className={styles.chartContainer}>
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
+        <ComposedChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#2d3d2d" />
 
           <XAxis
@@ -198,6 +202,16 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
               tick={{ fill: metricConfig.brix.color, fontSize: 10 }}
               tickLine={{ stroke: metricConfig.brix.color }}
               label={{ value: 'Brix°', angle: 90, position: 'insideRight', fill: metricConfig.brix.color, fontSize: 11 }}
+            />
+          )}
+
+          {/* Temperature axis - hidden, just for scaling the area */}
+          {hasData.temperature && (
+            <YAxis
+              yAxisId="temp"
+              orientation="right"
+              domain={domains.temp}
+              hide={true}
             />
           )}
 
@@ -272,17 +286,18 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
           )}
 
           {hasData.temperature && (
-            <Line
-              yAxisId="brix"
+            <Area
+              yAxisId="temp"
               type="monotone"
               dataKey="temperature"
               name="Temp (°F)"
               stroke={metricConfig.temperature.color}
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={{ fill: metricConfig.temperature.color, strokeWidth: 0, r: 4, cursor: 'pointer' }}
+              strokeWidth={1}
+              fill={metricConfig.temperature.color}
+              fillOpacity={0.15}
+              dot={{ fill: metricConfig.temperature.color, strokeWidth: 0, r: 3, cursor: 'pointer' }}
               activeDot={{
-                r: 6,
+                r: 5,
                 fill: metricConfig.temperature.color,
                 cursor: 'pointer',
                 onMouseEnter: () => setHoveredMetric('temperature'),
@@ -291,7 +306,7 @@ export const MeasurementChart = ({ measurements, analyses }: MeasurementChartPro
               connectNulls
             />
           )}
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
