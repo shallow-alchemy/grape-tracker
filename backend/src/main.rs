@@ -223,6 +223,8 @@ struct MeasurementData {
     brix: Option<f64>,
     temperature: Option<f64>,
     date: i64,
+    notes: Option<String>,
+    tasting_notes: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -1668,7 +1670,7 @@ async fn get_measurement_guidance(
 
     // Format current measurement
     let current = &payload.latest_measurement;
-    let current_str = vec![
+    let current_parts = vec![
         current.ph.map(|v| format!("pH: {:.2}", v)),
         current.ta.map(|v| format!("TA: {:.1} g/L", v)),
         current.brix.map(|v| format!("Brix: {:.1}°", v)),
@@ -1676,12 +1678,33 @@ async fn get_measurement_guidance(
     ]
     .into_iter()
     .flatten()
-    .collect::<Vec<_>>()
-    .join(", ");
+    .collect::<Vec<_>>();
+
+    let current_str = current_parts.join(", ");
+
+    // Add notes context if present
+    let notes_context = {
+        let mut notes = Vec::new();
+        if let Some(ref tasting) = current.tasting_notes {
+            if !tasting.is_empty() {
+                notes.push(format!("Tasting notes: {}", tasting));
+            }
+        }
+        if let Some(ref n) = current.notes {
+            if !n.is_empty() {
+                notes.push(format!("Notes: {}", n));
+            }
+        }
+        if notes.is_empty() {
+            String::new()
+        } else {
+            format!("\n\n## Winemaker's Notes\n{}", notes.join("\n"))
+        }
+    };
 
     // Build RAG query
     let rag_query_text = format!(
-        "{} wine {} stage pH TA Brix fermentation adjustments",
+        "{} wine {} stage pH TA Brix temperature fermentation adjustments",
         payload.variety, payload.current_stage
     );
 
@@ -1719,13 +1742,22 @@ async fn get_measurement_guidance(
 
 ## Current Measurements
 {}
-
+{}
 ## Measurement History
 {}
 {}
 
+## Important: Understanding Brix During Fermentation
+Brix measures sugar content. During fermentation, yeast convert sugar to alcohol, so **Brix SHOULD decrease**:
+- **Pre-fermentation/Crush**: Brix typically 20-28° (high sugar from grapes)
+- **Primary fermentation**: Brix drops rapidly as fermentation progresses
+- **End of primary**: Brix reaches -1° to 2° (fermentation complete or nearly complete)
+- **Secondary and beyond**: Brix stays low (0-2°)
+
+A Brix drop from 22° to 2° over 7-14 days is NORMAL and EXPECTED during primary fermentation - this indicates healthy, active fermentation. Do NOT flag low Brix as concerning if the measurement history shows a normal fermentation progression.
+
 Based on this data, provide guidance on:
-1. Whether each measurement is within normal/ideal range for this variety and stage
+1. Whether each measurement is within normal/ideal range for this variety and stage (considering expected trends)
 2. How these measurements might affect the final wine character
 3. Any corrective measures if values are concerning
 
@@ -1750,6 +1782,12 @@ Respond with JSON in this exact format:
       "value": 12.0,
       "status": "good",
       "analysis": "Brief analysis"
+    }},
+    {{
+      "name": "Temperature",
+      "value": 72.0,
+      "status": "good",
+      "analysis": "Brief analysis of fermentation temperature"
     }}
   ],
   "projections": "How these measurements suggest the wine will develop (flavor, structure, etc.)",
@@ -1766,8 +1804,18 @@ Keep analyses concise but specific to the variety and stage."#,
         variety_context,
         format_stage_name(&payload.current_stage),
         current_str,
+        notes_context,
         measurement_history,
         knowledge_context
+    );
+
+    // Log context for debugging AI responses
+    tracing::info!(
+        "AI Measurement Guidance - Wine: {}, Stage: {}, Current: {}, History entries: {}",
+        payload.wine_name,
+        payload.current_stage,
+        current_str,
+        payload.previous_measurements.as_ref().map(|v| v.len()).unwrap_or(0)
     );
 
     let request = AnthropicRequest {

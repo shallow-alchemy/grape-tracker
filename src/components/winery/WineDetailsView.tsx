@@ -4,7 +4,8 @@ import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
 import { getBackendUrl } from '../../config';
-import { myStageHistoryByEntity, myMeasurementsByEntity, myMeasurementAnalysisByMeasurement } from '../../shared/queries';
+import { myStageHistoryByEntity, myMeasurementsByEntity, myMeasurementAnalysisByMeasurement, myMeasurementAnalyses } from '../../shared/queries';
+import { MeasurementChart } from './MeasurementChart';
 import { useWines, useVintages } from '../vineyard-hooks';
 import { EditWineModal } from './EditWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
@@ -65,6 +66,10 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const [cachedAnalysisData] = useQuery(
     myMeasurementAnalysisByMeasurement(user?.id, latestMeasurement?.id || '')
   ) as any;
+
+  // Query for all measurement analyses (for chart tooltips)
+  const [allAnalysesData] = useQuery(myMeasurementAnalyses(user?.id)) as any;
+  const allAnalyses = Array.isArray(allAnalysesData) ? allAnalysesData : [];
 
   // Track Zero sync state: undefined = still syncing, [] = synced but no data
   const analysisCacheSynced = cachedAnalysisData !== undefined;
@@ -171,6 +176,8 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
             brix: latestMeasurement.brix,
             temperature: latestMeasurement.temperature,
             date: latestMeasurement.date,
+            notes: latestMeasurement.notes,
+            tasting_notes: latestMeasurement.tasting_notes,
           },
           previous_measurements: measurements.slice(1, 6).map((m: any) => ({
             ph: m.ph,
@@ -178,6 +185,8 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
             brix: m.brix,
             temperature: m.temperature,
             date: m.date,
+            notes: m.notes,
+            tasting_notes: m.tasting_notes,
           })),
         }),
       });
@@ -288,89 +297,71 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         </div>
       </div>
 
-      <div className={styles.detailSection}>
-        <div className={styles.sectionHeader}>WINE DETAILS</div>
-        <div className={styles.detailGrid}>
-          <div className={styles.detailItem}>
-            <div className={styles.detailLabel}>TYPE</div>
-            <div className={styles.detailValue}>{wine.wine_type.toUpperCase()}</div>
-          </div>
-          <div className={styles.detailItem}>
-            <div className={styles.detailLabel}>STATUS</div>
-            <div className={styles.detailValue}>{formatWineStatus(wine.status)}</div>
-          </div>
-          <div className={styles.detailItem}>
-            <div className={styles.detailLabel}>VOLUME</div>
-            <div className={styles.detailValue}>{wine.current_volume_gallons} GAL</div>
-          </div>
-          <div className={styles.detailItem}>
-            <div className={styles.detailLabel}>STARTING VOLUME</div>
-            <div className={styles.detailValue}>{wine.volume_gallons} GAL</div>
+      <div className={styles.wineDetailsRow}>
+        <div className={styles.wineDetailsMain}>
+          <div className={styles.detailSection}>
+            <div className={styles.sectionHeader}>WINE DETAILS</div>
+            <div className={styles.detailGrid}>
+              <div className={styles.detailItem}>
+                <div className={styles.detailLabel}>TYPE</div>
+                <div className={styles.detailValue}>{wine.wine_type.toUpperCase()}</div>
+              </div>
+              <div className={styles.detailItem}>
+                <div className={styles.detailLabel}>STATUS</div>
+                <div className={styles.detailValue}>{formatWineStatus(wine.status)}</div>
+              </div>
+              {!isBlend && vintage && (
+                <div className={styles.detailItem}>
+                  <div className={styles.detailLabel}>YEAR</div>
+                  <div className={styles.detailValue}>{vintage.vintage_year}</div>
+                </div>
+              )}
+              <div className={styles.detailItem}>
+                <div className={styles.detailLabel}>{isBlend ? 'VARIETIES' : 'VARIETY'}</div>
+                <div className={styles.detailValue}>
+                  {isBlend ? (
+                    (wine.blend_components as Array<{ vintage_id: string; percentage: number }>)
+                      .map((comp) => {
+                        const v = allVintagesData.find((vint: any) => vint.id === comp.vintage_id);
+                        return v ? `${v.variety} (${comp.percentage}%)` : `Unknown (${comp.percentage}%)`;
+                      })
+                      .join(', ')
+                  ) : (
+                    vintage?.variety || '—'
+                  )}
+                </div>
+              </div>
+              <div className={styles.detailItem}>
+                <div className={styles.detailLabel}>VOLUME</div>
+                <div className={styles.detailValue}>{wine.current_volume_gallons} GAL</div>
+              </div>
+              <div className={styles.detailItem}>
+                <div className={styles.detailLabel}>STARTING VOLUME</div>
+                <div className={styles.detailValue}>{wine.volume_gallons} GAL</div>
+              </div>
+            </div>
           </div>
         </div>
+
+        {aiAnalysis?.projections && (
+          <div className={styles.aiOutlookPanel}>
+            <div className={styles.aiOutlookPanelHeader}>PROJECTION</div>
+            <div className={styles.aiOutlookPanelText}>{aiAnalysis.projections}</div>
+          </div>
+        )}
       </div>
 
-      {isBlend ? (
-        <div className={styles.detailSection}>
-          <div className={styles.sectionHeader}>
-            BLEND VARIETIES
-            <span className={styles.sectionHeaderBadge}>
-              (Multi-Vintage Blend)
-            </span>
+      {/* AI Recommendations - shown above Latest Measurements */}
+      {aiAnalysis && aiAnalysis.recommendations.length > 0 && (
+        <div className={styles.aiInsightsSection}>
+          <div className={styles.aiInsightsHeader}>
+            <span>NEXT STEPS</span>
           </div>
-          <div className={styles.flexColumnGap}>
-            {(wine.blend_components as Array<{ vintage_id: string; percentage: number }>).map((variety, index) => {
-              const varietyVintage = allVintagesData.find((v: any) => v.id === variety.vintage_id);
-              return (
-                <div key={index} className={styles.blendVarietyCard}>
-                  <div>
-                    <div className={styles.blendVarietyName}>
-                      {varietyVintage ? `${varietyVintage.vintage_year} ${varietyVintage.variety}` : 'Unknown Vintage'}
-                    </div>
-                    {varietyVintage?.grape_source === 'purchased' && (
-                      <div className={styles.blendVarietySource}>
-                        Purchased{varietyVintage.supplier_name ? ` from ${varietyVintage.supplier_name}` : ''}
-                      </div>
-                    )}
-                  </div>
-                  <div className={styles.blendVarietyPercentage}>
-                    {variety.percentage}%
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : vintage && (
-        <div className={styles.detailSection}>
-          <div className={styles.sectionHeader}>
-            SOURCE VINTAGE
-            <span className={styles.sectionHeaderBadge}>
-              (Varietal)
-            </span>
-          </div>
-          <div className={styles.detailGrid}>
-            <div className={styles.detailItem}>
-              <div className={styles.detailLabel}>YEAR</div>
-              <div className={styles.detailValue}>{vintage.vintage_year}</div>
-            </div>
-            <div className={styles.detailItem}>
-              <div className={styles.detailLabel}>VARIETY</div>
-              <div className={styles.detailValue}>{vintage.variety}</div>
-            </div>
-            {vintage.grape_source === 'purchased' && (
-              <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>SOURCE</div>
-                <div className={styles.detailValue}>PURCHASED</div>
-              </div>
-            )}
-            {vintage.supplier_name && (
-              <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>SUPPLIER</div>
-                <div className={styles.detailValue}>{vintage.supplier_name}</div>
-              </div>
-            )}
-          </div>
+          <ul className={styles.aiInsightList}>
+            {aiAnalysis.recommendations.map((rec, idx) => (
+              <li key={idx}>{rec}</li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -459,7 +450,21 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
                 <div className={styles.measurementCardHeader}>
                   <div className={styles.measurementCardLabel}>TEMP</div>
                   <div className={styles.measurementCardValue}>{latestMeasurement.temperature}°F</div>
+                  {aiAnalysis && (() => {
+                    const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'temperature');
+                    if (!metric) return null;
+                    return (
+                      <span className={`${styles.aiMetricBadge} ${styles[`aiMetricBadge${metric.status.charAt(0).toUpperCase() + metric.status.slice(1)}`]}`}>
+                        {metric.status.toUpperCase()}
+                      </span>
+                    );
+                  })()}
                 </div>
+                {aiAnalysis && (() => {
+                  const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'temperature');
+                  if (!metric) return null;
+                  return <div className={styles.measurementCardAnalysis}>{metric.analysis}</div>;
+                })()}
               </div>
             )}
           </div>
@@ -480,31 +485,14 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
             <div className={styles.errorMessage}>{aiAnalysisError}</div>
           )}
 
-          {/* AI Projections & Recommendations (shown after analysis) */}
-          {aiAnalysis && (
-            <div className={styles.aiInsightsSection}>
-              <div className={styles.aiInsightsHeader}>
-                <span>✨ AI INSIGHTS</span>
+          {/* Measurement History Chart */}
+          {measurements.length > 0 && (
+            <>
+              <div className={styles.sectionHeader} style={{ marginTop: 'var(--spacing-md)' }}>
+                MEASUREMENT HISTORY
               </div>
-
-              {aiAnalysis.projections && (
-                <div className={styles.aiInsightBlock}>
-                  <div className={styles.aiInsightLabel}>OUTLOOK</div>
-                  <div className={styles.aiInsightText}>{aiAnalysis.projections}</div>
-                </div>
-              )}
-
-              {aiAnalysis.recommendations.length > 0 && (
-                <div className={styles.aiInsightBlock}>
-                  <div className={styles.aiInsightLabel}>NEXT STEPS</div>
-                  <ul className={styles.aiInsightList}>
-                    {aiAnalysis.recommendations.map((rec, idx) => (
-                      <li key={idx}>{rec}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+              <MeasurementChart measurements={measurements} analyses={allAnalyses} />
+            </>
           )}
         </div>
       )}

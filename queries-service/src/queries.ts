@@ -264,3 +264,12 @@ export const myMeasurementAnalysisByMeasurement = syncedQueryWithContext(
       .where('measurement_id', measurementId);
   }
 );
+
+export const myMeasurementAnalyses = syncedQueryWithContext(
+  'myMeasurementAnalyses',
+  z.tuple([]),
+  (userID: string | undefined) => {
+    if (!userID) return builder.measurement_analysis.where('id', '___never_match___');
+    return builder.measurement_analysis.where('user_id', userID);
+  }
+);
