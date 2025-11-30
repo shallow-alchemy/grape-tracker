@@ -1,4 +1,3 @@
-import { UserButton } from '@clerk/clerk-react';
 import { Route, Link } from 'wouter';
 import { AuthGuard } from './components/auth/AuthGuard';
 import { VineyardView } from './components/VineyardView';
@@ -6,6 +5,8 @@ import { WineryView } from './components/winery/WineryView';
 import { AllTasksView } from './components/winery/AllTasksView';
 import { DashboardView } from './components/DashboardView';
 import { SyncStatusIndicator } from './components/SyncStatusIndicator';
+import { UserMenu } from './components/UserMenu';
+import { SettingsPage } from './components/settings/SettingsPage';
 import styles from './App.module.css';
 
 // App now uses the shared ZeroProvider from index.tsx
@@ -22,11 +23,15 @@ export const App = () => {
           </nav>
           <div className={styles.headerActions}>
             <SyncStatusIndicator />
-            <UserButton />
+            <UserMenu />
           </div>
         </header>
         <Route path="/" component={DashboardView} />
         <Route path="/tasks" component={AllTasksView} />
+        <Route path="/settings/:section">
+          {(params) => <SettingsPage section={params?.section} />}
+        </Route>
+        <Route path="/settings">{() => <SettingsPage />}</Route>
         <Route path="/vineyard/vine/:id">
           {(params) => <VineyardView initialVineId={params?.id} />}
         </Route>

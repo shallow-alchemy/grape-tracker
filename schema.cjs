@@ -150,6 +150,7 @@ var taskTemplateTable = (0, import_zero.table)("task_template").columns({
   frequency_count: (0, import_zero.number)(),
   frequency_unit: (0, import_zero.string)(),
   default_enabled: (0, import_zero.boolean)(),
+  is_archived: (0, import_zero.boolean)(),
   sort_order: (0, import_zero.number)(),
   created_at: (0, import_zero.number)(),
   updated_at: (0, import_zero.number)()
@@ -229,6 +230,26 @@ var measurementAnalysisTable = (0, import_zero.table)("measurement_analysis").co
   // Array of strings
   created_at: (0, import_zero.number)()
 }).primaryKey("id");
+var stageTable = (0, import_zero.table)("stage").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  // '' = global default, user_id = user-specific
+  entity_type: (0, import_zero.string)(),
+  // 'wine' or 'vintage'
+  value: (0, import_zero.string)(),
+  // Stage identifier (e.g., 'crush')
+  label: (0, import_zero.string)(),
+  // Display name (e.g., 'Crush')
+  description: (0, import_zero.string)(),
+  sort_order: (0, import_zero.number)(),
+  is_archived: (0, import_zero.boolean)(),
+  is_default: (0, import_zero.boolean)(),
+  // TRUE = came from system defaults
+  applicability: (0, import_zero.json)(),
+  // Wine type applicability: {"red": "required", ...}
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
 var schema = (0, import_zero.createSchema)({
   tables: [
     userTable,
@@ -239,6 +260,7 @@ var schema = (0, import_zero.createSchema)({
     vintageTable,
     wineTable,
     stageHistoryTable,
+    stageTable,
     taskTemplateTable,
     taskTable,
     measurementTable,
@@ -330,6 +352,17 @@ var permissions = (0, import_zero.definePermissions)(
         }
       },
       stage_history: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      stage: {
         row: {
           select: import_zero.ANYONE_CAN,
           insert: import_zero.ANYONE_CAN,

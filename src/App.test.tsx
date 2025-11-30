@@ -4,7 +4,30 @@ import { App } from './App';
 
 // Mock all the dependencies
 rs.mock('@clerk/clerk-react', () => ({
-  UserButton: () => <div data-testid="user-button">User Button</div>,
+  useUser: () => ({
+    user: {
+      id: 'test-user-123',
+      firstName: 'Test',
+      lastName: 'User',
+      username: 'testuser',
+      imageUrl: null,
+      primaryEmailAddress: { emailAddress: 'test@example.com' },
+    },
+    isLoaded: true,
+    isSignedIn: true,
+  }),
+  useAuth: () => ({
+    signOut: async () => {},
+    getToken: async () => 'mock-token',
+  }),
+}));
+
+rs.mock('./components/UserMenu', () => ({
+  UserMenu: () => <div data-testid="user-menu">User Menu</div>,
+}));
+
+rs.mock('./components/settings/SettingsPage', () => ({
+  SettingsPage: () => <div data-testid="settings-page">Settings Page</div>,
 }));
 
 rs.mock('./contexts/ZeroContext', () => ({
@@ -84,10 +107,10 @@ describe('App', () => {
     expect(screen.getByText('WINERY')).toBeInTheDocument();
   });
 
-  test('renders UserButton', () => {
+  test('renders UserMenu', () => {
     render(<App />);
 
-    expect(screen.getByTestId('user-button')).toBeInTheDocument();
+    expect(screen.getByTestId('user-menu')).toBeInTheDocument();
   });
 
   test('renders DashboardView on root path', () => {
@@ -135,6 +158,6 @@ describe('App', () => {
     expect(screen.getByText('GILBERT')).toBeInTheDocument();
     expect(screen.getByText('VINEYARD')).toBeInTheDocument();
     expect(screen.getByText('WINERY')).toBeInTheDocument();
-    expect(screen.getByTestId('user-button')).toBeInTheDocument();
+    expect(screen.getByTestId('user-menu')).toBeInTheDocument();
   });
 });

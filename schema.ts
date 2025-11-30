@@ -146,6 +146,7 @@ const taskTemplateTable = table('task_template')
     frequency_count: number(),
     frequency_unit: string(),
     default_enabled: boolean(),
+    is_archived: boolean(),
     sort_order: number(),
     created_at: number(),
     updated_at: number(),
@@ -235,6 +236,23 @@ const measurementAnalysisTable = table('measurement_analysis')
   })
   .primaryKey('id');
 
+const stageTable = table('stage')
+  .columns({
+    id: string(),
+    user_id: string(),         // '' = global default, user_id = user-specific
+    entity_type: string(),     // 'wine' or 'vintage'
+    value: string(),           // Stage identifier (e.g., 'crush')
+    label: string(),           // Display name (e.g., 'Crush')
+    description: string(),
+    sort_order: number(),
+    is_archived: boolean(),
+    is_default: boolean(),     // TRUE = came from system defaults
+    applicability: json(),     // Wine type applicability: {"red": "required", ...}
+    created_at: number(),
+    updated_at: number(),
+  })
+  .primaryKey('id');
+
 export const schema = createSchema({
   tables: [
     userTable,
@@ -245,6 +263,7 @@ export const schema = createSchema({
     vintageTable,
     wineTable,
     stageHistoryTable,
+    stageTable,
     taskTemplateTable,
     taskTable,
     measurementTable,
@@ -344,6 +363,17 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
         },
       },
       stage_history: {
+        row: {
+          select: ANYONE_CAN,
+          insert: ANYONE_CAN,
+          update: {
+            preMutation: ANYONE_CAN,
+            postMutation: ANYONE_CAN,
+          },
+          delete: ANYONE_CAN,
+        },
+      },
+      stage: {
         row: {
           select: ANYONE_CAN,
           insert: ANYONE_CAN,

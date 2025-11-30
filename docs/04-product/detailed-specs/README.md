@@ -18,6 +18,7 @@ Use these specs when:
 
 ## Documents
 
+- **[settings-architecture.md](./settings-architecture.md)** - 🔄 In Progress - Settings page, user menu, portable settings pattern
 - **[winery-production.md](./winery-production.md)** - ✅ Complete - Wine production workflow reference
 - **[vintages-ui.md](./vintages-ui.md)** - ✅ Complete - Vintage management UI reference
 - **[training-pruning-system.md](./training-pruning-system.md)** - ✅ Complete - Training method & pruning log reference

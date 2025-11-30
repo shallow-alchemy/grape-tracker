@@ -273,3 +273,24 @@ export const myMeasurementAnalyses = syncedQueryWithContext(
     return builder.measurement_analysis.where('user_id', userID);
   }
 );
+
+// Stage queries
+export const stages = syncedQueryWithContext(
+  'stages',
+  z.tuple([]),
+  (_userID: string | undefined) => {
+    // Stages can be global (user_id = '') - no user filter needed
+    // Filter out archived stages
+    return builder.stage.where('is_archived', false);
+  }
+);
+
+// All stages including archived (for settings management)
+export const allStages = syncedQueryWithContext(
+  'allStages',
+  z.tuple([]),
+  (_userID: string | undefined) => {
+    // Return all stages for settings management
+    return builder.stage;
+  }
+);

@@ -36,6 +36,57 @@ ignore = "git diff --quiet HEAD^ HEAD -- . ':!backend' ':!migrations' ':!docs'"
 
 ---
 
+### Flash on Page Load (Zero Sync Loading State)
+
+**Date Reported:** Nov 30, 2025
+
+**Issue:** Pages flash/flicker on initial load because components render with empty data before Zero has synced.
+
+**Symptoms:**
+- Brief flash of empty content when navigating to pages
+- Zero logs show WebSocket closing/reopening and "hydrating N queries"
+- Particularly noticeable on Settings > Stages & Tasks
+
+**Root Cause:** Components don't distinguish between "data not yet loaded" (`undefined`) and "data loaded but empty" (`[]`). The pattern `(data || [])` treats both as empty array.
+
+**Fix Pattern:**
+```typescript
+const [data] = useQuery(someQuery(user?.id));
+
+// Check if still loading
+const isLoading = data === undefined;
+
+if (isLoading) {
+  return <LoadingState />;
+}
+
+// Now safe to render - data is loaded (may be empty array)
+return <ActualContent data={data} />;
+```
+
+**Applied Fixes:**
+- `StagesTasksSection.tsx` - Added loading check (2024-11-30)
+
+**Files to Audit:**
+```bash
+grep -r "useQuery" src/components --include="*.tsx" | grep -v ".test."
+```
+
+Components likely affected:
+- `VineyardView.tsx`
+- `WineryView.tsx`
+- `DashboardView.tsx`
+- `WineDetailsView.tsx`
+- `VintageDetailsView.tsx`
+- Any component using Zero queries
+
+**Next Steps:**
+- [ ] Audit all `useQuery` usages app-wide
+- [ ] Add loading state pattern consistently
+- [ ] Consider creating a `useQueryWithLoading` hook wrapper
+
+---
+
 ## Resolved Issues
 
 _(None yet)_

@@ -486,6 +486,94 @@ export const createMutators = (authData: AuthData) => {
       },
     },
 
+    stage: {
+      insert: async (
+        tx: Transaction<Schema>,
+        args: {
+          id: string;
+          user_id: string;
+          entity_type: string;
+          value: string;
+          label: string;
+          description: string;
+          sort_order: number;
+          is_archived: boolean;
+          is_default: boolean;
+          applicability: ReadonlyJSONValue;
+          created_at: number;
+          updated_at: number;
+        }
+      ) => {
+        const userID = requireAuth();
+        await tx.mutate.stage.insert({
+          ...args,
+          user_id: userID,
+          is_default: false, // User-created stages are never defaults
+        });
+      },
+      update: async (
+        tx: Transaction<Schema>,
+        args: {
+          id: string;
+          value?: string;
+          label?: string;
+          description?: string;
+          sort_order?: number;
+          is_archived?: boolean;
+          applicability?: ReadonlyJSONValue;
+          updated_at?: number;
+        }
+      ) => {
+        const userID = requireAuth();
+        // Stages with user_id = '' are global defaults - allow anyone to update
+        // TODO: Implement copy-on-write for proper multi-tenancy
+        if (tx.location === 'server') {
+          const result = await tx.dbTransaction.query(
+            `SELECT user_id FROM "stage" WHERE id = $1`,
+            [args.id]
+          );
+          const rows = Array.from(result);
+          if (rows.length === 0) {
+            throw new Error('stage not found');
+          }
+          const row = rows[0] as { user_id: string };
+          // Allow if it's a global stage (user_id = '') or owned by current user
+          if (row.user_id !== '' && row.user_id !== userID) {
+            throw new Error('Access denied to stage');
+          }
+        }
+        await tx.mutate.stage.update({
+          ...args,
+          updated_at: Date.now(),
+        });
+      },
+      delete: async (
+        tx: Transaction<Schema>,
+        args: { id: string }
+      ) => {
+        const userID = requireAuth();
+        // Only allow deleting user-created stages (not global defaults)
+        if (tx.location === 'server') {
+          const result = await tx.dbTransaction.query(
+            `SELECT user_id, is_default FROM "stage" WHERE id = $1`,
+            [args.id]
+          );
+          const rows = Array.from(result);
+          if (rows.length === 0) {
+            throw new Error('stage not found');
+          }
+          const row = rows[0] as { user_id: string; is_default: boolean };
+          if (row.is_default) {
+            throw new Error('Cannot delete default stages. Archive them instead.');
+          }
+          if (row.user_id !== '' && row.user_id !== userID) {
+            throw new Error('Access denied to stage');
+          }
+        }
+        await tx.mutate.stage.delete(args);
+      },
+    },
+
     task_template: {
       insert: async (
         tx: Transaction<Schema>,
@@ -502,6 +590,7 @@ export const createMutators = (authData: AuthData) => {
           frequency_count: number;
           frequency_unit: string;
           default_enabled: boolean;
+          is_archived: boolean;
           sort_order: number;
           created_at: number;
           updated_at: number;
@@ -511,6 +600,7 @@ export const createMutators = (authData: AuthData) => {
         await tx.mutate.task_template.insert({
           ...args,
           user_id: userID,
+          is_archived: false, // New templates are never archived
         });
       },
       update: async (
@@ -527,12 +617,29 @@ export const createMutators = (authData: AuthData) => {
           frequency_count?: number;
           frequency_unit?: string;
           default_enabled?: boolean;
+          is_archived?: boolean;
           sort_order?: number;
           updated_at?: number;
         }
       ) => {
         const userID = requireAuth();
-        await verifyOwnership(tx, 'task_template', args.id, userID);
+        // Task templates with user_id = '' are global defaults - allow anyone to update
+        // TODO: Implement copy-on-write for proper multi-tenancy
+        if (tx.location === 'server') {
+          const result = await tx.dbTransaction.query(
+            `SELECT user_id FROM "task_template" WHERE id = $1`,
+            [args.id]
+          );
+          const rows = Array.from(result);
+          if (rows.length === 0) {
+            throw new Error('task_template not found');
+          }
+          const row = rows[0] as { user_id: string };
+          // Allow if it's a global template (user_id = '') or owned by current user
+          if (row.user_id !== '' && row.user_id !== userID) {
+            throw new Error('Access denied to task_template');
+          }
+        }
         await tx.mutate.task_template.update({
           ...args,
           updated_at: Date.now(),

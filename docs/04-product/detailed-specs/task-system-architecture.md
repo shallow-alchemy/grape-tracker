@@ -1,7 +1,9 @@
 # Task System Architecture
 
-**Status:** Planned
-**Last Updated:** Nov 29, 2025
+**Status:** In Progress
+**Last Updated:** Nov 30, 2025
+
+**Related:** [Settings Architecture](./settings-architecture.md) - Task customization is part of the Settings page
 
 ## Overview
 
@@ -14,15 +16,17 @@ A unified task management system that supports three categories of tasks: winery
 ### 1. Winery Stage Tasks
 **Trigger:** Wine or Vintage transitions to a new stage
 
-**Current State:** Partially implemented
-- Stage tracking exists for wines (crush → primary fermentation → secondary → racking → oaking → aging → bottling)
-- Stage tracking exists for vintages (bud break → flowering → fruiting → veraison → pre-harvest → harvest)
+**Current State:** ✅ Core implemented, customization in progress
+- 11-stage wine system with wine-type-aware routing (see `src/components/winery/stages.ts`)
+- Stages: crush → pre_fermentation → primary_fermentation → press → malolactic_fermentation → aging → racking → fining_filtering → blending → bottling → bottle_aging
+- Stage applicability varies by wine type (red, white, rosé, sparkling, dessert, fortified)
+- Stage tracking exists for vintages (harvested → allocated)
 - Default task templates seeded in database
 - Tasks auto-created on stage transition via `useStageTransition` hook
 
-**Needed:**
+**In Progress (via Settings page):**
 - UI to view/edit/delete/add task templates per stage
-- User customization layer (don't modify defaults)
+- User customization layer (copy-on-write, don't modify defaults)
 
 ### 2. Vineyard Seasonal Tasks
 **Trigger:** Block or Vineyard enters a seasonal stage

@@ -5,12 +5,20 @@ rs.mock('@clerk/clerk-react', () => ({
   useUser: () => ({
     user: {
       id: 'test-user-123',
+      firstName: 'Test',
+      lastName: 'User',
+      username: 'testuser',
+      imageUrl: null,
       primaryEmailAddress: {
         emailAddress: 'test@example.com',
       },
     },
     isLoaded: true,
     isSignedIn: true,
+  }),
+  useAuth: () => ({
+    signOut: rs.fn(),
+    getToken: async () => 'mock-token',
   }),
   useClerk: () => ({
     signOut: rs.fn(),

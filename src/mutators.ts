@@ -347,6 +347,7 @@ export const createMutators = () => ({
         frequency_count: number;
         frequency_unit: string;
         default_enabled: boolean;
+        is_archived: boolean;
         sort_order: number;
         created_at: number;
         updated_at: number;
@@ -368,6 +369,7 @@ export const createMutators = () => ({
         frequency_count?: number;
         frequency_unit?: string;
         default_enabled?: boolean;
+        is_archived?: boolean;
         sort_order?: number;
         updated_at?: number;
       }
@@ -376,6 +378,46 @@ export const createMutators = () => ({
     },
     delete: async (tx: Transaction<Schema>, args: { id: string }) => {
       await tx.mutate.task_template.delete(args);
+    },
+  },
+
+  stage: {
+    insert: async (
+      tx: Transaction<Schema>,
+      args: {
+        id: string;
+        user_id: string;
+        entity_type: string;
+        value: string;
+        label: string;
+        description: string;
+        sort_order: number;
+        is_archived: boolean;
+        is_default: boolean;
+        applicability: ReadonlyJSONValue;
+        created_at: number;
+        updated_at: number;
+      }
+    ) => {
+      await tx.mutate.stage.insert(args);
+    },
+    update: async (
+      tx: Transaction<Schema>,
+      args: {
+        id: string;
+        value?: string;
+        label?: string;
+        description?: string;
+        sort_order?: number;
+        is_archived?: boolean;
+        applicability?: ReadonlyJSONValue;
+        updated_at?: number;
+      }
+    ) => {
+      await tx.mutate.stage.update({ ...args, updated_at: Date.now() });
+    },
+    delete: async (tx: Transaction<Schema>, args: { id: string }) => {
+      await tx.mutate.stage.delete(args);
     },
   },
 

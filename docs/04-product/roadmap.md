@@ -1,7 +1,7 @@
 # Gilbert - Development Roadmap
 
-**Last Updated:** Nov 29, 2025
-**Version:** 2.0 - Restructured
+**Last Updated:** Nov 30, 2025
+**Version:** 2.1 - Settings Architecture Added
 
 This roadmap prioritizes **vineyard and winery features first**, then operational enhancements. AI-powered features reference the [AI Knowledge Manifest](./ai-knowledge-manifest.md) for knowledge dependencies.
 
@@ -32,6 +32,8 @@ All previously completed features remain unchanged. See [Completed Features Arch
 - ✅ Weather integration (Open-Meteo, alerts, 10-day forecast)
 - ✅ Vintage management (full CRUD, cascade delete)
 - ✅ Wine production (stages, tasks, measurements, blends)
+- ✅ 11-stage winemaking system with wine-type-aware routing
+- ✅ Measurement history charts (Recharts) with AI analysis integration
 - ✅ User data isolation (JWT auth, custom mutators)
 - ✅ 746 frontend tests, 12 backend tests
 
@@ -232,7 +234,36 @@ Simple disease logging per vine. Foundation for AI-powered disease management.
 
 Enhancements to the existing wine production workflow.
 
-### Priority 1: Photo Uploads per Vintage
+### Priority 1: Settings & Task Customization System ← CURRENT PRIORITY
+**Status:** 🟡 In Progress
+
+**Detailed Spec:** [settings-architecture.md](./detailed-specs/settings-architecture.md)
+
+Replace Clerk's UserButton with custom user menu. Create comprehensive Settings page with modular, portable settings sections.
+
+**Phase 1: Foundation (Current)**
+- [ ] UserMenu component (Settings, Logout)
+- [ ] SettingsPage shell with section navigation
+- [ ] Portable section pattern (registry-based)
+- [ ] **Stages & Tasks section** (functional priority)
+
+**Settings Sections (Planned):**
+1. **Organization** - name, vineyards, users, roles
+2. **Notifications** - when/how to notify (coming soon)
+3. **Stages & Tasks** - customize stages, task templates ← PRIORITY
+4. **Theme** - comprehensive theme management
+5. **Storefront** - public vineyard exposure
+6. **Billing & Payments** - subscription management
+
+**Stages & Tasks Features:**
+- View/customize 11 wine stages per wine type
+- Task template management (enable/disable/edit/create)
+- Copy-on-write: user edits don't modify defaults
+- Reset to defaults functionality
+
+---
+
+### Priority 2: Photo Uploads per Vintage
 **Status:** 🔲 Not Started
 
 - [ ] Document harvest visually
@@ -244,25 +275,28 @@ Enhancements to the existing wine production workflow.
 
 ---
 
-### Priority 2: Measurement History Graphs
-**Status:** 🔲 Not Started
+### Priority 3: Measurement History Graphs
+**Status:** ✅ Complete
 
 Visualize wine chemistry over time.
 
-- [ ] pH trends over time (line chart)
-- [ ] TA trends over time
-- [ ] Brix/SG trends through fermentation
-- [ ] Temperature tracking visualization
+- [x] pH trends over time (line chart)
+- [x] TA trends over time
+- [x] Brix/SG trends through fermentation
+- [x] Temperature tracking visualization (area chart)
+- [x] Normalized acidity scale (pH + TA interact visually)
+- [x] AI analysis integration in chart tooltips
 - [ ] Stage markers on timeline
 - [ ] Export measurement data (CSV)
 
 **Technical:**
-- [ ] Chart library selection (Recharts recommended for React)
+- [x] Recharts ComposedChart implementation
+- [x] Wine-type-aware stage system (11 stages)
 
 ---
 
-### Priority 3: Unified Task Customization System
-**Status:** 🔲 Not Started
+### Priority 4: Unified Task Customization System
+**Status:** 🔄 Merged into Settings (Priority 1)
 
 Comprehensive task management across winery, vineyard, and general operations.
 
