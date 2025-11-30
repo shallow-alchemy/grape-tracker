@@ -1625,6 +1625,193 @@
   margin-bottom: var(--spacing-lg);
 }
 
+.desktopRowFull {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* What's Next header row - aligns both headers on same line */
+.whatsNextHeaderRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+/* What's Next split panel */
+.whatsNextSplit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+.whatsNextSubtitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.whatsNextTasks {
+  min-width: 0;
+}
+
+.whatsNextTask {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.whatsNextSeasonal {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+/* Seasonal Task Card */
+.seasonalTaskCard {
+  background: var(--color-surface-elevated);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  height: 100%;
+}
+
+.seasonalTaskInline {
+  /* No border/background - blends into parent container */
+  /* No padding - let content align with left side */
+}
+
+.seasonalTaskInline .seasonalTaskDetails {
+  -webkit-line-clamp: 1;
+}
+
+.seasonalTaskHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.seasonalTaskTitle {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.seasonalTaskRefreshBtn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast);
+}
+
+.seasonalTaskRefreshBtn:hover {
+  color: var(--color-text-accent);
+}
+
+.seasonalTaskMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.seasonalTaskName {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  letter-spacing: 0.05em;
+}
+
+.seasonalTaskTiming {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+}
+
+.seasonalTaskDetails {
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin-top: var(--spacing-xs);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.seasonalTaskMore {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-sm);
+  text-transform: lowercase;
+}
+
+.seasonalTaskMoreLink {
+  background: none;
+  border: none;
+  color: var(--color-interaction-400);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 0;
+  margin-top: var(--spacing-sm);
+  text-align: left;
+  align-self: flex-start;
+  text-transform: lowercase;
+  transition: color var(--transition-fast);
+}
+
+.seasonalTaskMoreLink:hover {
+  color: var(--color-interaction-300);
+}
+
+.seasonalTaskEmpty,
+.seasonalTaskLoading,
+.seasonalTaskError {
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.seasonalTaskRefresh {
+  background: none;
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  transition: all var(--transition-fast);
+}
+
+.seasonalTaskRefresh:hover {
+  border-color: var(--color-text-accent);
+  color: var(--color-text-accent);
+}
+
 .desktopPanel {
   background: var(--color-surface);
   border: var(--spacing-px) solid var(--color-border);

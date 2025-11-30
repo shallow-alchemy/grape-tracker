@@ -1,20 +1,18 @@
 import { createSchema, createBuilder, table, string, number, json, boolean, ANYONE_CAN, definePermissions } from '@rocicorp/zero';
-
 const userTable = table('user')
-  .columns({
-    id: string(),           // Clerk ID as primary key
+    .columns({
+    id: string(), // Clerk ID as primary key
     email: string(),
     display_name: string(),
     vineyard_id: string().optional(),
-    role: string(),         // 'owner' | 'member'
+    role: string(), // 'owner' | 'member'
     onboarding_completed: boolean(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const vineyardTable = table('vineyard')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
     name: string(),
@@ -23,11 +21,10 @@ const vineyardTable = table('vineyard')
     available_labor_hours: number().optional(), // Weekly hours available for vineyard work
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const blockTable = table('block')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
     name: string(),
@@ -39,11 +36,10 @@ const blockTable = table('block')
     training_method_other: string().optional(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const vineTable = table('vine')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
     block: string(),
@@ -57,11 +53,10 @@ const vineTable = table('vine')
     training_method_other: string().optional(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const pruningLogTable = table('pruning_log')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
     vine_id: string(),
@@ -74,11 +69,10 @@ const pruningLogTable = table('pruning_log')
     photo_id: string().optional(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const vintageTable = table('vintage')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
     vineyard_id: string(),
@@ -94,11 +88,10 @@ const vintageTable = table('vintage')
     notes: string(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const wineTable = table('wine')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
     vintage_id: string(),
@@ -113,11 +106,10 @@ const wineTable = table('wine')
     blend_components: json(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const stageHistoryTable = table('stage_history')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
     entity_type: string(),
@@ -129,11 +121,10 @@ const stageHistoryTable = table('stage_history')
     notes: string(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const taskTemplateTable = table('task_template')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
     vineyard_id: string(),
@@ -149,11 +140,10 @@ const taskTemplateTable = table('task_template')
     sort_order: number(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const taskTable = table('task')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
     task_template_id: string(),
@@ -169,11 +159,10 @@ const taskTable = table('task')
     skipped: boolean(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const measurementTable = table('measurement')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
     entity_type: string(),
@@ -188,11 +177,10 @@ const measurementTable = table('measurement')
     notes: string(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const measurementRangeTable = table('measurement_range')
-  .columns({
+    .columns({
     id: string(),
     wine_type: string(),
     measurement_type: string(),
@@ -203,198 +191,189 @@ const measurementRangeTable = table('measurement_range')
     low_warning: string(),
     high_warning: string(),
     created_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 const seasonalTaskTable = table('seasonal_task')
-  .columns({
+    .columns({
     id: string(),
     user_id: string(),
-    week_start: number(),    // Monday of the week (timestamp)
-    season: string(),        // e.g., "Post-Harvest/Early Dormant"
-    priority: number(),      // 1, 2, 3, etc.
+    week_start: number(), // Monday of the week (timestamp)
+    season: string(), // e.g., "Post-Harvest/Early Dormant"
+    priority: number(), // 1, 2, 3, etc.
     task_name: string(),
-    timing: string(),        // e.g., "Immediately", "This week"
+    timing: string(), // e.g., "Immediately", "This week"
     details: string(),
     completed_at: number().optional(),
     created_at: number(),
     updated_at: number(),
-  })
-  .primaryKey('id');
-
+})
+    .primaryKey('id');
 export const schema = createSchema({
-  tables: [
-    userTable,
-    vineyardTable,
-    blockTable,
-    vineTable,
-    pruningLogTable,
-    vintageTable,
-    wineTable,
-    stageHistoryTable,
-    taskTemplateTable,
-    taskTable,
-    measurementTable,
-    measurementRangeTable,
-    seasonalTaskTable,
-  ],
+    tables: [
+        userTable,
+        vineyardTable,
+        blockTable,
+        vineTable,
+        pruningLogTable,
+        vintageTable,
+        wineTable,
+        stageHistoryTable,
+        taskTemplateTable,
+        taskTable,
+        measurementTable,
+        measurementRangeTable,
+        seasonalTaskTable,
+    ],
 });
-
-export type Schema = typeof schema;
-
 // Builder for synced queries
 export const builder = createBuilder(schema);
-
 // NOTE: Temporary ANYONE_CAN permissions until synced queries are fully deployed
 // This allows zero-cache to start but provides NO multi-user isolation
 // TODO: Replace with synced queries (see zero-queries/src/queries.ts)
-export const permissions = definePermissions<{ sub: string }, Schema>(
-  schema,
-  () => {
+export const permissions = definePermissions(schema, () => {
     return {
-      user: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        user: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      vineyard: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        vineyard: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      block: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        block: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      vine: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        vine: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      pruning_log: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        pruning_log: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      vintage: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        vintage: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      wine: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        wine: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      stage_history: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        stage_history: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      task_template: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        task_template: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      task: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        task: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      measurement: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        measurement: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
-      measurement_range: {
-        row: {
-          select: ANYONE_CAN,
-          insert: [],
-          update: {
-            preMutation: [],
-            postMutation: [],
-          },
-          delete: [],
+        measurement_range: {
+            row: {
+                select: ANYONE_CAN,
+                insert: [],
+                update: {
+                    preMutation: [],
+                    postMutation: [],
+                },
+                delete: [],
+            },
         },
-      },
-      seasonal_task: {
-        row: {
-          select: ANYONE_CAN,
-          insert: ANYONE_CAN,
-          update: {
-            preMutation: ANYONE_CAN,
-            postMutation: ANYONE_CAN,
-          },
-          delete: ANYONE_CAN,
+        seasonal_task: {
+            row: {
+                select: ANYONE_CAN,
+                insert: ANYONE_CAN,
+                update: {
+                    preMutation: ANYONE_CAN,
+                    postMutation: ANYONE_CAN,
+                },
+                delete: ANYONE_CAN,
+            },
         },
-      },
     };
-  }
-);
+});

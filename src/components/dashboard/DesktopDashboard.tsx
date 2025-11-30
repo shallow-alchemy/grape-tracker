@@ -172,7 +172,7 @@ export const SuppliesNeeded = () => {
   );
 };
 
-export const TaskManagement = () => {
+export const TaskListPanel = () => {
   const { user } = useUser();
   const [, setLocation] = useLocation();
   const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
@@ -180,13 +180,13 @@ export const TaskManagement = () => {
   const upcomingTasks = tasksData
     .filter((t: any) => !t.completed_at && !t.skipped)
     .sort((a: any, b: any) => a.due_date - b.due_date)
-    .slice(0, 5);
+    .slice(0, 4);
 
   return (
     <div className={styles.desktopPanel}>
       <div className={styles.panelTitleRow}>
-        <h2 className={styles.panelTitle}>TASK MANAGEMENT</h2>
-        <Link href="/tasks" className={styles.panelLink}>VIEW ALL TASKS</Link>
+        <h2 className={styles.panelTitle}>TASK LIST</h2>
+        <Link href="/tasks" className={styles.panelLink}>VIEW ALL</Link>
       </div>
       <div className={styles.taskList}>
         {upcomingTasks.length > 0 ? (
@@ -223,8 +223,8 @@ export const DesktopDashboard = () => {
         <CurrentVintage />
       </div>
       <div className={styles.desktopRow}>
+        <TaskListPanel />
         <SuppliesNeeded />
-        <TaskManagement />
       </div>
     </div>
   );

@@ -2,12 +2,28 @@ import React, { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
-import { myTasks, myVintages, myWines } from '../../shared/queries';
+import { myTasks, myVintages, myWines, mySeasonalTasksByWeek } from '../../shared/queries';
 import { formatDueDate, isOverdue } from './taskHelpers';
 import { useZero } from '../../contexts/ZeroContext';
 import styles from '../../App.module.css';
 
 type FilterTab = 'active' | 'completed' | 'skipped' | 'all';
+
+// Get Monday of the current week (timestamp in milliseconds)
+const getWeekStart = (): number => {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(now.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday.getTime();
+};
+
+// Get Sunday of the current week (end of week)
+const getWeekEnd = (): number => {
+  const weekStart = getWeekStart();
+  return weekStart + 6 * 24 * 60 * 60 * 1000; // Add 6 days
+};
 
 export const AllTasksView = () => {
   const { user } = useUser();
@@ -16,9 +32,31 @@ export const AllTasksView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('active');
 
+  const weekStart = getWeekStart();
+  const weekEnd = getWeekEnd();
+
   const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
   const [vintagesData] = useQuery(myVintages(user?.id) as any) as any;
   const [winesData] = useQuery(myWines(user?.id) as any) as any;
+  const [seasonalTasksData] = useQuery(mySeasonalTasksByWeek(user?.id, weekStart) as any) as any;
+
+  // Wait for all queries to sync before rendering (undefined = still syncing)
+  const allQueriesSynced = tasksData !== undefined && seasonalTasksData !== undefined;
+
+  // Transform seasonal tasks to match regular task format
+  const seasonalTasks = (seasonalTasksData || []).map((st: any) => ({
+    id: st.id,
+    name: st.task_name,
+    description: st.details,
+    due_date: weekEnd,
+    completed_at: st.completed_at,
+    skipped: false,
+    entity_type: 'seasonal' as const,
+    entity_id: st.id,
+    stage: st.season,
+    timing: st.timing,
+    priority: st.priority,
+  }));
 
   const getVintageName = (vintageId: string) => {
     const vintage = vintagesData?.find((v: any) => v.id === vintageId);
@@ -30,7 +68,10 @@ export const AllTasksView = () => {
     return wine?.name || 'Unknown Wine';
   };
 
-  const filteredBySearch = (tasksData || []).filter((task: any) => {
+  // Combine regular tasks and seasonal tasks
+  const allTasks = [...(tasksData || []), ...seasonalTasks];
+
+  const filteredBySearch = allTasks.filter((task: any) => {
     if (!searchQuery) return true;
     return task.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
@@ -59,9 +100,12 @@ export const AllTasksView = () => {
 
     const vintageTasksMap: Record<string, any[]> = {};
     const wineTasksMap: Record<string, any[]> = {};
+    const seasonalTasksList: any[] = [];
 
     filteredTasks.forEach((task: any) => {
-      if (task.entity_type === 'vintage') {
+      if (task.entity_type === 'seasonal') {
+        seasonalTasksList.push(task);
+      } else if (task.entity_type === 'vintage') {
         const name = getVintageName(task.entity_id);
         if (!vintageTasksMap[name]) vintageTasksMap[name] = [];
         vintageTasksMap[name].push(task);
@@ -74,24 +118,29 @@ export const AllTasksView = () => {
 
     Object.values(vintageTasksMap).forEach(tasks => tasks.sort((a, b) => a.due_date - b.due_date));
     Object.values(wineTasksMap).forEach(tasks => tasks.sort((a, b) => a.due_date - b.due_date));
+    seasonalTasksList.sort((a, b) => a.priority - b.priority);
 
-    return { vintages: vintageTasksMap, wines: wineTasksMap };
+    return { vintages: vintageTasksMap, wines: wineTasksMap, seasonal: seasonalTasksList };
   };
 
   const groups = groupedTasks();
 
-  const counts = {
+  const counts = allQueriesSynced ? {
     active: filteredBySearch.filter((t: any) => !t.completed_at && !t.skipped).length,
     completed: filteredBySearch.filter((t: any) => t.completed_at).length,
     skipped: filteredBySearch.filter((t: any) => t.skipped && !t.completed_at).length,
     all: filteredBySearch.length,
-  };
+  } : { active: 0, completed: 0, skipped: 0, all: 0 };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
   };
 
-  const navigateToTask = (task: typeof tasksData[0]) => {
+  const navigateToTask = (task: any) => {
+    if (task.entity_type === 'seasonal') {
+      // Seasonal tasks don't navigate anywhere
+      return;
+    }
     const route = task.entity_type === 'vintage'
       ? `/winery/vintages/${task.entity_id}/tasks`
       : `/winery/wines/${task.entity_id}/tasks`;
@@ -101,11 +150,20 @@ export const AllTasksView = () => {
   const handleToggleComplete = (e: React.MouseEvent, task: any) => {
     e.stopPropagation();
     const completed = task.completed_at !== null && task.completed_at !== undefined;
-    zero.mutate.task.update({
-      id: task.id,
-      completed_at: completed ? undefined : Date.now(),
-      updated_at: Date.now(),
-    });
+
+    if (task.entity_type === 'seasonal') {
+      zero.mutate.seasonal_task.update({
+        id: task.id,
+        completed_at: completed ? undefined : Date.now(),
+        updated_at: Date.now(),
+      });
+    } else {
+      zero.mutate.task.update({
+        id: task.id,
+        completed_at: completed ? undefined : Date.now(),
+        updated_at: Date.now(),
+      });
+    }
   };
 
   const renderTaskCard = (task: any) => {
@@ -166,6 +224,21 @@ export const AllTasksView = () => {
     }
 
     const sections: React.ReactNode[] = [];
+
+    // Seasonal tasks section first
+    if (groups.seasonal && groups.seasonal.length > 0) {
+      sections.push(
+        <div key="seasonal" className={styles.allTaskGroup}>
+          <div className={styles.allTaskGroupHeader}>
+            <span className={styles.allTaskGroupType}>SEASONAL</span>
+            <span className={styles.allTaskGroupName}>This Week</span>
+          </div>
+          <div className={styles.allTaskGroupList}>
+            {groups.seasonal.map(renderTaskCard)}
+          </div>
+        </div>
+      );
+    }
 
     if (groups.vintages && Object.keys(groups.vintages).length > 0) {
       Object.entries(groups.vintages).forEach(([name, tasks]) => {
@@ -251,7 +324,9 @@ export const AllTasksView = () => {
       </div>
 
       <div className={styles.allTasksList}>
-        {filteredTasks.length > 0 ? renderGroupedTasks() : (
+        {!allQueriesSynced ? (
+          <div className={styles.tasksEmptyState}>Loading tasks...</div>
+        ) : filteredTasks.length > 0 ? renderGroupedTasks() : (
           <div className={styles.tasksEmptyState}>
             {searchQuery ? 'No tasks found matching your search.' : `No ${activeFilter} tasks.`}
           </div>

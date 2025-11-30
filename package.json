@@ -4,6 +4,7 @@
   "description": "Mobile-first web app with Zero sync",
   "type": "module",
   "scripts": {
+    "predev": "npx esbuild schema.ts --bundle --platform=node --format=cjs --outfile=schema.cjs --external:@rocicorp/zero",
     "dev": "concurrently -n \"zero,queries,backend,frontend\" -c \"cyan,yellow,magenta,green\" \"yarn dev:zero\" \"yarn dev:queries\" \"yarn dev:backend\" \"yarn dev:frontend\"",
     "dev:frontend": "rsbuild dev",
     "dev:backend": "cd backend && cargo run",
@@ -14,8 +15,12 @@
     "start": "zero-cache --upstream-db $ZERO_UPSTREAM_DB --replica-file $ZERO_REPLICA_FILE --schema-path schema.cjs --auth-secret $ZERO_AUTH_SECRET --admin-password $ZERO_ADMIN_PASSWORD",
     "backend": "cd backend && cargo run",
     "backend:watch": "cd backend && cargo watch -x run",
-    "test": "rstest",
-    "test:watch": "rstest --watch",
+    "test": "rstest && yarn test:backend",
+    "test:frontend": "rstest",
+    "test:backend": "cd backend && cargo test",
+    "test:backend:watch": "cd backend && cargo watch -x test",
+    "test:frontend:watch": "rstest --watch",
+    "test:watch": "concurrently -n \"frontend,backend\" -c \"green,magenta\" \"yarn test:frontend:watch\" \"yarn test:backend:watch\"",
     "test:coverage": "rstest --coverage",
     "some-shit": "yarn test",
     "embed-docs": "npx tsx scripts/embed-docs.ts"

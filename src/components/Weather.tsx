@@ -8,6 +8,7 @@ import { fetchWeather, getWeatherIcon, WeatherData } from '../utils/weather';
 import { Alerts } from './Alerts';
 import { WeatherAlertSettingsModal } from './weather/WeatherAlertSettingsModal';
 import { formatDueDate } from './winery/taskHelpers';
+import { SeasonalTaskCard } from './dashboard/SeasonalTaskCard';
 import styles from '../App.module.css';
 
 export const Weather = () => {
@@ -115,39 +116,53 @@ export const Weather = () => {
       <Alerts alerts={weatherData.alerts} />
 
       <div className={styles.seasonalActivities}>
-        <div className={styles.activityHeader}>WHAT'S NEXT</div>
-        <div className={styles.seasonalActivitiesContent}>
-          {nextTask.length > 0 ? (
-            <div className={styles.activityItem}>
-              <span
-                className={`${styles.activityText} ${styles.clickableActivityText}`}
-                onClick={() => {
-                  const task = nextTask[0];
-                  const route = task.entity_type === 'vintage'
-                    ? `/winery/vintages/${task.entity_id}/tasks`
-                    : `/winery/wines/${task.entity_id}/tasks`;
-                  setLocation(route);
-                }}
-              >
-                {'>'} {nextTask[0].name} — {formatDueDate(nextTask[0].due_date)}
-              </span>
-              <button
-                onClick={async () => {
-                  await zero.mutate.task.update({
-                    id: nextTask[0].id,
-                    completed_at: Date.now(),
-                  });
-                }}
-                className={styles.taskCompleteButton}
-              >
-                Mark complete →
-              </button>
-            </div>
-          ) : (
-            <div className={styles.activityItem}>
-              <span className={styles.activityText}>{'>'} NO UPCOMING TASKS</span>
-            </div>
-          )}
+        <div className={styles.whatsNextHeaderRow}>
+          <div className={styles.activityHeader}>WHAT'S NEXT</div>
+          <SeasonalTaskCard headerOnly />
+        </div>
+        <div className={styles.whatsNextSplit}>
+          <div className={styles.whatsNextTask}>
+            {nextTask.length > 0 ? (
+              <div className={styles.seasonalTaskMain}>
+                <div
+                  className={styles.seasonalTaskName}
+                  onClick={() => {
+                    const task = nextTask[0];
+                    const route = task.entity_type === 'vintage'
+                      ? `/winery/vintages/${task.entity_id}/tasks`
+                      : `/winery/wines/${task.entity_id}/tasks`;
+                    setLocation(route);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {nextTask[0].name.toUpperCase()}
+                </div>
+                <div className={styles.seasonalTaskTiming}>{formatDueDate(nextTask[0].due_date)}</div>
+                {nextTask[0].description && (
+                  <div className={styles.seasonalTaskDetails}>{nextTask[0].description}</div>
+                )}
+                <button
+                  type="button"
+                  className={styles.seasonalTaskMoreLink}
+                  onClick={async () => {
+                    await zero.mutate.task.update({
+                      id: nextTask[0].id,
+                      completed_at: Date.now(),
+                    });
+                  }}
+                >
+                  Mark complete →
+                </button>
+              </div>
+            ) : (
+              <div className={styles.seasonalTaskMain}>
+                <div className={styles.seasonalTaskName}>NO UPCOMING TASKS</div>
+              </div>
+            )}
+          </div>
+          <div className={styles.whatsNextSeasonal}>
+            <SeasonalTaskCard inline />
+          </div>
         </div>
       </div>
 

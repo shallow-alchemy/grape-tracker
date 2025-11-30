@@ -240,3 +240,15 @@ export const myPruningLogsByVine = syncedQueryWithContext(
       .where('vine_id', vineId);
   }
 );
+
+// Seasonal task queries
+export const mySeasonalTasksByWeek = syncedQueryWithContext(
+  'mySeasonalTasksByWeek',
+  z.tuple([z.number()]),
+  (userID: string | undefined, weekStart: number) => {
+    if (!userID) return builder.seasonal_task.where('id', '___never_match___');
+    return builder.seasonal_task
+      .where('user_id', userID)
+      .where('week_start', weekStart);
+  }
+);

@@ -5,6 +5,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::net::SocketAddr;
@@ -97,6 +98,55 @@ struct AlertSettingsResponse {
     alert_type: String,
     settings: serde_json::Value,
     updated_at: i64,
+}
+
+// Geocode test types
+#[derive(Deserialize)]
+struct GeocodeTestQuery {
+    location: String,
+}
+
+#[derive(Serialize)]
+struct GeocodeTestResponse {
+    input: String,
+    is_coordinates: bool,
+    resolved: String,
+}
+
+// Seasonal Task Advisor types
+#[derive(Deserialize)]
+struct SeasonalTasksRequest {
+    user_id: String,
+    week_start: i64,         // Monday timestamp (milliseconds)
+    vineyard_location: Option<String>,
+    varieties: Vec<String>,
+}
+
+#[derive(Serialize, Clone)]
+struct SeasonalTask {
+    id: String,
+    priority: i32,           // 1 = highest priority
+    task: String,            // What to do
+    timing: String,          // When to do it
+    details: String,         // How/why
+    completed_at: Option<i64>,
+}
+
+#[derive(Serialize)]
+struct SeasonalTasksResponse {
+    season: String,          // e.g., "Late Dormant" or "Bud Break"
+    tasks: Vec<SeasonalTask>,
+    weather_note: Option<String>,
+    context_summary: String,
+    from_cache: bool,        // Whether these were from the database
+}
+
+// Helper struct for parsing AI response (without id/completed_at)
+struct ParsedSeasonalTask {
+    priority: i32,
+    task: String,
+    timing: String,
+    details: String,
 }
 
 // AI Training Recommendation types
@@ -213,6 +263,8 @@ async fn main() {
         .route("/alert-settings/:vineyard_id/:alert_type", get(get_alert_settings))
         .route("/alert-settings/:vineyard_id/:alert_type", post(update_alert_settings))
         .route("/ai/training-recommendation", post(get_training_recommendation))
+        .route("/ai/seasonal-tasks", post(get_seasonal_tasks))
+        .route("/ai/geocode-test", get(geocode_test))
         .layer(cors)
         .with_state(state);
 
@@ -561,6 +613,332 @@ async fn update_alert_settings(
     }))
 }
 
+async fn geocode_test(
+    Query(params): Query<GeocodeTestQuery>,
+) -> Result<Json<GeocodeTestResponse>, StatusCode> {
+    let is_coordinates = parse_coordinates(&params.location).is_some();
+    let resolved = resolve_location(&params.location).await;
+
+    Ok(Json(GeocodeTestResponse {
+        input: params.location,
+        is_coordinates,
+        resolved,
+    }))
+}
+
+async fn get_seasonal_tasks(
+    State(state): State<AppState>,
+    Json(payload): Json<SeasonalTasksRequest>,
+) -> Result<Json<SeasonalTasksResponse>, StatusCode> {
+    // First, check if we have tasks for this week already
+    let existing_tasks: Vec<(String, String, i32, String, String, String, Option<i64>)> = sqlx::query_as(
+        r#"
+        SELECT id, season, priority, task_name, timing, details, completed_at
+        FROM seasonal_task
+        WHERE user_id = $1 AND week_start = $2
+        ORDER BY priority ASC
+        "#
+    )
+    .bind(&payload.user_id)
+    .bind(payload.week_start)
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    if !existing_tasks.is_empty() {
+        let season = existing_tasks.first().map(|t| t.1.clone()).unwrap_or_default();
+        let tasks: Vec<SeasonalTask> = existing_tasks
+            .into_iter()
+            .map(|(id, _, priority, task_name, timing, details, completed_at)| SeasonalTask {
+                id,
+                priority,
+                task: task_name,
+                timing,
+                details,
+                completed_at,
+            })
+            .collect();
+
+        return Ok(Json(SeasonalTasksResponse {
+            season,
+            tasks,
+            weather_note: None,
+            context_summary: "Tasks loaded from this week's recommendations".to_string(),
+            from_cache: true,
+        }));
+    }
+
+    // No cached tasks - generate new ones
+    let anthropic_api_key = std::env::var("ANTHROPIC_API_KEY")
+        .map_err(|_| {
+            tracing::error!("ANTHROPIC_API_KEY not set");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let openai_api_key = std::env::var("OPENAI_API_KEY").ok();
+    let client = reqwest::Client::new();
+
+    // Convert week_start timestamp to date
+    let current_date = chrono::DateTime::from_timestamp_millis(payload.week_start)
+        .map(|dt| dt.date_naive())
+        .unwrap_or_else(|| chrono::Local::now().date_naive());
+
+    let month = current_date.format("%B").to_string();
+    let day = current_date.day();
+
+    // Resolve location if coordinates
+    let resolved_location = match &payload.vineyard_location {
+        Some(loc) if !loc.is_empty() => Some(resolve_location(loc).await),
+        _ => None,
+    };
+
+    // Determine approximate season based on month (Northern Hemisphere default)
+    let season_hint = match current_date.month() {
+        12 | 1 | 2 => "dormant season (winter)",
+        3 => "late dormant to early bud break",
+        4 => "bud break to early shoot growth",
+        5 => "shoot growth to bloom",
+        6 => "bloom to fruit set",
+        7 | 8 => "veraison and ripening",
+        9 | 10 => "harvest season",
+        11 => "post-harvest",
+        _ => "growing season",
+    };
+
+    let varieties_str = if payload.varieties.is_empty() {
+        "various grape varieties".to_string()
+    } else {
+        payload.varieties.join(", ")
+    };
+
+    // Build context summary
+    let context_parts: Vec<String> = vec![
+        Some(format!("Date: {} {}", month, day)),
+        Some(format!("Season: {}", season_hint)),
+        resolved_location.as_ref().map(|l| format!("Location: {}", l)),
+        Some(format!("Varieties: {}", varieties_str)),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+
+    let context_summary = context_parts.join(" • ");
+
+    // Build RAG query
+    let rag_query_text = format!(
+        "vineyard tasks for {} in {}, growing {}",
+        season_hint,
+        resolved_location.as_deref().unwrap_or("temperate climate"),
+        varieties_str
+    );
+
+    // Fetch relevant documents from knowledgebase
+    let mut knowledge_context = String::new();
+    if let Some(openai_key) = &openai_api_key {
+        match rag_query(&state.db, &rag_query_text, openai_key, 8, None).await {
+            Ok(chunks) if !chunks.is_empty() => {
+                tracing::info!("RAG: Found {} relevant documents for seasonal tasks", chunks.len());
+                knowledge_context = format!(
+                    "\n\n## Reference Documentation\nThe following excerpts from our viticulture knowledgebase are relevant:\n\n{}",
+                    chunks
+                        .iter()
+                        .map(|c| format!("### From: {}\n{}\n", c.source_path, c.content))
+                        .collect::<Vec<_>>()
+                        .join("\n---\n")
+                );
+            }
+            Ok(_) => {
+                tracing::info!("RAG: No relevant documents found for seasonal tasks");
+            }
+            Err(e) => {
+                tracing::warn!("RAG query failed for seasonal tasks: {:?}", e);
+            }
+        }
+    }
+
+    let prompt = format!(
+        r#"You are a viticulture expert helping a home vineyard grower understand what tasks they should be doing right now.
+
+Context:
+- Current date: {} {}
+- Approximate season: {}
+- Location: {}
+- Varieties grown: {}
+{}
+
+Based on this timing and the reference documentation, provide a prioritized list of 3-5 vineyard tasks the grower should focus on right now.
+
+Respond with JSON in this exact format:
+{{
+  "season": "Name of current growth stage (e.g., 'Late Dormant', 'Bud Break', 'Bloom')",
+  "tasks": [
+    {{
+      "priority": 1,
+      "task": "Short task name",
+      "timing": "When to do this (e.g., 'This week', 'Before bud break', 'When shoots reach 6 inches')",
+      "details": "1-2 sentence explanation of what to do and why"
+    }}
+  ],
+  "weather_note": "Optional note about weather considerations, or null if not applicable"
+}}
+
+Important guidelines:
+1. Tasks should be actionable and specific to this time of year
+2. Consider the varieties - some have specific needs
+3. Prioritize by urgency - what must be done now vs. can wait
+4. Reference the documentation for timing cues (e.g., soil temperature, phenological stages)
+5. For home growers, focus on essential tasks rather than commercial-scale operations"#,
+        month, day,
+        season_hint,
+        resolved_location.as_deref().unwrap_or("unspecified location"),
+        varieties_str,
+        knowledge_context
+    );
+
+    let request = AnthropicRequest {
+        model: "claude-3-5-haiku-20241022".to_string(),
+        max_tokens: 1500,
+        messages: vec![AnthropicMessage {
+            role: "user".to_string(),
+            content: prompt,
+        }],
+    };
+
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", &anthropic_api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&request)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to call Anthropic API for seasonal tasks: {}", e);
+            StatusCode::BAD_GATEWAY
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        tracing::error!("Anthropic API error for seasonal tasks: {} - {}", status, body);
+        return Err(StatusCode::BAD_GATEWAY);
+    }
+
+    let anthropic_response: AnthropicResponse = response
+        .json()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to parse Anthropic response for seasonal tasks: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let ai_text = anthropic_response
+        .content
+        .first()
+        .map(|c| c.text.clone())
+        .unwrap_or_default();
+
+    // Parse the JSON response
+    let (season, parsed_tasks, weather_note) = parse_seasonal_tasks_response(&ai_text);
+
+    // Store tasks in database
+    let now = chrono::Utc::now().timestamp_millis();
+    let mut stored_tasks: Vec<SeasonalTask> = Vec::new();
+
+    for task in parsed_tasks {
+        let id = uuid::Uuid::new_v4().to_string();
+
+        let result = sqlx::query(
+            r#"
+            INSERT INTO seasonal_task (id, user_id, week_start, season, priority, task_name, timing, details, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            "#
+        )
+        .bind(&id)
+        .bind(&payload.user_id)
+        .bind(payload.week_start)
+        .bind(&season)
+        .bind(task.priority)
+        .bind(&task.task)
+        .bind(&task.timing)
+        .bind(&task.details)
+        .bind(now)
+        .bind(now)
+        .execute(&state.db)
+        .await;
+
+        if let Err(e) = result {
+            tracing::warn!("Failed to store seasonal task: {}", e);
+        }
+
+        stored_tasks.push(SeasonalTask {
+            id,
+            priority: task.priority,
+            task: task.task,
+            timing: task.timing,
+            details: task.details,
+            completed_at: None,
+        });
+    }
+
+    Ok(Json(SeasonalTasksResponse {
+        season,
+        tasks: stored_tasks,
+        weather_note,
+        context_summary,
+        from_cache: false,
+    }))
+}
+
+fn parse_seasonal_tasks_response(text: &str) -> (String, Vec<ParsedSeasonalTask>, Option<String>) {
+    let json_start = text.find('{');
+    let json_end = text.rfind('}');
+
+    if let (Some(start), Some(end)) = (json_start, json_end) {
+        let json_str = &text[start..=end];
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(json_str) {
+            let season = parsed.get("season")
+                .and_then(|s| s.as_str())
+                .unwrap_or("Growing Season")
+                .to_string();
+
+            let weather_note = parsed.get("weather_note")
+                .and_then(|w| w.as_str())
+                .map(|s| s.to_string());
+
+            let tasks = parsed.get("tasks")
+                .and_then(|t| t.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|t| {
+                            Some(ParsedSeasonalTask {
+                                priority: t.get("priority")?.as_i64()? as i32,
+                                task: t.get("task")?.as_str()?.to_string(),
+                                timing: t.get("timing")?.as_str()?.to_string(),
+                                details: t.get("details")?.as_str()?.to_string(),
+                            })
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            return (season, tasks, weather_note);
+        }
+    }
+
+    // Fallback
+    (
+        "Growing Season".to_string(),
+        vec![ParsedSeasonalTask {
+            priority: 1,
+            task: "Monitor your vineyard".to_string(),
+            timing: "Regularly".to_string(),
+            details: "Walk your vineyard weekly to observe vine health and development.".to_string(),
+        }],
+        None,
+    )
+}
+
 async fn get_training_recommendation(
     State(state): State<AppState>,
     Json(payload): Json<TrainingRecommendationRequest>,
@@ -576,6 +954,12 @@ async fn get_training_recommendation(
 
     let client = reqwest::Client::new();
 
+    // Resolve vineyard location (geocode if coordinates)
+    let resolved_location = match &payload.vineyard_location {
+        Some(loc) if !loc.is_empty() => Some(resolve_location(loc).await),
+        _ => None,
+    };
+
     // Build context for the AI
     let varieties_str = if payload.varieties.is_empty() {
         "unknown varieties".to_string()
@@ -587,7 +971,7 @@ async fn get_training_recommendation(
         Some(format!("Block: {}", payload.block_name)),
         Some(format!("Varieties: {}", varieties_str)),
         Some(format!("Vine count: {}", payload.vine_count)),
-        payload.vineyard_location.as_ref().map(|l| format!("Vineyard location: {}", l)),
+        resolved_location.as_ref().map(|l| format!("Vineyard location: {}", l)),
         payload.location.as_ref().map(|l| format!("Block position: {}", l)),
         payload.soil_type.as_ref().map(|s| format!("Soil type: {}", s)),
         payload.size_acres.map(|a| format!("Size: {} acres", a)),
@@ -604,7 +988,7 @@ async fn get_training_recommendation(
         "training system selection for {} grape varieties, vineyard with {} vines{}{}",
         varieties_str,
         payload.vine_count,
-        payload.vineyard_location.as_ref().map(|l| format!(", {}", l)).unwrap_or_default(),
+        resolved_location.as_ref().map(|l| format!(", {}", l)).unwrap_or_default(),
         payload.soil_type.as_ref().map(|s| format!(", {} soil", s)).unwrap_or_default()
     );
 
@@ -762,6 +1146,63 @@ fn parse_ai_recommendations(text: &str) -> Vec<TrainingRecommendation> {
     }]
 }
 
+/// Check if a string looks like coordinates (e.g., "38.2975,-122.2869" or "38.2975, -122.2869")
+fn parse_coordinates(location: &str) -> Option<(f64, f64)> {
+    let parts: Vec<&str> = location.split(',').map(|s| s.trim()).collect();
+    if parts.len() != 2 {
+        return None;
+    }
+
+    let lat = parts[0].parse::<f64>().ok()?;
+    let lon = parts[1].parse::<f64>().ok()?;
+
+    // Validate ranges
+    if lat >= -90.0 && lat <= 90.0 && lon >= -180.0 && lon <= 180.0 {
+        Some((lat, lon))
+    } else {
+        None
+    }
+}
+
+/// Reverse geocode coordinates to a human-readable location name
+async fn geocode_coordinates(lat: f64, lon: f64) -> Option<String> {
+    let client = reqwest::Client::new();
+    let location_url = format!(
+        "https://nominatim.openstreetmap.org/reverse?lat={}&lon={}&format=json",
+        lat, lon
+    );
+
+    match client
+        .get(&location_url)
+        .header("User-Agent", "GilbertGrapeTracker/1.0")
+        .send()
+        .await
+    {
+        Ok(resp) => match resp.json::<NominatimResponse>().await {
+            Ok(geo) => {
+                let city = geo.address.city
+                    .or(geo.address.town)
+                    .or(geo.address.village)?;
+                let state = geo.address.state?;
+                Some(format!("{}, {}", city, state))
+            }
+            Err(_) => None,
+        },
+        Err(_) => None,
+    }
+}
+
+/// Resolve a location string - if it's coordinates, geocode it; otherwise return as-is
+async fn resolve_location(location: &str) -> String {
+    if let Some((lat, lon)) = parse_coordinates(location) {
+        if let Some(resolved) = geocode_coordinates(lat, lon).await {
+            tracing::info!("Geocoded {} to {}", location, resolved);
+            return resolved;
+        }
+    }
+    location.to_string()
+}
+
 /// Generate an embedding for the given text using OpenAI's API
 async fn generate_query_embedding(text: &str, api_key: &str) -> Result<Vec<f64>, StatusCode> {
     let client = reqwest::Client::new();
@@ -893,4 +1334,93 @@ async fn rag_query(
 ) -> Result<Vec<RelevantChunk>, StatusCode> {
     let embedding = generate_query_embedding(query, openai_api_key).await?;
     query_similar_documents(db, &embedding, limit, category_filter).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_coordinates_valid() {
+        // Standard format
+        let result = parse_coordinates("38.2975,-122.2869");
+        assert!(result.is_some());
+        let (lat, lon) = result.unwrap();
+        assert!((lat - 38.2975).abs() < 0.0001);
+        assert!((lon - (-122.2869)).abs() < 0.0001);
+    }
+
+    #[test]
+    fn test_parse_coordinates_with_spaces() {
+        // With space after comma
+        let result = parse_coordinates("38.2975, -122.2869");
+        assert!(result.is_some());
+        let (lat, lon) = result.unwrap();
+        assert!((lat - 38.2975).abs() < 0.0001);
+        assert!((lon - (-122.2869)).abs() < 0.0001);
+    }
+
+    #[test]
+    fn test_parse_coordinates_with_extra_spaces() {
+        // With spaces around both numbers
+        let result = parse_coordinates(" 38.2975 , -122.2869 ");
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_parse_coordinates_negative_lat() {
+        // Southern hemisphere
+        let result = parse_coordinates("-33.9, 18.4");
+        assert!(result.is_some());
+        let (lat, lon) = result.unwrap();
+        assert!((lat - (-33.9)).abs() < 0.0001);
+        assert!((lon - 18.4).abs() < 0.0001);
+    }
+
+    #[test]
+    fn test_parse_coordinates_invalid_place_name() {
+        // Place name should not parse as coordinates
+        let result = parse_coordinates("Napa Valley");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_parse_coordinates_invalid_single_number() {
+        let result = parse_coordinates("38.2975");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_parse_coordinates_invalid_too_many_parts() {
+        let result = parse_coordinates("38.2975,-122.2869,100");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_parse_coordinates_invalid_out_of_range_lat() {
+        // Latitude > 90
+        let result = parse_coordinates("91.0,-122.0");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_parse_coordinates_invalid_out_of_range_lon() {
+        // Longitude > 180
+        let result = parse_coordinates("38.0,-181.0");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_parse_coordinates_edge_cases() {
+        // Valid edge cases
+        assert!(parse_coordinates("90.0,180.0").is_some());
+        assert!(parse_coordinates("-90.0,-180.0").is_some());
+        assert!(parse_coordinates("0,0").is_some());
+    }
+
+    #[test]
+    fn test_parse_coordinates_invalid_text_mixed() {
+        let result = parse_coordinates("38.2975, California");
+        assert!(result.is_none());
+    }
 }

@@ -206,6 +206,22 @@ const measurementRangeTable = table('measurement_range')
   })
   .primaryKey('id');
 
+const seasonalTaskTable = table('seasonal_task')
+  .columns({
+    id: string(),
+    user_id: string(),
+    week_start: number(),    // Monday of the week (timestamp)
+    season: string(),        // e.g., "Post-Harvest/Early Dormant"
+    priority: number(),      // 1, 2, 3, etc.
+    task_name: string(),
+    timing: string(),        // e.g., "Immediately", "This week"
+    details: string(),
+    completed_at: number().optional(),
+    created_at: number(),
+    updated_at: number(),
+  })
+  .primaryKey('id');
+
 export const schema = createSchema({
   tables: [
     userTable,
@@ -220,6 +236,7 @@ export const schema = createSchema({
     taskTable,
     measurementTable,
     measurementRangeTable,
+    seasonalTaskTable,
   ],
 });
 
@@ -365,6 +382,17 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
             postMutation: [],
           },
           delete: [],
+        },
+      },
+      seasonal_task: {
+        row: {
+          select: ANYONE_CAN,
+          insert: ANYONE_CAN,
+          update: {
+            preMutation: ANYONE_CAN,
+            postMutation: ANYONE_CAN,
+          },
+          delete: ANYONE_CAN,
         },
       },
     };

@@ -5,7 +5,7 @@ import {
   RecentActivity,
   CurrentVintage,
   SuppliesNeeded,
-  TaskManagement,
+  TaskListPanel,
 } from './DesktopDashboard';
 
 rs.mock('@clerk/clerk-react', () => ({
@@ -121,6 +121,7 @@ rs.mock('wouter', () => ({
   Link: ({ children, href }: any) => <a href={href}>{children}</a>,
 }));
 
+
 describe('RecentActivity', () => {
   afterEach(() => {
     cleanup();
@@ -218,19 +219,19 @@ describe('SuppliesNeeded', () => {
   });
 });
 
-describe('TaskManagement', () => {
+describe('TaskListPanel', () => {
   afterEach(() => {
     cleanup();
   });
 
   test('renders title', () => {
-    render(<TaskManagement />);
+    render(<TaskListPanel />);
 
-    expect(screen.getByText('TASK MANAGEMENT')).toBeInTheDocument();
+    expect(screen.getByText('TASK LIST')).toBeInTheDocument();
   });
 
   test('renders task items', () => {
-    render(<TaskManagement />);
+    render(<TaskListPanel />);
 
     // Component renders task names in uppercase
     expect(screen.getByText('WINTER PRUNING DUE: DEC 1-15')).toBeInTheDocument();
@@ -240,7 +241,7 @@ describe('TaskManagement', () => {
   });
 
   test('renders task dates', () => {
-    render(<TaskManagement />);
+    render(<TaskListPanel />);
 
     // Dates are formatted using toLocaleDateString
     // Just verify that task items are present with dates
@@ -266,8 +267,8 @@ describe('DesktopDashboard', () => {
     // Check for SuppliesNeeded
     expect(screen.getByText('SUPPLIES NEEDED')).toBeInTheDocument();
 
-    // Check for TaskManagement
-    expect(screen.getByText('TASK MANAGEMENT')).toBeInTheDocument();
+    // Check for TaskListPanel
+    expect(screen.getByText('TASK LIST')).toBeInTheDocument();
   });
 
   test('renders recent activity items', () => {
