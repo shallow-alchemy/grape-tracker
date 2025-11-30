@@ -4109,3 +4109,281 @@
 .createNewButton:hover {
   color: var(--color-interaction-300);
 }
+
+/* AI Analysis Styles */
+.aiAnalysisButton {
+  width: 100%;
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: transparent;
+  border: 1px solid var(--color-interaction-400);
+  color: var(--color-interaction-400);
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.aiAnalysisButton:hover:not(:disabled) {
+  background: var(--color-interaction-400);
+  color: var(--color-bg-primary);
+}
+
+.aiAnalysisButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.aiAnalysisCard {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-left: 3px solid var(--color-interaction-400);
+}
+
+.aiAnalysisHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-interaction-400);
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.aiAnalysisClose {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0;
+  font-size: 1rem;
+}
+
+.aiAnalysisClose:hover {
+  color: var(--color-text-primary);
+}
+
+.aiAnalysisSummary {
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.aiAnalysisMetrics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.aiMetricItem {
+  padding: var(--spacing-sm);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-primary);
+}
+
+.aiMetricHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.aiMetricName {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary);
+}
+
+.aiMetricStatus {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+}
+
+.aiMetricStatusGood {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.aiMetricStatusWarning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.aiMetricStatusConcern {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.aiMetricAnalysis {
+  color: var(--color-text-primary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.aiAnalysisSection {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.aiAnalysisSectionTitle {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.aiAnalysisSectionContent {
+  color: var(--color-text-primary);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.aiAnalysisRecommendations {
+  margin: 0;
+  padding-left: var(--spacing-md);
+  color: var(--color-text-primary);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.aiAnalysisRecommendations li {
+  margin-bottom: var(--spacing-xs);
+}
+
+/* Inline Measurement Cards with AI Analysis */
+.measurementCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.measurementCard {
+  padding: var(--spacing-sm);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+}
+
+.measurementCardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.measurementCardLabel {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary);
+}
+
+.measurementCardValue {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.measurementCardAnalysis {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-text-primary);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--color-border-primary);
+}
+
+/* AI Metric Badges (inline with measurement values) */
+.aiMetricBadge {
+  font-family: var(--font-heading);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  margin-left: auto;
+}
+
+.aiMetricBadgeGood {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.aiMetricBadgeWarning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.aiMetricBadgeConcern {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+/* AI Insights Section (projections & recommendations) */
+.aiInsightsSection {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-left: 3px solid var(--color-interaction-400);
+}
+
+.aiInsightsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-interaction-400);
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.aiInsightBlock {
+  margin-bottom: var(--spacing-sm);
+}
+
+.aiInsightBlock:last-child {
+  margin-bottom: 0;
+}
+
+.aiInsightLabel {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.aiInsightText {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.aiInsightList {
+  margin: 0;
+  padding-left: var(--spacing-md);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.aiInsightList li {
+  margin-bottom: var(--spacing-xs);
+}
+
+.aiInsightList li:last-child {
+  margin-bottom: 0;
+}

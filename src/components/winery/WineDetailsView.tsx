@@ -3,6 +3,7 @@ import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
+import { getBackendUrl } from '../../config';
 import { myStageHistoryByEntity, myMeasurementsByEntity } from '../../shared/queries';
 import { useWines, useVintages } from '../vineyard-hooks';
 import { EditWineModal } from './EditWineModal';
@@ -65,6 +66,16 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const [showStageModal, setShowStageModal] = useState(false);
   const [showMeasurementModal, setShowMeasurementModal] = useState(false);
 
+  // AI Analysis state
+  const [aiAnalysis, setAiAnalysis] = useState<{
+    summary: string;
+    metrics: Array<{ name: string; value: number | null; status: string; analysis: string }>;
+    projections: string | null;
+    recommendations: string[];
+  } | null>(null);
+  const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
+  const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
+
   if (!wine) {
     return (
       <div className={styles.paddingContainer}>
@@ -101,6 +112,52 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   };
 
   const daysInStage = getDaysInStage();
+
+  const fetchAiAnalysis = async () => {
+    if (!latestMeasurement || !wine) return;
+
+    setAiAnalysisLoading(true);
+    setAiAnalysisError(null);
+
+    try {
+      const response = await fetch(`${getBackendUrl()}/ai/measurement-guidance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wine_name: wine.name,
+          variety: vintage?.variety || 'Unknown',
+          blend_components: isBlend ? wine.blend_components : null,
+          current_stage: wine.current_stage || 'unknown',
+          latest_measurement: {
+            ph: latestMeasurement.ph,
+            ta: latestMeasurement.ta,
+            brix: latestMeasurement.brix,
+            temperature: latestMeasurement.temperature,
+            date: latestMeasurement.date,
+          },
+          previous_measurements: measurements.slice(1, 6).map((m: any) => ({
+            ph: m.ph,
+            ta: m.ta,
+            brix: m.brix,
+            temperature: m.temperature,
+            date: m.date,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI analysis');
+      }
+
+      const data = await response.json();
+      setAiAnalysis(data);
+    } catch (err) {
+      setAiAnalysisError('Failed to get AI analysis. Please try again.');
+      console.error('AI analysis error:', err);
+    } finally {
+      setAiAnalysisLoading(false);
+    }
+  };
 
   type ExpandedStageHistoryEntry = {
     id: string;
@@ -286,32 +343,137 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
               ({formatDate(latestMeasurement.date)})
             </span>
           </div>
-          <div className={styles.detailGrid}>
+
+          {/* Measurement cards with inline AI analysis */}
+          <div className={styles.measurementCards}>
             {latestMeasurement.ph !== null && latestMeasurement.ph !== undefined && (
-              <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>PH</div>
-                <div className={styles.detailValue}>{latestMeasurement.ph}</div>
+              <div className={styles.measurementCard}>
+                <div className={styles.measurementCardHeader}>
+                  <div className={styles.measurementCardLabel}>PH</div>
+                  <div className={styles.measurementCardValue}>{latestMeasurement.ph}</div>
+                  {aiAnalysis && (() => {
+                    const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'ph');
+                    if (!metric) return null;
+                    return (
+                      <span className={`${styles.aiMetricBadge} ${styles[`aiMetricBadge${metric.status.charAt(0).toUpperCase() + metric.status.slice(1)}`]}`}>
+                        {metric.status.toUpperCase()}
+                      </span>
+                    );
+                  })()}
+                </div>
+                {aiAnalysis && (() => {
+                  const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'ph');
+                  if (!metric) return null;
+                  return <div className={styles.measurementCardAnalysis}>{metric.analysis}</div>;
+                })()}
               </div>
             )}
+
             {latestMeasurement.ta !== null && latestMeasurement.ta !== undefined && (
-              <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>TA</div>
-                <div className={styles.detailValue}>{latestMeasurement.ta} G/L</div>
+              <div className={styles.measurementCard}>
+                <div className={styles.measurementCardHeader}>
+                  <div className={styles.measurementCardLabel}>TA</div>
+                  <div className={styles.measurementCardValue}>{latestMeasurement.ta} G/L</div>
+                  {aiAnalysis && (() => {
+                    const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'ta');
+                    if (!metric) return null;
+                    return (
+                      <span className={`${styles.aiMetricBadge} ${styles[`aiMetricBadge${metric.status.charAt(0).toUpperCase() + metric.status.slice(1)}`]}`}>
+                        {metric.status.toUpperCase()}
+                      </span>
+                    );
+                  })()}
+                </div>
+                {aiAnalysis && (() => {
+                  const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'ta');
+                  if (!metric) return null;
+                  return <div className={styles.measurementCardAnalysis}>{metric.analysis}</div>;
+                })()}
               </div>
             )}
+
             {latestMeasurement.brix !== null && latestMeasurement.brix !== undefined && (
-              <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>BRIX</div>
-                <div className={styles.detailValue}>{latestMeasurement.brix}°</div>
+              <div className={styles.measurementCard}>
+                <div className={styles.measurementCardHeader}>
+                  <div className={styles.measurementCardLabel}>BRIX</div>
+                  <div className={styles.measurementCardValue}>{latestMeasurement.brix}°</div>
+                  {aiAnalysis && (() => {
+                    const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'brix');
+                    if (!metric) return null;
+                    return (
+                      <span className={`${styles.aiMetricBadge} ${styles[`aiMetricBadge${metric.status.charAt(0).toUpperCase() + metric.status.slice(1)}`]}`}>
+                        {metric.status.toUpperCase()}
+                      </span>
+                    );
+                  })()}
+                </div>
+                {aiAnalysis && (() => {
+                  const metric = aiAnalysis.metrics.find(m => m.name.toLowerCase() === 'brix');
+                  if (!metric) return null;
+                  return <div className={styles.measurementCardAnalysis}>{metric.analysis}</div>;
+                })()}
               </div>
             )}
+
             {latestMeasurement.temperature !== null && latestMeasurement.temperature !== undefined && (
-              <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>TEMP</div>
-                <div className={styles.detailValue}>{latestMeasurement.temperature}°F</div>
+              <div className={styles.measurementCard}>
+                <div className={styles.measurementCardHeader}>
+                  <div className={styles.measurementCardLabel}>TEMP</div>
+                  <div className={styles.measurementCardValue}>{latestMeasurement.temperature}°F</div>
+                </div>
               </div>
             )}
           </div>
+
+          {/* AI Analysis Button */}
+          {!aiAnalysis && (
+            <button
+              type="button"
+              className={styles.aiAnalysisButton}
+              onClick={fetchAiAnalysis}
+              disabled={aiAnalysisLoading}
+            >
+              {aiAnalysisLoading ? 'ANALYZING...' : '✨ GET AI ANALYSIS'}
+            </button>
+          )}
+
+          {aiAnalysisError && (
+            <div className={styles.errorMessage}>{aiAnalysisError}</div>
+          )}
+
+          {/* AI Projections & Recommendations (shown after analysis) */}
+          {aiAnalysis && (
+            <div className={styles.aiInsightsSection}>
+              <div className={styles.aiInsightsHeader}>
+                <span>✨ AI INSIGHTS</span>
+                <button
+                  type="button"
+                  className={styles.aiAnalysisClose}
+                  onClick={() => setAiAnalysis(null)}
+                >
+                  CLEAR
+                </button>
+              </div>
+
+              {aiAnalysis.projections && (
+                <div className={styles.aiInsightBlock}>
+                  <div className={styles.aiInsightLabel}>OUTLOOK</div>
+                  <div className={styles.aiInsightText}>{aiAnalysis.projections}</div>
+                </div>
+              )}
+
+              {aiAnalysis.recommendations.length > 0 && (
+                <div className={styles.aiInsightBlock}>
+                  <div className={styles.aiInsightLabel}>NEXT STEPS</div>
+                  <ul className={styles.aiInsightList}>
+                    {aiAnalysis.recommendations.map((rec, idx) => (
+                      <li key={idx}>{rec}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

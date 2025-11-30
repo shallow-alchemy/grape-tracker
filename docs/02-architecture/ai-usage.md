@@ -87,7 +87,45 @@ This document tracks all AI API calls in the application for cost monitoring and
 
 ---
 
-### 3. `/ai/geocode-test` (GET) - Dev Only
+### 3. `/ai/measurement-guidance` (POST)
+
+**Purpose**: Analyzes wine measurements (pH, TA, Brix) and provides guidance on whether values are in range, how they'll affect the final wine, and corrective measures if needed.
+
+**Frontend**: `src/components/winery/WineDetailsView.tsx` (AI Analysis button in measurements section)
+
+**API Calls**:
+| Provider | Model | Purpose |
+|----------|-------|---------|
+| OpenAI | text-embedding-3-small | RAG query embeddings (winemaking docs) |
+| Anthropic | claude-3-5-haiku-20241022 | Generate measurement analysis |
+
+**Request Payload**:
+```json
+{
+  "wine_name": "2024 Cabernet Sauvignon",
+  "variety": "Cabernet Sauvignon",
+  "blend_components": null,
+  "current_stage": "primary_fermentation",
+  "latest_measurement": {
+    "ph": 3.4,
+    "ta": 6.5,
+    "brix": 12.0,
+    "temperature": 72,
+    "date": 1701234567890
+  },
+  "previous_measurements": [...]
+}
+```
+
+**Response**: Summary, per-metric status (good/warning/concern), projections, and actionable recommendations.
+
+**Caching**: None - each request is unique based on current measurements.
+
+**Paywall Priority**: High - called on-demand but likely frequent during active fermentation.
+
+---
+
+### 4. `/ai/geocode-test` (GET) - Dev Only
 
 **Purpose**: Testing endpoint for reverse geocoding coordinates to location names.
 

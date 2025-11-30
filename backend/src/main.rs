@@ -203,6 +203,42 @@ struct TrainingRecommendationResponse {
     context_summary: String,
 }
 
+// Measurement Guidance types
+#[derive(Deserialize)]
+struct MeasurementGuidanceRequest {
+    wine_name: String,
+    variety: String,                    // Primary variety or "Blend"
+    blend_components: Option<Vec<String>>, // For blends
+    current_stage: String,
+    latest_measurement: MeasurementData,
+    previous_measurements: Option<Vec<MeasurementData>>,
+}
+
+#[derive(Deserialize, Clone)]
+struct MeasurementData {
+    ph: Option<f64>,
+    ta: Option<f64>,
+    brix: Option<f64>,
+    temperature: Option<f64>,
+    date: i64,
+}
+
+#[derive(Serialize)]
+struct MetricAssessment {
+    name: String,
+    value: Option<f64>,
+    status: String,      // "good", "warning", "concern"
+    analysis: String,
+}
+
+#[derive(Serialize)]
+struct MeasurementGuidanceResponse {
+    summary: String,
+    metrics: Vec<MetricAssessment>,
+    projections: Option<String>,
+    recommendations: Vec<String>,
+}
+
 // RAG types for document embeddings
 #[derive(Debug)]
 struct RelevantChunk {
@@ -291,6 +327,7 @@ async fn main() {
         .route("/alert-settings/:vineyard_id/:alert_type", post(update_alert_settings))
         .route("/ai/training-recommendation", post(get_training_recommendation))
         .route("/ai/seasonal-tasks", post(get_seasonal_tasks))
+        .route("/ai/measurement-guidance", post(get_measurement_guidance))
         .route("/ai/geocode-test", get(geocode_test))
         .layer(cors)
         .with_state(state);
@@ -1545,6 +1582,282 @@ async fn rag_query(
 ) -> Result<Vec<RelevantChunk>, StatusCode> {
     let embedding = generate_query_embedding(query, openai_api_key).await?;
     query_similar_documents(db, &embedding, limit, category_filter).await
+}
+
+// Measurement Guidance endpoint
+async fn get_measurement_guidance(
+    State(state): State<AppState>,
+    Json(payload): Json<MeasurementGuidanceRequest>,
+) -> Result<Json<MeasurementGuidanceResponse>, StatusCode> {
+    let anthropic_api_key = std::env::var("ANTHROPIC_API_KEY")
+        .map_err(|_| {
+            tracing::error!("ANTHROPIC_API_KEY not set");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let openai_api_key = std::env::var("OPENAI_API_KEY").ok();
+    let client = reqwest::Client::new();
+
+    // Build variety context
+    let variety_context = if let Some(ref components) = payload.blend_components {
+        if !components.is_empty() {
+            format!("Blend of: {}", components.join(", "))
+        } else {
+            payload.variety.clone()
+        }
+    } else {
+        payload.variety.clone()
+    };
+
+    // Format measurement history
+    let measurement_history = if let Some(ref prev) = payload.previous_measurements {
+        prev.iter()
+            .map(|m| {
+                let date_str = chrono::DateTime::from_timestamp_millis(m.date)
+                    .map(|dt| dt.format("%b %d").to_string())
+                    .unwrap_or_else(|| "Unknown".to_string());
+                let parts: Vec<String> = vec![
+                    m.ph.map(|v| format!("pH: {:.2}", v)),
+                    m.ta.map(|v| format!("TA: {:.1} g/L", v)),
+                    m.brix.map(|v| format!("Brix: {:.1}°", v)),
+                    m.temperature.map(|v| format!("Temp: {:.0}°F", v)),
+                ]
+                .into_iter()
+                .flatten()
+                .collect();
+                format!("- {} ({})", parts.join(", "), date_str)
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    } else {
+        "No previous measurements".to_string()
+    };
+
+    // Format current measurement
+    let current = &payload.latest_measurement;
+    let current_str = vec![
+        current.ph.map(|v| format!("pH: {:.2}", v)),
+        current.ta.map(|v| format!("TA: {:.1} g/L", v)),
+        current.brix.map(|v| format!("Brix: {:.1}°", v)),
+        current.temperature.map(|v| format!("Temp: {:.0}°F", v)),
+    ]
+    .into_iter()
+    .flatten()
+    .collect::<Vec<_>>()
+    .join(", ");
+
+    // Build RAG query
+    let rag_query_text = format!(
+        "{} wine {} stage pH TA Brix fermentation adjustments",
+        payload.variety, payload.current_stage
+    );
+
+    // Fetch relevant documents
+    let mut knowledge_context = String::new();
+    if let Some(openai_key) = &openai_api_key {
+        match rag_query(&state.db, &rag_query_text, openai_key, 6, Some("winemaking")).await {
+            Ok(chunks) if !chunks.is_empty() => {
+                tracing::info!("RAG: Found {} winemaking docs for measurement guidance", chunks.len());
+                knowledge_context = format!(
+                    "\n\n## Reference Documentation\n{}",
+                    chunks
+                        .iter()
+                        .map(|c| format!("### {}\n{}\n", c.source_path, c.content))
+                        .collect::<Vec<_>>()
+                        .join("\n---\n")
+                );
+            }
+            Ok(_) => {
+                tracing::info!("RAG: No winemaking docs found");
+            }
+            Err(e) => {
+                tracing::warn!("RAG query failed: {:?}", e);
+            }
+        }
+    }
+
+    let prompt = format!(
+        r#"You are a winemaking expert helping a home winemaker understand their wine's measurements and what adjustments might be needed.
+
+## Wine Context
+- **Wine:** {}
+- **Variety:** {}
+- **Current Stage:** {}
+
+## Current Measurements
+{}
+
+## Measurement History
+{}
+{}
+
+Based on this data, provide guidance on:
+1. Whether each measurement is within normal/ideal range for this variety and stage
+2. How these measurements might affect the final wine character
+3. Any corrective measures if values are concerning
+
+Respond with JSON in this exact format:
+{{
+  "summary": "1-2 sentence overall assessment of the wine's current state",
+  "metrics": [
+    {{
+      "name": "pH",
+      "value": 3.4,
+      "status": "good",
+      "analysis": "Brief analysis of this metric"
+    }},
+    {{
+      "name": "TA",
+      "value": 6.5,
+      "status": "warning",
+      "analysis": "Brief analysis"
+    }},
+    {{
+      "name": "Brix",
+      "value": 12.0,
+      "status": "good",
+      "analysis": "Brief analysis"
+    }}
+  ],
+  "projections": "How these measurements suggest the wine will develop (flavor, structure, etc.)",
+  "recommendations": [
+    "Specific actionable recommendation 1",
+    "Specific actionable recommendation 2"
+  ]
+}}
+
+Status values: "good" (ideal range), "warning" (slightly outside ideal), "concern" (needs attention)
+Only include metrics that have values in the current measurements.
+Keep analyses concise but specific to the variety and stage."#,
+        payload.wine_name,
+        variety_context,
+        format_stage_name(&payload.current_stage),
+        current_str,
+        measurement_history,
+        knowledge_context
+    );
+
+    let request = AnthropicRequest {
+        model: "claude-3-5-haiku-20241022".to_string(),
+        max_tokens: 1500,
+        messages: vec![AnthropicMessage {
+            role: "user".to_string(),
+            content: prompt,
+        }],
+    };
+
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", &anthropic_api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&request)
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to call Anthropic API: {}", e);
+            StatusCode::BAD_GATEWAY
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        tracing::error!("Anthropic API error: {} - {}", status, body);
+        return Err(StatusCode::BAD_GATEWAY);
+    }
+
+    let anthropic_response: AnthropicResponse = response
+        .json()
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to parse Anthropic response: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let ai_text = anthropic_response
+        .content
+        .first()
+        .map(|c| c.text.clone())
+        .unwrap_or_default();
+
+    // Parse the JSON response
+    let guidance = parse_measurement_guidance_response(&ai_text);
+
+    Ok(Json(guidance))
+}
+
+fn format_stage_name(stage: &str) -> String {
+    stage
+        .replace("_", " ")
+        .split_whitespace()
+        .map(|word| {
+            let mut chars: Vec<char> = word.chars().collect();
+            if let Some(first) = chars.first_mut() {
+                *first = first.to_uppercase().next().unwrap_or(*first);
+            }
+            chars.into_iter().collect::<String>()
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn parse_measurement_guidance_response(text: &str) -> MeasurementGuidanceResponse {
+    let json_start = text.find('{');
+    let json_end = text.rfind('}');
+
+    if let (Some(start), Some(end)) = (json_start, json_end) {
+        let json_str = &text[start..=end];
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(json_str) {
+            let summary = parsed.get("summary")
+                .and_then(|s| s.as_str())
+                .unwrap_or("Unable to analyze measurements")
+                .to_string();
+
+            let projections = parsed.get("projections")
+                .and_then(|p| p.as_str())
+                .map(|s| s.to_string());
+
+            let metrics = parsed.get("metrics")
+                .and_then(|m| m.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|m| {
+                            Some(MetricAssessment {
+                                name: m.get("name")?.as_str()?.to_string(),
+                                value: m.get("value").and_then(|v| v.as_f64()),
+                                status: m.get("status")?.as_str()?.to_string(),
+                                analysis: m.get("analysis")?.as_str()?.to_string(),
+                            })
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            let recommendations = parsed.get("recommendations")
+                .and_then(|r| r.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|r| r.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            return MeasurementGuidanceResponse {
+                summary,
+                metrics,
+                projections,
+                recommendations,
+            };
+        }
+    }
+
+    // Fallback
+    MeasurementGuidanceResponse {
+        summary: "Unable to analyze measurements. Please try again.".to_string(),
+        metrics: vec![],
+        projections: None,
+        recommendations: vec![],
+    }
 }
 
 #[cfg(test)]
