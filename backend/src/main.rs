@@ -52,8 +52,6 @@ struct HistoricalDaily {
     temperature_2m_min: Vec<f64>,
     #[serde(default)]
     snowfall_sum: Vec<f64>,
-    #[serde(default)]
-    precipitation_sum: Vec<f64>,
 }
 
 // Calculated weather metrics for AI context
@@ -384,7 +382,7 @@ async fn fetch_seasonal_weather_context(
     }
 
     let url = format!(
-        "https://archive-api.open-meteo.com/v1/archive?latitude={}&longitude={}&start_date={}&end_date={}&daily=temperature_2m_max,temperature_2m_min,snowfall_sum,precipitation_sum&timezone=auto&temperature_unit=celsius",
+        "https://archive-api.open-meteo.com/v1/archive?latitude={}&longitude={}&start_date={}&end_date={}&daily=temperature_2m_max,temperature_2m_min,snowfall_sum&timezone=auto&temperature_unit=celsius",
         latitude, longitude,
         start_date.format("%Y-%m-%d"),
         end_date.format("%Y-%m-%d")

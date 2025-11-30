@@ -73,7 +73,7 @@ export const AllTasksView = () => {
 
   const filteredBySearch = allTasks.filter((task: any) => {
     if (!searchQuery) return true;
-    return task.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return task.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false;
   });
 
   const filteredTasks = filteredBySearch.filter((task: any) => {

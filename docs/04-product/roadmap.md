@@ -57,10 +57,12 @@ Track how each vine is trained and pruned. AI provides guidance based on trainin
 - [x] Training method selection on vine creation
 - [x] Scrollable pruning log list with max height
 
-**AI-Powered Features:**
-- [ ] Training method selection helper (recommends based on variety, climate, vigor)
-- [ ] Pruning guidance by method (what to do, when, how much)
+**AI-Powered Features:** ⏸️ Blocked by Photo Management
+- [x] Training method selection helper (`/ai/training-recommendation` endpoint)
+- [ ] **Vision-based pruning guidance** — User uploads photo, AI identifies which buds to keep/remove based on training method, vigor, goals
 - [ ] Visual reference diagrams for each training system
+
+**Note:** Text-based pruning guidance is not worth building. The real value is vision AI analyzing the user's actual vine structure. This requires Photo Management infrastructure first.
 
 **AI Knowledge Required:**
 | Document | Status |
@@ -73,29 +75,41 @@ Track how each vine is trained and pruned. AI provides guidance based on trainin
 | `training/umbrella-system.md` | ✅ Complete |
 | `training/cane-pruning.md` | ✅ Complete |
 | `training/divided-canopy-system.md` | ✅ Complete |
-| `training/selection-guide.md` | ⏳ Needed for AI recommendations |
+| `training/Training_System_Selection_Guide.md` | ✅ Complete |
 
 ---
 
-### Priority 2: Photo Management
+### Priority 2: Photo Management 🚨 AI Blocker
 **Status:** 🔲 Not Started
 
-Visual documentation for vines. Shared infrastructure with winery photos.
+**Critical infrastructure** that unblocks vision-based AI features (pruning guidance, disease identification). Also provides visual documentation for vines and vintages.
 
+**Phase 1: Core Infrastructure**
+- [ ] Storage solution selection (S3/Cloudinary/R2)
+- [ ] Backend upload endpoint with presigned URLs
+- [ ] Database schema: `photos` table (polymorphic: vine_id, vintage_id, etc.)
+- [ ] Image compression before upload (client-side)
+
+**Phase 2: Upload UI**
 - [ ] Mobile camera capture with permission handling
 - [ ] Photo library picker
 - [ ] Desktop drag-and-drop upload
+- [ ] Upload progress indicator
+
+**Phase 3: Display & Management**
 - [ ] Thumbnail grid view (3-4 per row on mobile)
 - [ ] Fullscreen viewer with swipe navigation
 - [ ] Photo metadata display (date, size)
 - [ ] Delete photos with confirmation
-- [ ] Image compression before upload
-- [ ] Storage solution integration (S3/Cloudinary)
-- [ ] Database schema: `photos` table (polymorphic: vine_id, vintage_id, etc.)
 
-**Dependencies:**
-- Photo storage infrastructure (S3 or equivalent)
-- Image processing library (compression, thumbnails)
+**Phase 4: Vision AI Integration**
+- [ ] Send photos to Claude Vision / GPT-4V for analysis
+- [ ] Structured response parsing for pruning/disease features
+
+**Unblocks:**
+- Vision-based pruning guidance (Training & Pruning AI)
+- Photo-based disease identification (AI Disease Management)
+- Vintage/harvest documentation
 
 ---
 
@@ -320,16 +334,17 @@ Features that require AI knowledge documents and real-time data integration.
 **Detailed Spec:** [ai-integration-roadmap.md](./detailed-specs/ai-integration-roadmap.md) — RAG infrastructure, pgvector setup, all AI features
 
 ### Priority 0: RAG Infrastructure
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
 Foundation for all AI features. Enables AI to use our knowledgebase docs.
 
-- [ ] Add pgvector extension to Railway Postgres
-- [ ] Create `doc_embeddings` table with vector column
-- [ ] Build embedding pipeline CLI (`yarn embed-docs`)
-- [ ] OpenAI embeddings API integration (text-embedding-3-small)
-- [ ] Query helper for similarity search in backend
-- [ ] Wire training advisor to use RAG
+- [x] Add pgvector extension to Railway Postgres
+- [x] Create `doc_embeddings` table with vector column
+- [x] Build embedding pipeline CLI (`yarn embed-docs`)
+- [x] OpenAI embeddings API integration (text-embedding-3-small)
+- [x] Query helper for similarity search in backend (`rag_query` function)
+- [x] Wire training advisor to use RAG
+- [x] Wire seasonal tasks to use RAG
 
 **Environment Variables Needed:**
 - `OPENAI_API_KEY` for embeddings
@@ -337,8 +352,8 @@ Foundation for all AI features. Enables AI to use our knowledgebase docs.
 ---
 
 ### Priority 1: AI Seasonal Guidance
-**Status:** 🔲 Not Started
-**AI Knowledge:** ⏳ Seasonal docs needed
+**Status:** 🟡 Core Complete
+**AI Knowledge:** ✅ All seasonal docs complete
 
 AI-generated task recommendations based on season, region, and vineyard state.
 
@@ -346,61 +361,64 @@ AI-generated task recommendations based on season, region, and vineyard state.
 - Vineyard Task Management (Vineyard Priority 7) — provides manual task infrastructure
 
 **Features:**
-- [ ] AI-generated seasonal task suggestions
-- [ ] Tasks generated from: season + region + user's varietals + training systems
-- [ ] One-click add AI suggestions to task list
+- [x] AI-generated seasonal task suggestions (via `/ai/seasonal-tasks` endpoint)
+- [x] Tasks generated from: season + region + user's varietals
+- [x] Auto-add to task list (stored in `seasonal_task` table, synced via Zero)
 - [ ] "What should I be doing now?" assistant
 
 **AI Integration:**
-- [ ] Real-time weather lookup for task timing (frost warnings → protection tasks)
-- [ ] Historical weather analysis (unusual patterns → adjusted recommendations)
-- [ ] Regional knowledge: "In [user's region], [month] typically means [tasks]"
-- [ ] Varietal-specific tasks: "Pinot Noir in your climate needs [specific care] now"
+- [x] Real-time weather lookup for task timing (Open-Meteo forecast API)
+- [x] Historical weather analysis (Open-Meteo Archive API - snowfall, frost, GDD)
+- [x] Regional knowledge via RAG (knowledgebase docs)
+- [x] Varietal-specific tasks via RAG
 
 **AI Knowledge Required:**
 | Document | Status | Purpose |
 |----------|--------|---------|
-| `seasonal/dormant-season.md` | ⏳ Needed | Nov–Feb tasks |
-| `seasonal/bud-break.md` | ⏳ Needed | Mar–Apr tasks |
-| `seasonal/bloom-fruit-set.md` | ⏳ Needed | May–Jun tasks |
-| `seasonal/veraison-ripening.md` | ⏳ Needed | Jul–Aug tasks |
-| `seasonal/harvest.md` | ⏳ Needed | Aug–Oct tasks |
-| `seasonal/post-harvest.md` | ⏳ Needed | Oct–Nov tasks |
-| Climate doc for user's region | ✅ Ready | Regional timing adjustments |
-| Training doc for user's system | ✅ Ready | System-specific tasks |
+| `seasonal/dormant-season.md` | ✅ Complete | Nov–Feb tasks |
+| `seasonal/bud-break.md` | ✅ Complete | Mar–Apr tasks |
+| `seasonal/bloom-fruit-set.md` | ✅ Complete | May–Jun tasks |
+| `seasonal/veraison-ripening.md` | ✅ Complete | Jul–Aug tasks |
+| `seasonal/harvest.md` | ✅ Complete | Aug–Oct tasks |
+| `seasonal/post-harvest.md` | ✅ Complete | Oct–Nov tasks |
+| Climate doc for user's region | ✅ Complete | Regional timing adjustments |
+| Training doc for user's system | ✅ Complete | System-specific tasks |
 
-**Weather Integration:**
-- Open-Meteo API (already integrated) for current conditions
+**Weather Integration:** ✅ Complete
+- Open-Meteo Forecast API for current conditions
 - Open-Meteo Historical API for pattern analysis
-- GDD calculation from accumulated temperature data
+- GDD calculation (base 50°F) from accumulated temperature data
+- Snowfall/frost tracking for winter tasks
 
 ---
 
-### Priority 2: AI Disease Management
+### Priority 2: AI Disease Management ⏸️ Blocked by Photo Management
 **Status:** 🔲 Not Started
-**AI Knowledge:** ⏳ Pest/disease docs needed
+**AI Knowledge:** 🟡 Partial (3 core disease docs complete)
 
 AI-assisted disease identification and treatment recommendations.
 
 **Prerequisites:**
+- **Photo Management** (Vineyard Priority 2) — required for vision-based identification
 - Disease Tracking Basic (Vineyard Priority 8) — provides manual disease logging
 
 **AI-Powered Features:**
-- [ ] Photo-based disease identification (upload photo → AI suggests diagnosis)
+- [ ] **Vision-based disease identification** (upload photo → AI diagnoses powdery mildew, botrytis, etc.)
 - [ ] Treatment recommendations by disease + organic/conventional preference
 - [ ] Spread risk alerts (disease on one vine → warn about neighbors)
 - [ ] Preventive recommendations based on conditions (humidity + temp → mildew risk)
 
+**Note:** Photo-based identification is the core value. Without it, this is just documentation lookup.
+
 **AI Knowledge Required:**
 | Document | Status | Purpose |
 |----------|--------|---------|
-| `pests/powdery-mildew.md` | ⏳ Needed | Universal threat |
-| `pests/downy-mildew.md` | ⏳ Needed | Humid climates |
-| `pests/botrytis.md` | ⏳ Needed | Humid + tight clusters |
+| `pests/Powdery_Mildew_Management_Guide.md` | ✅ Complete | Universal threat |
+| `pests/Downy_Mildew_Management_Guide.md` | ✅ Complete | Humid climates |
+| `pests/Botrytis_Bunch_Rot_Management_Guide.md` | ✅ Complete | Humid + tight clusters |
 | `pests/phylloxera.md` | ⏳ Needed | Rootstock context |
 | `pests/pierces-disease.md` | ⏳ Needed | Southern US, CA |
-| Climate doc for user's region | ✅ Ready | Disease pressure context |
-| Varietal docs | ⏳ Needed | Susceptibility info |
+| Climate doc for user's region | ✅ Complete | Disease pressure context |
 
 ---
 
@@ -616,12 +634,17 @@ Lower priority improvements.
 
 ## CROSS-CUTTING CONCERNS
 
-### Photo Storage Infrastructure
-**Shared by:** Vine photos, Vintage photos, Disease photos
-- [ ] S3 or Cloudinary integration
+### Photo Storage Infrastructure 🚨 Critical AI Blocker
+**Shared by:** Vine photos, Vintage photos, Disease photos, Vision AI features
+**Blocks:** Pruning guidance, Disease identification
+
+See **Photo Management** (Vineyard Priority 2) for full implementation plan.
+
+- [ ] Storage solution (S3/Cloudinary/R2)
 - [ ] Image compression pipeline
 - [ ] Thumbnail generation
 - [ ] CDN delivery
+- [ ] Vision AI integration (Claude Vision / GPT-4V)
 
 ### Push Notifications
 **Shared by:** Weather alerts, Task reminders, Winery deadlines
@@ -631,8 +654,9 @@ Lower priority improvements.
 
 ### Historical Weather API
 **Shared by:** Seasonal tasks, Vintage correlation, Harvest timing
-- [ ] Open-Meteo Historical API integration
-- [ ] GDD calculation service
+- [x] Open-Meteo Historical API integration (in `fetch_seasonal_weather_context`)
+- [x] GDD calculation service (base 50°F)
+- [x] Snowfall/frost tracking for seasonal context
 - [ ] Weather snapshot storage (capture weather at key events)
 
 ### CI/CD Pipeline

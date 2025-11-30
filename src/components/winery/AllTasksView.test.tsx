@@ -65,8 +65,16 @@ rs.mock('../../contexts/ZeroContext', () => ({
   }),
 }));
 
+// Track which query we're on within each render cycle (resets every 4 calls)
+let useQueryCallCount = 0;
 rs.mock('@rocicorp/zero/react', () => ({
-  useQuery: () => [mockTasksData],
+  useQuery: () => {
+    const callIndex = useQueryCallCount % 4;
+    useQueryCallCount++;
+    // 0: myTasks, 1: myVintages, 2: myWines, 3: mySeasonalTasksByWeek
+    if (callIndex === 0) return [mockTasksData];
+    return [[]]; // Return empty for vintages, wines, and seasonal tasks
+  },
 }));
 
 rs.mock('wouter', () => ({
@@ -89,6 +97,7 @@ describe('AllTasksView', () => {
     cleanup();
     mockTasksData = [mockCompletedTask, mockOverdueTask, mockUpcomingTask, mockSkippedTask];
     mockSetLocation.mockClear();
+    useQueryCallCount = 0;
   });
 
   describe('rendering', () => {
