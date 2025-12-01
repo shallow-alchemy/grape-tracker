@@ -78,10 +78,8 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
 
   // Query for tasks to check which recommendations have been converted
   const [tasksData] = useQuery(myTasksByEntity(user?.id, 'wine', wineId)) as any;
-  const tasksFromRecommendations = new Set(
-    (tasksData || [])
-      .filter((t: any) => t.notes === 'Created from AI recommendation')
-      .map((t: any) => t.description)
+  const existingTaskDescriptions = new Set(
+    (tasksData || []).map((t: any) => t.description)
   );
 
   // Track Zero sync state: undefined = still syncing, [] = synced but no data
@@ -113,7 +111,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
     summary: string;
     metrics: Array<{ name: string; value: number | null; status: string; analysis: string }>;
     projections: string | null;
-    recommendations: string[];
+    recommendations: Array<{ title: string; description: string }>;
   } | null>(null);
   const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
   const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
@@ -133,9 +131,13 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
           user_id: user.id,
           measurement_id: latestMeasurement.id,
           wine_name: wine.name,
+          wine_type: wine.wine_type || 'red',
           variety: vintage?.variety || 'Unknown',
           blend_components: isBlend ? wine.blend_components : null,
           current_stage: wine.current_stage || 'unknown',
+          days_in_stage: currentStageHistory
+            ? Math.floor((latestMeasurement.date - currentStageHistory.started_at) / (1000 * 60 * 60 * 24))
+            : null,
           latest_measurement: {
             ph: latestMeasurement.ph,
             ta: latestMeasurement.ta,
@@ -169,7 +171,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
     } finally {
       setAiAnalysisLoading(false);
     }
-  }, [latestMeasurement, wine, user?.id, vintage?.variety, isBlend, measurements]);
+  }, [latestMeasurement, wine, user?.id, vintage?.variety, isBlend, measurements, currentStageHistory]);
 
   // Load cached analysis from Zero when available
   useEffect(() => {
@@ -273,7 +275,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   };
 
   // Create a task from an AI recommendation
-  const createTaskFromRecommendation = async (recommendation: string) => {
+  const createTaskFromRecommendation = async (recommendation: { title: string; description: string }) => {
     if (!user?.id || !wine) return;
 
     try {
@@ -288,12 +290,12 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         entity_type: 'wine',
         entity_id: wineId,
         stage: wine.current_stage,
-        name: recommendation.length > 60 ? recommendation.slice(0, 57) + '...' : recommendation,
-        description: recommendation,
+        name: recommendation.title,
+        description: recommendation.description,
         due_date: dueDate,
         completed_at: null as any,
         completed_by: '',
-        notes: 'Created from AI recommendation',
+        notes: '',
         skipped: false,
         created_at: now,
         updated_at: now,
@@ -484,8 +486,8 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
               <ul className={styles.nextStepsList}>
                 {aiAnalysis.recommendations.map((rec, idx) => (
                   <li key={idx}>
-                    {rec}
-                    {tasksFromRecommendations.has(rec) ? (
+                    {rec.description}
+                    {existingTaskDescriptions.has(rec.description) ? (
                       <span className={styles.taskCreatedCheck}>
                         <FiCheck size={14} /> Task created
                       </span>

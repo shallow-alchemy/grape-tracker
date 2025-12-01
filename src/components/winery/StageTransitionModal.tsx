@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { useStageTransition } from './useStageTransition';
 import {
@@ -43,10 +43,18 @@ export const StageTransitionModal = ({
   const [notes, setNotes] = useState('');
   const [skipCurrentStage, setSkipCurrentStage] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [stageStartDate, setStageStartDate] = useState(() => {
+    // Default to today in YYYY-MM-DD format
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
 
-  if (isOpen && selectedStage === '' && nextStage) {
-    setSelectedStage(nextStage.value);
-  }
+  // Sync selectedStage with nextStage when currentStage changes
+  useEffect(() => {
+    if (nextStage) {
+      setSelectedStage(nextStage.value);
+    }
+  }, [currentStage, nextStage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,10 +65,14 @@ export const StageTransitionModal = ({
       return;
     }
 
+    // Convert date string to timestamp (start of day in local time)
+    const startedAt = new Date(stageStartDate + 'T00:00:00').getTime();
+
     const result = await advanceStage(currentStage, {
       toStage: selectedStage,
       notes: notes.trim(),
       skipCurrentStage,
+      startedAt,
     });
 
     if (result.success) {
@@ -88,6 +100,7 @@ export const StageTransitionModal = ({
       setNotes('');
       setSkipCurrentStage(false);
       setFormError(null);
+      setStageStartDate(new Date().toISOString().split('T')[0]);
       onClose();
     }
   };
@@ -183,6 +196,20 @@ export const StageTransitionModal = ({
             )}
           </div>
         )}
+
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>STAGE START DATE</label>
+          <input
+            type="date"
+            className={styles.formInput}
+            value={stageStartDate}
+            onChange={(e) => setStageStartDate(e.target.value)}
+            disabled={isLoading}
+          />
+          <div className={styles.formHint}>
+            When did this stage actually begin?
+          </div>
+        </div>
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>NOTES (OPTIONAL)</label>

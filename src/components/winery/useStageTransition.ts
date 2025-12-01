@@ -10,6 +10,7 @@ export type StageTransitionData = {
   toStage: string;
   notes: string;
   skipCurrentStage: boolean;
+  startedAt?: number;  // Custom start date for the new stage (defaults to now)
 };
 
 export type StageTransitionResult = {
@@ -38,6 +39,7 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
 
     try {
       const now = Date.now();
+      const stageStartTime = data.startedAt || now;
 
       // Use already-fetched reactive data instead of imperative .run()
       const stageHistory = (stageHistoryData || []).filter((s: any) => s.stage === currentStage);
@@ -59,7 +61,7 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
         entity_type: entityType,
         entity_id: entityId,
         stage: data.toStage,
-        started_at: now,
+        started_at: stageStartTime,
         completed_at: null,
         skipped: false,
         notes: '',

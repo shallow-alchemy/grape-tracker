@@ -209,9 +209,11 @@ struct MeasurementGuidanceRequest {
     user_id: String,                    // For caching
     measurement_id: String,             // FK to measurement table
     wine_name: String,
+    wine_type: String,                  // red, white, rose, sparkling, dessert, fortified
     variety: String,                    // Primary variety or "Blend"
     blend_components: Option<Vec<String>>, // For blends
     current_stage: String,
+    days_in_stage: Option<i32>,         // How many days wine has been in current stage
     latest_measurement: MeasurementData,
     previous_measurements: Option<Vec<MeasurementData>>,
 }
@@ -1619,7 +1621,19 @@ async fn get_measurement_guidance(
     if let Some((summary, metrics_json, projections, recommendations_json)) = existing {
         // Return cached analysis
         let metrics: Vec<MetricAssessment> = serde_json::from_value(metrics_json).unwrap_or_default();
-        let recommendations: Vec<String> = serde_json::from_value(recommendations_json).unwrap_or_default();
+        // Handle both old format (Vec<String>) and new format (Vec<Recommendation>)
+        let recommendations: Vec<Recommendation> = serde_json::from_value::<Vec<Recommendation>>(recommendations_json.clone())
+            .unwrap_or_else(|_| {
+                // Fallback: try parsing as old string format and convert
+                serde_json::from_value::<Vec<String>>(recommendations_json)
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|s| Recommendation {
+                        title: if s.len() > 50 { format!("{}...", &s[..47]) } else { s.clone() },
+                        description: s,
+                    })
+                    .collect()
+            });
 
         return Ok(Json(MeasurementGuidanceResponse {
             summary,
@@ -1708,23 +1722,30 @@ async fn get_measurement_guidance(
         }
     };
 
-    // Build RAG query
+    // Build RAG query - include variety, wine type, and stage for comprehensive matches
     let rag_query_text = format!(
-        "{} wine {} stage pH TA Brix temperature fermentation adjustments",
-        payload.variety, payload.current_stage
+        "{} {} wine {} winemaking practices fermentation pH TA Brix adjustments",
+        payload.variety, payload.wine_type, format_stage_name(&payload.current_stage)
     );
 
     // Fetch relevant documents
     let mut knowledge_context = String::new();
     if let Some(openai_key) = &openai_api_key {
-        match rag_query(&state.db, &rag_query_text, openai_key, 6, Some("winemaking")).await {
+        // Search all categories - varietals, winemaking, etc. - for comprehensive guidance
+        match rag_query(&state.db, &rag_query_text, openai_key, 8, None).await {
             Ok(chunks) if !chunks.is_empty() => {
                 tracing::info!("RAG: Found {} winemaking docs for measurement guidance", chunks.len());
                 knowledge_context = format!(
-                    "\n\n## Reference Documentation\n{}",
+                    r#"
+
+## WINEMAKER'S GUIDE (AUTHORITATIVE)
+**CRITICAL: The following is from the winemaker's personal guide. These instructions take precedence over general winemaking knowledge. If this guide recommends a specific practice, follow it exactly - even if unconventional.**
+
+{}
+"#,
                     chunks
                         .iter()
-                        .map(|c| format!("### {}\n{}\n", c.source_path, c.content))
+                        .map(|c| format!("### From: {}\n{}\n", c.source_path, c.content))
                         .collect::<Vec<_>>()
                         .join("\n---\n")
                 );
@@ -1738,13 +1759,64 @@ async fn get_measurement_guidance(
         }
     }
 
+    // Build stage duration context
+    let stage_duration_context = match payload.days_in_stage {
+        Some(days) => format!("- **Days in Current Stage:** {} days", days),
+        None => String::new(),
+    };
+
     let prompt = format!(
         r#"You are a winemaking expert helping a home winemaker understand their wine's measurements and what adjustments might be needed.
 
+**IMPORTANT: Knowledge Priority**
+1. FIRST: Follow the "WINEMAKER'S GUIDE" section if present - these are the winemaker's own documented practices and take absolute precedence
+2. SECOND: Apply the wine type and stage guidance below as defaults when the guide doesn't cover something
+
 ## Wine Context
 - **Wine:** {}
+- **Wine Type:** {}
 - **Variety:** {}
 - **Current Stage:** {}
+{}
+
+## Default Wine Type Practices (use when Winemaker's Guide doesn't specify)
+Different wine types have VERY different winemaking processes. Apply these as defaults:
+
+**RED WINE:**
+- Ferments ON skins for 5-21 days to extract color and tannins
+- Press AFTER primary fermentation is complete (Brix near 0)
+- Extended skin contact is normal and desirable
+
+**WHITE WINE:**
+- Press IMMEDIATELY after crush (before fermentation)
+- Ferments OFF skins in juice only
+- If a white wine is on skins during fermentation, this is WRONG - recommend pressing immediately
+
+**ROSÉ WINE:**
+- LIMITED skin contact: typically 2-48 HOURS only (not days!)
+- Press VERY EARLY to get light pink color
+- If a rosé has been on skins for more than 2-3 days, this is a SERIOUS PROBLEM - it will become a red wine
+- URGENT: If rosé is in primary fermentation on skins for more than 48 hours, strongly recommend pressing IMMEDIATELY
+
+**SPARKLING WINE:**
+- Base wine made like white wine (press before fermentation)
+- Low alcohol, high acid is desirable for base wine
+
+## Winemaking Stage Progression
+The typical stages in order:
+1. **Crush** - Grapes crushed (whites/rosés should press here)
+2. **Pre-fermentation** - Cold soak (reds), cold settle (whites)
+3. **Primary Fermentation** - Active fermentation, Brix drops to 0-2°
+4. **Press** - Separating from skins (reds press here, whites/rosés already pressed)
+5. **Malolactic Fermentation** - Converting malic to lactic acid
+6. **Aging** - Bulk aging
+7. **Racking** - Transferring off sediment
+8. **Fining/Filtering** - Clarification
+9. **Blending** - Combining lots
+10. **Bottling** - Final packaging
+11. **Bottle Aging** - Aging in bottle
+
+**IMPORTANT:** The wine is ALREADY in the "{}" stage. Do NOT recommend moving to this stage.
 
 ## Current Measurements
 {}
@@ -1753,19 +1825,20 @@ async fn get_measurement_guidance(
 {}
 {}
 
-## Important: Understanding Brix During Fermentation
-Brix measures sugar content. During fermentation, yeast convert sugar to alcohol, so **Brix SHOULD decrease**:
-- **Pre-fermentation/Crush**: Brix typically 20-28° (high sugar from grapes)
-- **Primary fermentation**: Brix drops rapidly as fermentation progresses
-- **End of primary**: Brix reaches -1° to 2° (fermentation complete or nearly complete)
-- **Secondary and beyond**: Brix stays low (0-2°)
-
-A Brix drop from 22° to 2° over 7-14 days is NORMAL and EXPECTED during primary fermentation - this indicates healthy, active fermentation. Do NOT flag low Brix as concerning if the measurement history shows a normal fermentation progression.
+## Interpreting Measurements by Stage and Wine Type
+- **Time in stage matters**: Consider both the stage AND the wine type
+- **For ROSÉ specifically**: Any skin contact beyond 48 hours is problematic - flag this urgently
+- **Brix interpretation**:
+  - Pre-fermentation: 20-28° is normal
+  - Primary Fermentation END: 0-2° means fermentation complete
+  - Post-primary: 0-2° is expected
+- **Do NOT flag low Brix as concerning** after 7+ days in primary - this indicates success
 
 Based on this data, provide guidance on:
-1. Whether each measurement is within normal/ideal range for this variety and stage (considering expected trends)
-2. How these measurements might affect the final wine character
-3. Any corrective measures if values are concerning
+1. Whether practices are appropriate FOR THIS WINE TYPE (this is critical!)
+2. Whether measurements are within normal range for variety and stage
+3. Any URGENT issues (especially wine type violations like rosé on skins too long)
+4. Whether ready to move to next stage
 
 Respond with JSON in this exact format:
 {{
@@ -1809,8 +1882,11 @@ Status values: "good" (ideal range), "warning" (slightly outside ideal), "concer
 Only include metrics that have values in the current measurements.
 Keep analyses concise but specific to the variety and stage."#,
         payload.wine_name,
+        payload.wine_type,
         variety_context,
         format_stage_name(&payload.current_stage),
+        stage_duration_context,
+        format_stage_name(&payload.current_stage),  // For the IMPORTANT note
         current_str,
         notes_context,
         measurement_history,
