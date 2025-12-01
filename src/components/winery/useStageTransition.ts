@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useZero } from '../../contexts/ZeroContext';
-import { myStageHistoryByEntity, myTasksByEntity, taskTemplates } from '../../shared/queries';
+import { myStageHistoryByEntity, myTasksByEntity, taskTemplates, supplyTemplates } from '../../shared/queries';
 import type { EntityType } from './stages';
 import { calculateDueDate } from './taskHelpers';
 
@@ -27,6 +27,7 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
   const [stageHistoryData] = useQuery(myStageHistoryByEntity(user?.id, entityType, entityId) as any) as any;
   const [templatesData] = useQuery(taskTemplates(user?.id) as any) as any;
   const [tasksData] = useQuery(myTasksByEntity(user?.id, entityType, entityId) as any) as any;
+  const [supplyTemplatesData] = useQuery(supplyTemplates(user?.id) as any) as any;
 
   const advanceStage = async (
     currentStage: string,
@@ -100,11 +101,14 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
       });
 
       let tasksCreated = 0;
+      const allSupplyTemplates = supplyTemplatesData || [];
+
       for (const template of relevantTemplates) {
         const dueDate = calculateDueDate(now, template.frequency, template.frequency_count);
+        const taskId = crypto.randomUUID();
 
         await zero.mutate.task.insert({
-          id: crypto.randomUUID(),
+          id: taskId,
           user_id: user!.id,
           task_template_id: template.id,
           entity_type: entityType,
@@ -120,6 +124,27 @@ export const useStageTransition = (entityType: EntityType, entityId: string, win
           created_at: now,
           updated_at: now,
         });
+
+        // Create supply instances for this task
+        const taskSupplyTemplates = allSupplyTemplates.filter(
+          (s: any) => s.task_template_id === template.id
+        );
+
+        for (const supplyTemplate of taskSupplyTemplates) {
+          await zero.mutate.supply_instance.insert({
+            id: crypto.randomUUID(),
+            user_id: user!.id,
+            supply_template_id: supplyTemplate.id,
+            task_id: taskId,
+            entity_type: entityType,
+            entity_id: entityId,
+            calculated_quantity: supplyTemplate.quantity_fixed || 1,
+            verified_at: null,
+            verified_by: null,
+            created_at: now,
+            updated_at: now,
+          });
+        }
 
         tasksCreated++;
       }

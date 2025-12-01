@@ -212,3 +212,57 @@ export const allStages = syncedQueryWithContext(
     return builder.stage;
   }
 );
+
+// Supply template queries - no user filter because templates can be global (user_id = '')
+export const supplyTemplates = syncedQueryWithContext(
+  'supplyTemplates',
+  z.tuple([]),
+  (_userID: string | undefined) => {
+    // Supply templates can be global (user_id = '') - no user filter needed
+    return builder.supply_template.where('is_archived', false);
+  }
+);
+
+export const supplyTemplatesByTask = syncedQueryWithContext(
+  'supplyTemplatesByTask',
+  z.tuple([z.string()]),
+  (_userID: string | undefined, taskTemplateId: string) => {
+    // Supply templates can be global (user_id = '') - no user filter needed
+    return builder.supply_template
+      .where('task_template_id', taskTemplateId)
+      .where('is_archived', false);
+  }
+);
+
+// Supply instance queries
+export const mySupplyInstances = syncedQueryWithContext(
+  'mySupplyInstances',
+  z.tuple([]),
+  (userID: string | undefined) => {
+    if (!userID) return builder.supply_instance.where('id', '___never_match___');
+    return builder.supply_instance.where('user_id', userID);
+  }
+);
+
+export const mySupplyInstancesByTask = syncedQueryWithContext(
+  'mySupplyInstancesByTask',
+  z.tuple([z.string()]),
+  (userID: string | undefined, taskId: string) => {
+    if (!userID) return builder.supply_instance.where('id', '___never_match___');
+    return builder.supply_instance
+      .where('user_id', userID)
+      .where('task_id', taskId);
+  }
+);
+
+export const mySupplyInstancesByEntity = syncedQueryWithContext(
+  'mySupplyInstancesByEntity',
+  z.tuple([z.string(), z.string()]),
+  (userID: string | undefined, entityType: string, entityId: string) => {
+    if (!userID) return builder.supply_instance.where('id', '___never_match___');
+    return builder.supply_instance
+      .where('user_id', userID)
+      .where('entity_type', entityType)
+      .where('entity_id', entityId);
+  }
+);

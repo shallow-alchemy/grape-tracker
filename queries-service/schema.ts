@@ -253,6 +253,39 @@ const stageTable = table('stage')
   })
   .primaryKey('id');
 
+const supplyTemplateTable = table('supply_template')
+  .columns({
+    id: string(),
+    user_id: string(),
+    task_template_id: string(),
+    name: string(),
+    quantity_formula: string().optional(),  // e.g., "1 per 30 lbs grapes"
+    quantity_fixed: number(),               // Fallback quantity (default: 1)
+    lead_time_days: number(),               // Days before task to surface (default: 7)
+    notes: string(),
+    is_archived: boolean(),
+    sort_order: number(),
+    created_at: number(),
+    updated_at: number(),
+  })
+  .primaryKey('id');
+
+const supplyInstanceTable = table('supply_instance')
+  .columns({
+    id: string(),
+    user_id: string(),
+    supply_template_id: string(),
+    task_id: string(),
+    entity_type: string(),                  // 'wine' or 'vintage'
+    entity_id: string(),
+    calculated_quantity: number().optional(),
+    verified_at: number().optional(),       // When user confirmed they have it
+    verified_by: string().optional(),       // User who verified
+    created_at: number(),
+    updated_at: number(),
+  })
+  .primaryKey('id');
+
 export const schema = createSchema({
   tables: [
     userTable,
@@ -270,6 +303,8 @@ export const schema = createSchema({
     measurementRangeTable,
     seasonalTaskTable,
     measurementAnalysisTable,
+    supplyTemplateTable,
+    supplyInstanceTable,
   ],
 });
 
@@ -440,6 +475,28 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
         },
       },
       measurement_analysis: {
+        row: {
+          select: ANYONE_CAN,
+          insert: ANYONE_CAN,
+          update: {
+            preMutation: ANYONE_CAN,
+            postMutation: ANYONE_CAN,
+          },
+          delete: ANYONE_CAN,
+        },
+      },
+      supply_template: {
+        row: {
+          select: ANYONE_CAN,
+          insert: ANYONE_CAN,
+          update: {
+            preMutation: ANYONE_CAN,
+            postMutation: ANYONE_CAN,
+          },
+          delete: ANYONE_CAN,
+        },
+      },
+      supply_instance: {
         row: {
           select: ANYONE_CAN,
           insert: ANYONE_CAN,

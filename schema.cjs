@@ -250,6 +250,39 @@ var stageTable = (0, import_zero.table)("stage").columns({
   created_at: (0, import_zero.number)(),
   updated_at: (0, import_zero.number)()
 }).primaryKey("id");
+var supplyTemplateTable = (0, import_zero.table)("supply_template").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  task_template_id: (0, import_zero.string)(),
+  name: (0, import_zero.string)(),
+  quantity_formula: (0, import_zero.string)().optional(),
+  // e.g., "1 per 30 lbs grapes"
+  quantity_fixed: (0, import_zero.number)(),
+  // Fallback quantity (default: 1)
+  lead_time_days: (0, import_zero.number)(),
+  // Days before task to surface (default: 7)
+  notes: (0, import_zero.string)(),
+  is_archived: (0, import_zero.boolean)(),
+  sort_order: (0, import_zero.number)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var supplyInstanceTable = (0, import_zero.table)("supply_instance").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  supply_template_id: (0, import_zero.string)(),
+  task_id: (0, import_zero.string)(),
+  entity_type: (0, import_zero.string)(),
+  // 'wine' or 'vintage'
+  entity_id: (0, import_zero.string)(),
+  calculated_quantity: (0, import_zero.number)().optional(),
+  verified_at: (0, import_zero.number)().optional(),
+  // When user confirmed they have it
+  verified_by: (0, import_zero.string)().optional(),
+  // User who verified
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
 var schema = (0, import_zero.createSchema)({
   tables: [
     userTable,
@@ -266,7 +299,9 @@ var schema = (0, import_zero.createSchema)({
     measurementTable,
     measurementRangeTable,
     seasonalTaskTable,
-    measurementAnalysisTable
+    measurementAnalysisTable,
+    supplyTemplateTable,
+    supplyInstanceTable
   ]
 });
 var builder = (0, import_zero.createBuilder)(schema);
@@ -429,6 +464,28 @@ var permissions = (0, import_zero.definePermissions)(
         }
       },
       measurement_analysis: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      supply_template: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      supply_instance: {
         row: {
           select: import_zero.ANYONE_CAN,
           insert: import_zero.ANYONE_CAN,

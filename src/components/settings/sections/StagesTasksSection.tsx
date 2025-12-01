@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useQuery } from '@rocicorp/zero/react';
-import { FiChevronDown, FiChevronRight, FiCheck, FiX, FiPlus, FiEdit2, FiTrash2, FiRefreshCw, FiArchive } from 'react-icons/fi';
-import { taskTemplates, allStages } from '../../../shared/queries';
+import { FiChevronDown, FiChevronRight, FiCheck, FiX, FiPlus, FiEdit2, FiTrash2, FiRefreshCw, FiArchive, FiPackage } from 'react-icons/fi';
+import { taskTemplates, allStages, supplyTemplates as supplyTemplatesQuery } from '../../../shared/queries';
 import { type WineType } from '../../winery/stages';
 import { useZero } from '../../../contexts/ZeroContext';
 import styles from '../SettingsPage.module.css';
@@ -11,6 +11,7 @@ import taskStyles from './StagesTasksSection.module.css';
 // Module-level cache - persists across component unmount/remount
 let cachedStagesData: Stage[] | null = null;
 let cachedTemplatesData: TaskTemplate[] | null = null;
+let cachedSupplyTemplatesData: SupplyTemplate[] | null = null;
 
 type StageApplicability = 'required' | 'optional' | 'hidden';
 
@@ -43,6 +44,21 @@ type TaskTemplate = {
   default_enabled: boolean;
   is_archived: boolean;
   sort_order: number;
+};
+
+type SupplyTemplate = {
+  id: string;
+  user_id: string;
+  task_template_id: string;
+  name: string;
+  quantity_formula: string | null;
+  quantity_fixed: number;
+  lead_time_days: number;
+  notes: string;
+  is_archived: boolean;
+  sort_order: number;
+  created_at: number;
+  updated_at: number;
 };
 
 const WINE_TYPES: { value: WineType; label: string }[] = [
@@ -84,6 +100,7 @@ export const StagesTasksSection = () => {
   const zero = useZero();
   const [templatesData, templatesStatus] = useQuery(taskTemplates(user?.id) as any) as any;
   const [stagesData, stagesStatus] = useQuery(allStages(user?.id) as any) as any;
+  const [supplyTemplatesData] = useQuery(supplyTemplatesQuery(user?.id) as any) as any;
 
   // Update module-level cache when we have real data
   if (stagesData?.length > 0) {
@@ -92,10 +109,14 @@ export const StagesTasksSection = () => {
   if (templatesData?.length > 0) {
     cachedTemplatesData = templatesData;
   }
+  if (supplyTemplatesData?.length > 0) {
+    cachedSupplyTemplatesData = supplyTemplatesData;
+  }
 
   // Use cached data if Zero is still syncing but we have previous data
   const effectiveStagesData = stagesData?.length > 0 ? stagesData : cachedStagesData || stagesData;
   const effectiveTemplatesData = templatesData?.length > 0 ? templatesData : cachedTemplatesData || templatesData;
+  const effectiveSupplyTemplatesData = supplyTemplatesData?.length > 0 ? supplyTemplatesData : cachedSupplyTemplatesData || supplyTemplatesData;
 
   // Only show loading on FIRST load - never show loading if we have cached data
   const hasLoadedBefore = cachedStagesData !== null || cachedTemplatesData !== null;
@@ -120,6 +141,18 @@ export const StagesTasksSection = () => {
     wine_type: '',
     frequency: 'once',
     frequency_count: 1,
+  });
+
+  // Supply editing state
+  const [expandedTaskForSupplies, setExpandedTaskForSupplies] = useState<string | null>(null);
+  const [editingSupply, setEditingSupply] = useState<SupplyTemplate | null>(null);
+  const [addingSupplyToTask, setAddingSupplyToTask] = useState<string | null>(null);
+  const [newSupply, setNewSupply] = useState({
+    name: '',
+    quantity_formula: '',
+    quantity_fixed: 1,
+    lead_time_days: 7,
+    notes: '',
   });
 
   const stages: Stage[] = useMemo(() => {
@@ -151,6 +184,23 @@ export const StagesTasksSection = () => {
 
     return grouped;
   }, [templates, filterWineType]);
+
+  // Group supply templates by task template ID
+  const supplyTemplates: SupplyTemplate[] = useMemo(() => {
+    return (effectiveSupplyTemplatesData || [])
+      .filter((s: SupplyTemplate) => showArchived || !s.is_archived)
+      .sort((a: SupplyTemplate, b: SupplyTemplate) => a.sort_order - b.sort_order);
+  }, [effectiveSupplyTemplatesData, showArchived]);
+
+  const suppliesByTaskTemplate = useMemo(() => {
+    const grouped = new Map<string, SupplyTemplate[]>();
+    for (const supply of supplyTemplates) {
+      const taskSupplies = grouped.get(supply.task_template_id) || [];
+      taskSupplies.push(supply);
+      grouped.set(supply.task_template_id, taskSupplies);
+    }
+    return grouped;
+  }, [supplyTemplates]);
 
   const toggleStage = (stage: string) => {
     setExpandedStages(prev => {
@@ -337,6 +387,90 @@ export const StagesTasksSection = () => {
       setAddingTaskToStage(null);
     } catch (err) {
       console.error('Failed to add task:', err);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  // Supply handlers
+  const toggleTaskSupplies = (taskId: string) => {
+    setExpandedTaskForSupplies(prev => prev === taskId ? null : taskId);
+  };
+
+  const handleAddSupply = async (taskTemplateId: string) => {
+    if (!newSupply.name) return;
+
+    setIsUpdating('new-supply');
+    try {
+      const taskSupplies = suppliesByTaskTemplate.get(taskTemplateId) || [];
+      const maxOrder = Math.max(...taskSupplies.map(s => s.sort_order), 0);
+
+      await zero.mutate.supply_template.insert({
+        id: generateId('st'),
+        user_id: user?.id || '',
+        task_template_id: taskTemplateId,
+        name: newSupply.name,
+        quantity_formula: newSupply.quantity_formula || null,
+        quantity_fixed: newSupply.quantity_fixed,
+        lead_time_days: newSupply.lead_time_days,
+        notes: newSupply.notes,
+        is_archived: false,
+        sort_order: maxOrder + 1,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+      });
+      setNewSupply({ name: '', quantity_formula: '', quantity_fixed: 1, lead_time_days: 7, notes: '' });
+      setAddingSupplyToTask(null);
+    } catch (err) {
+      console.error('Failed to add supply:', err);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const handleSaveSupply = async (supply: SupplyTemplate) => {
+    setIsUpdating(supply.id);
+    try {
+      await zero.mutate.supply_template.update({
+        id: supply.id,
+        name: supply.name,
+        quantity_formula: supply.quantity_formula,
+        quantity_fixed: supply.quantity_fixed,
+        lead_time_days: supply.lead_time_days,
+        notes: supply.notes,
+        updated_at: Date.now(),
+      });
+      setEditingSupply(null);
+    } catch (err) {
+      console.error('Failed to update supply:', err);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const handleArchiveSupply = async (supply: SupplyTemplate) => {
+    setIsUpdating(supply.id);
+    try {
+      await zero.mutate.supply_template.update({
+        id: supply.id,
+        is_archived: !supply.is_archived,
+        updated_at: Date.now(),
+      });
+    } catch (err) {
+      console.error('Failed to archive supply:', err);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const handleDeleteSupply = async (supply: SupplyTemplate) => {
+    if (!confirm(`Delete supply "${supply.name}"? This cannot be undone.`)) return;
+
+    setIsUpdating(supply.id);
+    try {
+      await zero.mutate.supply_template.delete({ id: supply.id });
+    } catch (err) {
+      console.error('Failed to delete supply:', err);
     } finally {
       setIsUpdating(null);
     }
@@ -659,60 +793,262 @@ export const StagesTasksSection = () => {
                               );
                             }
 
-                            return (
-                              <div
-                                key={template.id}
-                                className={`${taskStyles.taskItem} ${!template.default_enabled ? taskStyles.taskDisabled : ''} ${template.is_archived ? taskStyles.taskArchived : ''}`}
-                              >
-                                <button
-                                  className={`${taskStyles.toggleButton} ${template.default_enabled ? taskStyles.toggleEnabled : taskStyles.toggleDisabled}`}
-                                  onClick={() => handleToggleEnabled(template)}
-                                  disabled={isUpdating === template.id}
-                                  title={template.default_enabled ? 'Disable task' : 'Enable task'}
-                                >
-                                  {template.default_enabled ? <FiCheck /> : <FiX />}
-                                </button>
+                            const taskSupplies = suppliesByTaskTemplate.get(template.id) || [];
+                            const isSuppliesExpanded = expandedTaskForSupplies === template.id;
 
-                                <div className={taskStyles.taskInfo}>
-                                  <div className={taskStyles.taskName}>
-                                    {template.name}
-                                    {template.wine_type && (
-                                      <span className={taskStyles.wineTypeBadge}>
-                                        {WINE_TYPES.find(t => t.value === template.wine_type)?.label || template.wine_type}
-                                      </span>
-                                    )}
-                                    {template.is_archived && (
-                                      <span className={taskStyles.archivedBadge}>Archived</span>
+                            return (
+                              <div key={template.id} className={taskStyles.taskItemWrapper}>
+                                <div
+                                  className={`${taskStyles.taskItem} ${!template.default_enabled ? taskStyles.taskDisabled : ''} ${template.is_archived ? taskStyles.taskArchived : ''}`}
+                                >
+                                  <button
+                                    className={`${taskStyles.toggleButton} ${template.default_enabled ? taskStyles.toggleEnabled : taskStyles.toggleDisabled}`}
+                                    onClick={() => handleToggleEnabled(template)}
+                                    disabled={isUpdating === template.id}
+                                    title={template.default_enabled ? 'Disable task' : 'Enable task'}
+                                  >
+                                    {template.default_enabled ? <FiCheck /> : <FiX />}
+                                  </button>
+
+                                  <div className={taskStyles.taskInfo}>
+                                    <div className={taskStyles.taskName}>
+                                      {template.name}
+                                      {template.wine_type && (
+                                        <span className={taskStyles.wineTypeBadge}>
+                                          {WINE_TYPES.find(t => t.value === template.wine_type)?.label || template.wine_type}
+                                        </span>
+                                      )}
+                                      {template.is_archived && (
+                                        <span className={taskStyles.archivedBadge}>Archived</span>
+                                      )}
+                                    </div>
+                                    {template.description && (
+                                      <div className={taskStyles.taskDescription}>
+                                        {template.description}
+                                      </div>
                                     )}
                                   </div>
-                                  {template.description && (
-                                    <div className={taskStyles.taskDescription}>
-                                      {template.description}
+
+                                  <div className={taskStyles.taskFrequency}>
+                                    {formatFrequency(template)}
+                                  </div>
+
+                                  <div className={taskStyles.taskActions}>
+                                    <button
+                                      onClick={() => toggleTaskSupplies(template.id)}
+                                      className={`${taskStyles.iconButton} ${taskSupplies.length > 0 ? taskStyles.hasSupplies : ''}`}
+                                      title={`Supplies (${taskSupplies.length})`}
+                                    >
+                                      <FiPackage />
+                                      {taskSupplies.length > 0 && (
+                                        <span className={taskStyles.supplyCount}>{taskSupplies.length}</span>
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingTask(template)}
+                                      className={taskStyles.iconButton}
+                                      title="Edit task"
+                                    >
+                                      <FiEdit2 />
+                                    </button>
+                                    <button
+                                      onClick={() => handleArchiveTask(template)}
+                                      className={taskStyles.iconButton}
+                                      title={template.is_archived ? 'Restore task' : 'Archive task'}
+                                      disabled={isUpdating === template.id}
+                                    >
+                                      {template.is_archived ? <FiRefreshCw /> : <FiTrash2 />}
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Supplies section */}
+                                {isSuppliesExpanded && (
+                                  <div className={taskStyles.suppliesSection}>
+                                    <div className={taskStyles.suppliesHeader}>
+                                      <FiPackage /> Supplies for this task
                                     </div>
-                                  )}
-                                </div>
 
-                                <div className={taskStyles.taskFrequency}>
-                                  {formatFrequency(template)}
-                                </div>
+                                    {taskSupplies.length === 0 && addingSupplyToTask !== template.id && (
+                                      <div className={taskStyles.noSupplies}>
+                                        No supplies configured
+                                      </div>
+                                    )}
 
-                                <div className={taskStyles.taskActions}>
-                                  <button
-                                    onClick={() => setEditingTask(template)}
-                                    className={taskStyles.iconButton}
-                                    title="Edit task"
-                                  >
-                                    <FiEdit2 />
-                                  </button>
-                                  <button
-                                    onClick={() => handleArchiveTask(template)}
-                                    className={taskStyles.iconButton}
-                                    title={template.is_archived ? 'Restore task' : 'Archive task'}
-                                    disabled={isUpdating === template.id}
-                                  >
-                                    {template.is_archived ? <FiRefreshCw /> : <FiTrash2 />}
-                                  </button>
-                                </div>
+                                    {taskSupplies.map((supply) => {
+                                      const isEditingThisSupply = editingSupply?.id === supply.id;
+
+                                      if (isEditingThisSupply) {
+                                        return (
+                                          <div key={supply.id} className={taskStyles.supplyEditForm}>
+                                            <input
+                                              type="text"
+                                              value={editingSupply.name}
+                                              onChange={(e) => setEditingSupply({ ...editingSupply, name: e.target.value })}
+                                              className={taskStyles.formInput}
+                                              placeholder="Supply name"
+                                            />
+                                            <div className={taskStyles.formRow}>
+                                              <input
+                                                type="text"
+                                                value={editingSupply.quantity_formula || ''}
+                                                onChange={(e) => setEditingSupply({ ...editingSupply, quantity_formula: e.target.value || null })}
+                                                className={taskStyles.formInput}
+                                                placeholder="Quantity formula (e.g., 1 per 30 lbs)"
+                                              />
+                                              <input
+                                                type="number"
+                                                min="1"
+                                                value={editingSupply.quantity_fixed}
+                                                onChange={(e) => setEditingSupply({ ...editingSupply, quantity_fixed: parseInt(e.target.value) || 1 })}
+                                                className={taskStyles.formInputSmall}
+                                                title="Fixed quantity"
+                                              />
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                value={editingSupply.lead_time_days}
+                                                onChange={(e) => setEditingSupply({ ...editingSupply, lead_time_days: parseInt(e.target.value) || 0 })}
+                                                className={taskStyles.formInputSmall}
+                                                title="Lead time (days)"
+                                              />
+                                            </div>
+                                            <input
+                                              type="text"
+                                              value={editingSupply.notes}
+                                              onChange={(e) => setEditingSupply({ ...editingSupply, notes: e.target.value })}
+                                              className={taskStyles.formInput}
+                                              placeholder="Notes (optional)"
+                                            />
+                                            <div className={taskStyles.formActions}>
+                                              <button onClick={() => setEditingSupply(null)} className={taskStyles.cancelButton}>
+                                                Cancel
+                                              </button>
+                                              <button
+                                                onClick={() => handleSaveSupply(editingSupply)}
+                                                className={taskStyles.saveButton}
+                                                disabled={isUpdating === supply.id}
+                                              >
+                                                Save
+                                              </button>
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+
+                                      return (
+                                        <div
+                                          key={supply.id}
+                                          className={`${taskStyles.supplyItem} ${supply.is_archived ? taskStyles.supplyArchived : ''}`}
+                                        >
+                                          <div className={taskStyles.supplyInfo}>
+                                            <span className={taskStyles.supplyName}>
+                                              {supply.name}
+                                              {supply.is_archived && (
+                                                <span className={taskStyles.archivedBadge}>Archived</span>
+                                              )}
+                                            </span>
+                                            <span className={taskStyles.supplyDetails}>
+                                              {supply.quantity_formula || `${supply.quantity_fixed} needed`}
+                                              <span className={taskStyles.leadTime}>{supply.lead_time_days}d lead</span>
+                                            </span>
+                                          </div>
+                                          <div className={taskStyles.supplyActions}>
+                                            <button
+                                              onClick={() => setEditingSupply(supply)}
+                                              className={taskStyles.iconButton}
+                                              title="Edit supply"
+                                            >
+                                              <FiEdit2 />
+                                            </button>
+                                            <button
+                                              onClick={() => handleArchiveSupply(supply)}
+                                              className={taskStyles.iconButton}
+                                              title={supply.is_archived ? 'Restore supply' : 'Archive supply'}
+                                              disabled={isUpdating === supply.id}
+                                            >
+                                              {supply.is_archived ? <FiRefreshCw /> : <FiArchive />}
+                                            </button>
+                                            <button
+                                              onClick={() => handleDeleteSupply(supply)}
+                                              className={taskStyles.iconButton}
+                                              title="Delete supply"
+                                              disabled={isUpdating === supply.id}
+                                            >
+                                              <FiTrash2 />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+
+                                    {/* Add supply form */}
+                                    {addingSupplyToTask === template.id ? (
+                                      <div className={taskStyles.addSupplyForm}>
+                                        <input
+                                          type="text"
+                                          placeholder="Supply name"
+                                          value={newSupply.name}
+                                          onChange={(e) => setNewSupply(prev => ({ ...prev, name: e.target.value }))}
+                                          className={taskStyles.formInput}
+                                        />
+                                        <div className={taskStyles.formRow}>
+                                          <input
+                                            type="text"
+                                            placeholder="Quantity formula (optional)"
+                                            value={newSupply.quantity_formula}
+                                            onChange={(e) => setNewSupply(prev => ({ ...prev, quantity_formula: e.target.value }))}
+                                            className={taskStyles.formInput}
+                                          />
+                                          <input
+                                            type="number"
+                                            min="1"
+                                            value={newSupply.quantity_fixed}
+                                            onChange={(e) => setNewSupply(prev => ({ ...prev, quantity_fixed: parseInt(e.target.value) || 1 }))}
+                                            className={taskStyles.formInputSmall}
+                                            placeholder="Qty"
+                                            title="Fixed quantity"
+                                          />
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            value={newSupply.lead_time_days}
+                                            onChange={(e) => setNewSupply(prev => ({ ...prev, lead_time_days: parseInt(e.target.value) || 0 }))}
+                                            className={taskStyles.formInputSmall}
+                                            placeholder="Days"
+                                            title="Lead time (days)"
+                                          />
+                                        </div>
+                                        <input
+                                          type="text"
+                                          placeholder="Notes (optional)"
+                                          value={newSupply.notes}
+                                          onChange={(e) => setNewSupply(prev => ({ ...prev, notes: e.target.value }))}
+                                          className={taskStyles.formInput}
+                                        />
+                                        <div className={taskStyles.formActions}>
+                                          <button onClick={() => setAddingSupplyToTask(null)} className={taskStyles.cancelButton}>
+                                            Cancel
+                                          </button>
+                                          <button
+                                            onClick={() => handleAddSupply(template.id)}
+                                            className={taskStyles.saveButton}
+                                            disabled={!newSupply.name || isUpdating === 'new-supply'}
+                                          >
+                                            Add Supply
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        className={taskStyles.addSupplyButton}
+                                        onClick={() => setAddingSupplyToTask(template.id)}
+                                      >
+                                        <FiPlus /> Add Supply
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}

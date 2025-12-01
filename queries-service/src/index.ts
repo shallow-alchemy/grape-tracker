@@ -37,6 +37,11 @@ import {
   myMeasurementAnalyses,
   stages,
   allStages,
+  supplyTemplates,
+  supplyTemplatesByTask,
+  mySupplyInstances,
+  mySupplyInstancesByTask,
+  mySupplyInstancesByEntity,
 } from './queries.js';
 
 const app = new Hono();
@@ -85,6 +90,11 @@ const validatedQueries = {
   [myMeasurementAnalyses.queryName]: withValidation(myMeasurementAnalyses),
   [stages.queryName]: withValidation(stages),
   [allStages.queryName]: withValidation(allStages),
+  [supplyTemplates.queryName]: withValidation(supplyTemplates),
+  [supplyTemplatesByTask.queryName]: withValidation(supplyTemplatesByTask),
+  [mySupplyInstances.queryName]: withValidation(mySupplyInstances),
+  [mySupplyInstancesByTask.queryName]: withValidation(mySupplyInstancesByTask),
+  [mySupplyInstancesByEntity.queryName]: withValidation(mySupplyInstancesByEntity),
 };
 
 // Extract user ID from request headers

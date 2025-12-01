@@ -514,6 +514,88 @@ export const createMutators = () => ({
       await tx.mutate.measurement.delete(args);
     },
   },
+
+  supply_template: {
+    insert: async (
+      tx: Transaction<Schema>,
+      args: {
+        id: string;
+        user_id: string;
+        task_template_id: string;
+        name: string;
+        quantity_formula?: string | null;
+        quantity_fixed: number;
+        lead_time_days: number;
+        notes: string;
+        is_archived: boolean;
+        sort_order: number;
+        created_at: number;
+        updated_at: number;
+      }
+    ) => {
+      await tx.mutate.supply_template.insert(args);
+    },
+    update: async (
+      tx: Transaction<Schema>,
+      args: {
+        id: string;
+        task_template_id?: string;
+        name?: string;
+        quantity_formula?: string | null;
+        quantity_fixed?: number;
+        lead_time_days?: number;
+        notes?: string;
+        is_archived?: boolean;
+        sort_order?: number;
+        updated_at?: number;
+      }
+    ) => {
+      await tx.mutate.supply_template.update({ ...args, updated_at: Date.now() });
+    },
+    delete: async (tx: Transaction<Schema>, args: { id: string }) => {
+      await tx.mutate.supply_template.delete(args);
+    },
+  },
+
+  supply_instance: {
+    insert: async (
+      tx: Transaction<Schema>,
+      args: {
+        id: string;
+        user_id: string;
+        supply_template_id: string;
+        task_id: string;
+        entity_type: string;
+        entity_id: string;
+        calculated_quantity?: number | null;
+        verified_at?: number | null;
+        verified_by?: string | null;
+        created_at: number;
+        updated_at: number;
+      }
+    ) => {
+      await tx.mutate.supply_instance.insert(args);
+    },
+    update: async (
+      tx: Transaction<Schema>,
+      args: {
+        id: string;
+        supply_template_id?: string;
+        task_id?: string;
+        entity_type?: string;
+        entity_id?: string;
+        calculated_quantity?: number | null;
+        verified_at?: number | null;
+        verified_by?: string | null;
+        updated_at?: number;
+      }
+    ) => {
+      await tx.mutate.supply_instance.update({ ...args, updated_at: Date.now() });
+    },
+    delete: async (tx: Transaction<Schema>, args: { id: string }) => {
+      await tx.mutate.supply_instance.delete(args);
+    },
+  },
 });
 
 export type Mutators = ReturnType<typeof createMutators>;

@@ -1,16 +1,19 @@
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation, Link } from 'wouter';
-import { myTasks, myVintages, myMeasurements } from '../../shared/queries';
+import { myTasks, myVintages, myMeasurements, supplyTemplates as supplyTemplatesQuery } from '../../shared/queries';
 import { formatDueDate } from '../winery/taskHelpers';
 import { formatStage } from '../winery/stages';
 import styles from '../../App.module.css';
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // Module-level caches - persist across component unmount/remount to prevent flash on navigation
 // See docs/engineering-principles.md "Zero Query Loading States" for pattern documentation
 let cachedVintagesData: any[] | null = null;
 let cachedMeasurementsData: any[] | null = null;
 let cachedTasksData: any[] | null = null;
+let cachedSupplyTemplatesData: any[] | null = null;
 
 export const RecentActivity = () => {
   return (
@@ -162,29 +165,76 @@ export const CurrentVintage = () => {
 };
 
 export const SuppliesNeeded = () => {
+  const { user } = useUser();
+  const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
+  const [supplyTemplatesData] = useQuery(supplyTemplatesQuery(user?.id) as any) as any;
+
+  // Update module-level caches
+  if (tasksData && tasksData.length > 0) {
+    cachedTasksData = tasksData;
+  }
+  if (supplyTemplatesData && supplyTemplatesData.length > 0) {
+    cachedSupplyTemplatesData = supplyTemplatesData;
+  }
+
+  const effectiveTasksData = tasksData && tasksData.length > 0 ? tasksData : cachedTasksData || [];
+  const effectiveSupplyData = supplyTemplatesData && supplyTemplatesData.length > 0 ? supplyTemplatesData : cachedSupplyTemplatesData || [];
+
+  // Get upcoming tasks (not completed, not skipped)
+  const upcomingTasks = effectiveTasksData
+    .filter((t: any) => !t.completed_at && !t.skipped)
+    .sort((a: any, b: any) => a.due_date - b.due_date);
+
+  // Build a map of task_template_id -> tasks
+  const tasksByTemplateId = new Map<string, any[]>();
+  for (const task of upcomingTasks) {
+    const existing = tasksByTemplateId.get(task.task_template_id) || [];
+    existing.push(task);
+    tasksByTemplateId.set(task.task_template_id, existing);
+  }
+
+  // Find supplies that are due based on lead_time_days
+  const now = Date.now();
+  const suppliesNeeded: { supply: any; task: any }[] = [];
+
+  for (const supply of effectiveSupplyData) {
+    const tasksForTemplate = tasksByTemplateId.get(supply.task_template_id) || [];
+    for (const task of tasksForTemplate) {
+      const leadTimeMs = (supply.lead_time_days || 7) * MS_PER_DAY;
+      const surfaceDate = task.due_date - leadTimeMs;
+      if (surfaceDate <= now) {
+        suppliesNeeded.push({ supply, task });
+      }
+    }
+  }
+
+  // Sort by task due date and limit to 6 items
+  const sortedSupplies = suppliesNeeded
+    .sort((a, b) => a.task.due_date - b.task.due_date)
+    .slice(0, 6);
+
   return (
     <div className={styles.desktopPanel}>
       <div className={styles.panelTitleRow}>
         <h2 className={styles.panelTitle}>SUPPLIES NEEDED</h2>
-        <a href="#inventory" className={styles.panelLink}>VIEW INVENTORY</a>
+        <Link href="/settings" className={styles.panelLink}>MANAGE</Link>
       </div>
       <div className={styles.suppliesList}>
-        <div className={styles.supplyItem}>
-          <span className={styles.supplyName}>YEAST (RED STAR)</span>
-          <span className={styles.supplyReason}>HARVEST - NOV 20</span>
-        </div>
-        <div className={styles.supplyItem}>
-          <span className={styles.supplyName}>POTASSIUM METABISULFATE</span>
-          <span className={styles.supplyReason}>HARVEST - NOV 20</span>
-        </div>
-        <div className={styles.supplyItem}>
-          <span className={styles.supplyName}>CARBOYS (5 GAL)</span>
-          <span className={styles.supplyReason}>SECONDARY FERMENT</span>
-        </div>
-        <div className={styles.supplyItem}>
-          <span className={styles.supplyName}>SANITIZER</span>
-          <span className={styles.supplyReason}>EQUIPMENT MAINT</span>
-        </div>
+        {sortedSupplies.length > 0 ? (
+          sortedSupplies.map(({ supply, task }) => (
+            <div key={`${supply.id}-${task.id}`} className={styles.supplyItem}>
+              <span className={styles.supplyName}>{supply.name.toUpperCase()}</span>
+              <span className={styles.supplyReason}>
+                {task.name.toUpperCase()} - {formatDueDate(task.due_date)}
+              </span>
+            </div>
+          ))
+        ) : (
+          <div className={styles.supplyItem}>
+            <span className={styles.supplyName}>NO SUPPLIES NEEDED</span>
+            <span className={styles.supplyReason}>ALL STOCKED UP</span>
+          </div>
+        )}
       </div>
     </div>
   );

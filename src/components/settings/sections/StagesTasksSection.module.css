@@ -569,3 +569,184 @@
     width: 100%;
   }
 }
+
+/* Task item wrapper for supplies */
+.taskItemWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Supply count badge on package icon */
+.hasSupplies {
+  position: relative;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.supplyCount {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--color-primary-500);
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Supplies section */
+.suppliesSection {
+  margin-left: calc(28px + var(--spacing-md));
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border: var(--spacing-px) solid var(--color-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.suppliesHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: var(--spacing-px) solid var(--color-border);
+}
+
+.noSupplies {
+  padding: var(--spacing-md);
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.supplyItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface-elevated);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.supplyArchived {
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+.supplyInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.supplyName {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.supplyDetails {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.leadTime {
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  padding: 1px 6px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+
+.supplyActions {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+/* Supply forms */
+.supplyEditForm,
+.addSupplyForm {
+  padding: var(--spacing-md);
+  background: var(--color-surface-elevated);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.addSupplyButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-top: var(--spacing-sm);
+  background: transparent;
+  border: var(--spacing-px) dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.addSupplyButton:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 600px) {
+  .suppliesSection {
+    margin-left: 0;
+    margin-top: var(--spacing-xs);
+    border: var(--spacing-px) solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  .supplyItem {
+    flex-wrap: wrap;
+  }
+
+  .supplyActions {
+    width: 100%;
+    margin-top: var(--spacing-sm);
+    justify-content: flex-end;
+  }
+}
