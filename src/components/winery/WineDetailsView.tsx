@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
-import { useLocation } from 'wouter';
 import { FiSettings, FiCheck, FiAlertTriangle, FiX } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { getBackendUrl } from '../../config';
@@ -12,6 +11,11 @@ import { EditWineModal } from './EditWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
 import { AddMeasurementModal } from './AddMeasurementModal';
 import { getStagesForWineType, type WineType } from './stages';
+import { formatDueDate, isDueToday, isOverdue } from './taskHelpers';
+import { TaskCompletionModal } from './TaskCompletionModal';
+import { CreateTaskModal } from './CreateTaskModal';
+import { useDebouncedCompletion } from '../../hooks/useDebouncedCompletion';
+import { ActionLink } from '../ActionLink';
 import styles from '../../App.module.css';
 
 const formatWineStatus = (status: string): string => {
@@ -26,7 +30,6 @@ type WineDetailsViewProps = {
 
 export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const { user } = useUser();
-  const [, setLocation] = useLocation();
   const zero = useZero();
   const allWinesData = useWines();
   const wine = allWinesData.find((w: any) => w.id === wineId);
@@ -89,6 +92,17 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showStageModal, setShowStageModal] = useState(false);
   const [showMeasurementModal, setShowMeasurementModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+
+  const { removedTaskId, startCompletion, undoCompletion, isPending } = useDebouncedCompletion(
+    async (taskId) => {
+      await zero.mutate.task.update({
+        id: taskId,
+        completed_at: Date.now(),
+      });
+    }
+  );
 
   // Inline measurement editing state
   const [editingField, setEditingField] = useState<'ph' | 'ta' | 'brix' | 'temperature' | null>(null);
@@ -391,9 +405,6 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
           {vintage ? `${vintage.vintage_year} ${wine.name}` : wine.name}
         </div>
         <div className={styles.actionButtonGroup}>
-          <button className={styles.actionButton} onClick={() => setLocation(`/winery/wines/${wineId}/tasks`)}>
-            TASKS
-          </button>
           <button className={styles.actionButton} onClick={() => setShowMeasurementModal(true)}>
             ADD MEASUREMENT
           </button>
@@ -412,9 +423,9 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
               ({daysInStage} {daysInStage === 1 ? 'day' : 'days'})
             </span>
           )}
-          <button onClick={() => setShowStageModal(true)} className={styles.markCompleteButtonInline}>
-            mark complete →
-          </button>
+          <ActionLink onClick={() => setShowStageModal(true)}>
+            →
+          </ActionLink>
         </div>
       </div>
 
@@ -710,6 +721,74 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         </div>
       )}
 
+      {(() => {
+        const activeTasks = (tasksData || [])
+          .filter((t: any) => !t.completed_at && !t.skipped && t.id !== removedTaskId);
+        return (
+          <div className={styles.detailSection}>
+            <div className={styles.sectionHeaderWithAction}>
+              <div className={styles.sectionHeader}>TASKS ({activeTasks.length})</div>
+              <ActionLink onClick={() => setShowCreateTaskModal(true)}>
+                + Add
+              </ActionLink>
+            </div>
+            {activeTasks.length > 0 ? (
+              <div className={styles.flexColumnGap}>
+                {activeTasks.sort((a: any, b: any) => a.due_date - b.due_date).map((task: any) => {
+                  const overdue = isOverdue(task.due_date, task.completed_at, task.skipped ? 1 : 0);
+                  const dueToday = isDueToday(task.due_date);
+                  const taskPending = isPending(task.id);
+                  return (
+                    <div
+                      key={task.id}
+                      className={`${styles.stageHistoryCard} ${overdue && !taskPending ? styles.taskCardOverdue : ''} ${taskPending ? styles.taskItemPending : ''}`}
+                      onClick={() => !taskPending && setSelectedTask(task)}
+                      style={{ cursor: taskPending ? 'default' : 'pointer' }}
+                    >
+                      <div className={styles.stageHistoryHeader}>
+                        <div className={`${styles.stageHistoryTitle} ${taskPending ? styles.taskTextPending : ''}`}>
+                          {task.name}
+                        </div>
+                        {taskPending ? (
+                          <ActionLink onClick={(e) => {
+                            e.stopPropagation();
+                            undoCompletion();
+                          }}>
+                            Undo
+                          </ActionLink>
+                        ) : (
+                          <ActionLink onClick={(e) => {
+                            e.stopPropagation();
+                            startCompletion(task.id);
+                          }}>
+                            →
+                          </ActionLink>
+                        )}
+                      </div>
+                      <div className={styles.stageHistoryBody}>
+                        {task.description && (
+                          <div className={`${styles.taskDescriptionClamp} ${taskPending ? styles.taskTextPending : ''}`}>
+                            {task.description}
+                          </div>
+                        )}
+                        <div className={`${styles.taskMetaRow} ${taskPending ? styles.taskTextPending : ''}`}>
+                          <span className={dueToday || overdue ? styles.taskDateUrgent : ''}>
+                            {formatDueDate(task.due_date)}
+                          </span>
+                          {task.notes && <span className={styles.taskHasNotes}>• Has note</span>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className={styles.tasksEmptyState}>No active tasks</div>
+            )}
+          </div>
+        );
+      })()}
+
       {expandedStageHistory.length > 0 && (
         <div className={styles.detailSection}>
           <div className={styles.sectionHeader}>STAGE HISTORY</div>
@@ -794,6 +873,37 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
         <AddMeasurementModal
           isOpen={showMeasurementModal}
           onClose={() => setShowMeasurementModal(false)}
+          onSuccess={(message) => {
+            setSuccessMessage(message);
+            setTimeout(() => setSuccessMessage(null), 3000);
+          }}
+          entityType="wine"
+          entityId={wineId}
+          currentStage={wine.current_stage}
+        />
+      )}
+
+      {selectedTask && (
+        <TaskCompletionModal
+          isOpen={!!selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onSuccess={(message) => {
+            setSuccessMessage(message);
+            setTimeout(() => setSuccessMessage(null), 3000);
+          }}
+          taskId={selectedTask.id}
+          taskName={selectedTask.name}
+          taskDescription={selectedTask.description}
+          taskNotes={selectedTask.notes}
+          dueDate={selectedTask.due_date}
+          currentlySkipped={selectedTask.skipped}
+        />
+      )}
+
+      {wine && (
+        <CreateTaskModal
+          isOpen={showCreateTaskModal}
+          onClose={() => setShowCreateTaskModal(false)}
           onSuccess={(message) => {
             setSuccessMessage(message);
             setTimeout(() => setSuccessMessage(null), 3000);

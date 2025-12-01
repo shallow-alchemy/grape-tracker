@@ -476,6 +476,7 @@
   text-align: center;
   box-shadow: var(--shadow-glow);
   animation: slideIn 0.3s ease-out;
+  grid-column: 1 / -1;
 }
 
 @keyframes slideIn {
@@ -1740,6 +1741,7 @@
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
   letter-spacing: 0.05em;
+  line-height: 1;
 }
 
 .seasonalTaskTiming {
@@ -1779,6 +1781,9 @@
   padding: 0;
   text-align: left;
   transition: color var(--transition-fast);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .seasonalTaskMoreLink:hover {
@@ -2148,6 +2153,27 @@
 
 .taskTextPending {
   text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.taskDescriptionClamp {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: var(--spacing-xs);
+}
+
+.taskMetaRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.taskHasNotes {
   color: var(--color-text-muted);
 }
 
@@ -3250,6 +3276,19 @@
   color: var(--color-error);
 }
 
+.taskModalScrollableText {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  max-height: 120px;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  white-space: pre-wrap;
+}
+
 .wineTypeBadge {
   margin-left: var(--spacing-sm);
   font-size: var(--font-size-xs);
@@ -3484,6 +3523,11 @@
   border-color: var(--color-error);
 }
 
+.taskDateUrgent {
+  color: var(--color-error);
+  font-weight: var(--font-weight-medium);
+}
+
 .taskCardCompleted {
   background-color: var(--color-surface);
 }
@@ -3585,6 +3629,24 @@
 
 .sectionHeaderError {
   color: var(--color-error);
+}
+
+.sectionHeaderWithAction {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.sectionHeaderWithAction .sectionHeader {
+  margin-bottom: 0;
+}
+
+.taskNotes {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary-500);
+  font-style: italic;
+  margin-top: var(--spacing-xs);
 }
 
 .paddingContainer {
@@ -3835,7 +3897,7 @@
 
 .winesSectionHeader {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-xs);
 }
@@ -4157,6 +4219,16 @@
   color: var(--color-border);
 }
 
+.allTaskMetaSource {
+  color: var(--color-accent-400);
+  font-weight: var(--font-weight-medium);
+}
+
+.allTaskMetaDueToday {
+  color: var(--color-error);
+  font-weight: var(--font-weight-medium);
+}
+
 .allTaskMetaStage {
   color: var(--color-text-muted);
 }
@@ -4204,12 +4276,17 @@
   font-size: 0.7rem;
   cursor: pointer;
   transition: all var(--transition-fast);
-  padding: 3px 8px 5px;
+  padding: 4px 8px;
 }
 
 .createNewButton:hover {
   border-color: var(--color-interaction-400);
   color: var(--color-interaction-300);
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* AI Analysis Styles */

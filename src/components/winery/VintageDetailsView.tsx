@@ -1,14 +1,19 @@
 import { useState, useRef } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
-import { useLocation } from 'wouter';
 import { FiSettings } from 'react-icons/fi';
-import { myMeasurementsByEntity, myStageHistoryByEntity } from '../../shared/queries';
+import { myMeasurementsByEntity, myStageHistoryByEntity, myTasksByEntity } from '../../shared/queries';
+import { formatDueDate, isDueToday, isOverdue } from './taskHelpers';
+import { useZero } from '../../contexts/ZeroContext';
 import { useVintages, useWines } from '../vineyard-hooks';
 import { EditVintageModal } from './EditVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
 import { formatStage, getStagesForEntity } from './stages';
+import { TaskCompletionModal } from './TaskCompletionModal';
+import { CreateTaskModal } from './CreateTaskModal';
+import { ActionLink } from '../ActionLink';
+import { useDebouncedCompletion } from '../../hooks/useDebouncedCompletion';
 import styles from '../../App.module.css';
 
 const formatWineStatus = (status: string): string => {
@@ -24,7 +29,7 @@ type VintageDetailsViewProps = {
 
 export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDetailsViewProps) => {
   const { user } = useUser();
-  const [, setLocation] = useLocation();
+  const zero = useZero();
   const allVintagesData = useVintages();
   const vintage = allVintagesData.find((v: any) => v.id === vintageId);
 
@@ -67,6 +72,10 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
     : lastStageHistoryRef.current;
 
   const stageHistory = [...cachedStageHistory].sort((a, b) => b.started_at - a.started_at);
+
+  const [tasksData] = useQuery(
+    myTasksByEntity(user?.id, 'vintage', vintageId)
+  ) as any;
 
   type ExpandedStageHistoryEntry = {
     id: string;
@@ -122,7 +131,18 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddWineModal, setShowAddWineModal] = useState(false);
   const [showStageModal, setShowStageModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const { removedTaskId, startCompletion, undoCompletion, isPending } = useDebouncedCompletion(
+    async (taskId) => {
+      await zero.mutate.task.update({
+        id: taskId,
+        completed_at: Date.now(),
+      });
+    }
+  );
 
   const showSuccessMessage = (message: string) => {
     setSuccessMessage(message);
@@ -160,9 +180,6 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
           {vintage.variety}, {vintage.vintage_year} Vintage{vintage.grape_source === 'purchased' && vintage.supplier_name ? ` from ${vintage.supplier_name}` : ''}
         </div>
         <div className={styles.actionButtonGroup}>
-          <button className={styles.actionButton} onClick={() => setLocation(`/winery/vintages/${vintageId}/tasks`)}>
-            TASKS
-          </button>
           <button className={styles.actionButton} onClick={() => setShowAddWineModal(true)}>
             CREATE WINE
           </button>
@@ -173,14 +190,12 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
       </div>
 
       <div className={styles.detailSection}>
-        <div className={styles.stageHeaderRow}>
-          <div className={`${styles.sectionHeader} ${styles.sectionHeaderNoMargin}`}>CURRENT STAGE</div>
-          <button onClick={() => setShowStageModal(true)} className={styles.markCompleteButton}>
-            Mark Complete →
-          </button>
-        </div>
+        <div className={styles.sectionHeader}>CURRENT STAGE</div>
         <div className={styles.currentStageDisplay}>
           {formatStage(vintage.current_stage)}
+          <ActionLink onClick={() => setShowStageModal(true)}>
+            →
+          </ActionLink>
         </div>
       </div>
 
@@ -297,6 +312,74 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
         </div>
       )}
 
+      {(() => {
+        const activeTasks = (tasksData || [])
+          .filter((t: any) => !t.completed_at && !t.skipped && t.id !== removedTaskId);
+        return (
+          <div className={styles.detailSection}>
+            <div className={styles.sectionHeaderWithAction}>
+              <div className={styles.sectionHeader}>TASKS ({activeTasks.length})</div>
+              <ActionLink onClick={() => setShowCreateTaskModal(true)}>
+                + Add
+              </ActionLink>
+            </div>
+            {activeTasks.length > 0 ? (
+              <div className={styles.flexColumnGap}>
+                {activeTasks.sort((a: any, b: any) => a.due_date - b.due_date).map((task: any) => {
+                  const overdue = isOverdue(task.due_date, task.completed_at, task.skipped ? 1 : 0);
+                  const dueToday = isDueToday(task.due_date);
+                  const taskPending = isPending(task.id);
+                  return (
+                    <div
+                      key={task.id}
+                      className={`${styles.stageHistoryCard} ${overdue && !taskPending ? styles.taskCardOverdue : ''} ${taskPending ? styles.taskItemPending : ''}`}
+                      onClick={() => !taskPending && setSelectedTask(task)}
+                      style={{ cursor: taskPending ? 'default' : 'pointer' }}
+                    >
+                      <div className={styles.stageHistoryHeader}>
+                        <div className={`${styles.stageHistoryTitle} ${taskPending ? styles.taskTextPending : ''}`}>
+                          {task.name}
+                        </div>
+                        {taskPending ? (
+                          <ActionLink onClick={(e) => {
+                            e.stopPropagation();
+                            undoCompletion();
+                          }}>
+                            Undo
+                          </ActionLink>
+                        ) : (
+                          <ActionLink onClick={(e) => {
+                            e.stopPropagation();
+                            startCompletion(task.id);
+                          }}>
+                            →
+                          </ActionLink>
+                        )}
+                      </div>
+                      <div className={styles.stageHistoryBody}>
+                        {task.description && (
+                          <div className={`${styles.taskDescriptionClamp} ${taskPending ? styles.taskTextPending : ''}`}>
+                            {task.description}
+                          </div>
+                        )}
+                        <div className={`${styles.taskMetaRow} ${taskPending ? styles.taskTextPending : ''}`}>
+                          <span className={dueToday || overdue ? styles.taskDateUrgent : ''}>
+                            {formatDueDate(task.due_date)}
+                          </span>
+                          {task.notes && <span className={styles.taskHasNotes}>• Has note</span>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className={styles.tasksEmptyState}>No active tasks</div>
+            )}
+          </div>
+        );
+      })()}
+
       {expandedStageHistory.length > 0 && (
         <div className={styles.detailSection}>
           <div className={styles.sectionHeader}>STAGE HISTORY</div>
@@ -372,6 +455,31 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
         <StageTransitionModal
           isOpen={showStageModal}
           onClose={() => setShowStageModal(false)}
+          onSuccess={showSuccessMessage}
+          entityType="vintage"
+          entityId={vintageId}
+          currentStage={vintage.current_stage}
+        />
+      )}
+
+      {selectedTask && (
+        <TaskCompletionModal
+          isOpen={!!selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onSuccess={showSuccessMessage}
+          taskId={selectedTask.id}
+          taskName={selectedTask.name}
+          taskDescription={selectedTask.description}
+          taskNotes={selectedTask.notes}
+          dueDate={selectedTask.due_date}
+          currentlySkipped={selectedTask.skipped}
+        />
+      )}
+
+      {vintage && (
+        <CreateTaskModal
+          isOpen={showCreateTaskModal}
+          onClose={() => setShowCreateTaskModal(false)}
           onSuccess={showSuccessMessage}
           entityType="vintage"
           entityId={vintageId}

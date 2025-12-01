@@ -1,25 +1,22 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useActiveWines, useVintages, useWines } from '../vineyard-hooks';
+import { useActiveWines } from '../vineyard-hooks';
 import { AddVintageModal } from './AddVintageModal';
 import { AddWineModal } from './AddWineModal';
 import { VintagesList } from './VintagesList';
 import { WinesList } from './WinesList';
 import { VintageDetailsView } from './VintageDetailsView';
 import { WineDetailsView } from './WineDetailsView';
-import { TaskListView } from './TaskListView';
 import styles from '../../App.module.css';
 
 type WineryViewProps = {
   initialVintageId?: string;
   initialWineId?: string;
-  initialVintageTasksId?: string;
-  initialWineTasksId?: string;
 };
 
 type ActiveTab = 'vintages' | 'wines';
 
-export const WineryView = ({ initialVintageId, initialWineId, initialVintageTasksId, initialWineTasksId }: WineryViewProps) => {
+export const WineryView = ({ initialVintageId, initialWineId }: WineryViewProps) => {
   const [location, setLocation] = useLocation();
   const [showAddVintageModal, setShowAddVintageModal] = useState(false);
   const [showAddWineModal, setShowAddWineModal] = useState(false);
@@ -27,8 +24,6 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const activeWinesData = useActiveWines();
-  const allVintagesData = useVintages();
-  const allWinesData = useWines();
   const activeWineCount = activeWinesData.length;
 
   const activeTab: ActiveTab = location.includes('/winery/wines') ? 'wines' : 'vintages';
@@ -58,65 +53,15 @@ export const WineryView = ({ initialVintageId, initialWineId, initialVintageTask
     if (hasInternalNav) {
       window.history.back();
     } else {
-      if (initialVintageId || initialVintageTasksId) {
+      if (initialVintageId) {
         setLocation('/winery/vintages');
-      } else if (initialWineId || initialWineTasksId) {
+      } else if (initialWineId) {
         setLocation('/winery/wines');
       } else {
         setLocation('/winery/vintages');
       }
     }
   };
-
-  if (initialVintageTasksId) {
-    const vintage = allVintagesData.find((v: any) => v.id === initialVintageTasksId);
-
-    if (!vintage) {
-      return (
-        <div className={styles.vineyardContainer}>
-          <div className={styles.errorMessage}>VINTAGE NOT FOUND</div>
-          <button className={styles.actionButton} onClick={navigateBack}>
-            BACK
-          </button>
-        </div>
-      );
-    }
-
-    return (
-      <TaskListView
-        entityType="vintage"
-        entityId={initialVintageTasksId}
-        entityName={`${vintage.variety}, ${vintage.vintage_year} Vintage${vintage.grape_source === 'purchased' && vintage.supplier_name ? ` from ${vintage.supplier_name}` : ''}`}
-        currentStage={vintage.current_stage}
-        onBack={navigateBack}
-      />
-    );
-  }
-
-  if (initialWineTasksId) {
-    const wine = allWinesData.find((w: any) => w.id === initialWineTasksId);
-
-    if (!wine) {
-      return (
-        <div className={styles.vineyardContainer}>
-          <div className={styles.errorMessage}>WINE NOT FOUND</div>
-          <button className={styles.actionButton} onClick={navigateBack}>
-            BACK
-          </button>
-        </div>
-      );
-    }
-
-    return (
-      <TaskListView
-        entityType="wine"
-        entityId={initialWineTasksId}
-        entityName={wine.name}
-        currentStage={wine.current_stage}
-        onBack={navigateBack}
-      />
-    );
-  }
 
   if (initialVintageId) {
     return <VintageDetailsView vintageId={initialVintageId} onBack={navigateBack} onWineClick={handleWineClick} />;

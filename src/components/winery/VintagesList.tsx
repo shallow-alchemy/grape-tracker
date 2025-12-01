@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { FiPlus } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { useVintages, useWines, useMeasurements, useTasks } from '../vineyard-hooks';
 import { CreateTaskModal } from './CreateTaskModal';
 import { WarningBadge } from '../WarningBadge';
+import { ActionLink } from '../ActionLink';
 import styles from '../../App.module.css';
 
 const formatWineStatus = (status: string): string => {
@@ -94,7 +96,13 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
   const [featuredVintage, ...olderVintages] = vintages;
 
   return (
-    <div className={styles.vintagesContainer}>
+    <>
+      {successMessage && (
+        <div className={styles.successMessage}>
+          {successMessage}
+        </div>
+      )}
+      <div className={styles.vintagesContainer}>
       {featuredVintage && (
         <div
           className={styles.featuredVintageCard}
@@ -191,16 +199,15 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                     return count;
                   })()})
                 </div>
-                <button
-                  type="button"
+                <ActionLink
+                  className={styles.addButton}
                   onClick={(e) => {
                     e.stopPropagation();
                     onCreateWine(featuredVintage.id);
                   }}
-                  className={styles.createNewButton}
                 >
-                  Create new →
-                </button>
+                  Add <FiPlus />
+                </ActionLink>
               </div>
 
               {(() => {
@@ -298,17 +305,16 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
                       <div className={styles.featuredMetricLabel}>
                         TASKS ({vintageTasks.filter((t: any) => !t.completed_at).length})
                       </div>
-                      <button
-                        type="button"
+                      <ActionLink
+                        className={styles.addButton}
                         onClick={(e) => {
                           e.stopPropagation();
                           setTaskModalVintageId(featuredVintage.id);
                           setShowCreateTaskModal(true);
                         }}
-                        className={styles.createNewButton}
                       >
-                        Add task →
-                      </button>
+                        Add <FiPlus />
+                      </ActionLink>
                     </div>
                   <div className={styles.tasksList}>
                     {vintageTasks.map((task: any) => {
@@ -443,12 +449,7 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
           ))}
         </>
       )}
-
-      {successMessage && (
-        <div className={styles.successMessage}>
-          {successMessage}
-        </div>
-      )}
+      </div>
 
       {taskModalVintageId && (
         <CreateTaskModal
@@ -466,6 +467,6 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
           currentStage={vintages.find(v => v.id === taskModalVintageId)?.current_stage || ''}
         />
       )}
-    </div>
+    </>
   );
 };

@@ -109,15 +109,6 @@ rs.mock('./WineDetailsView', () => ({
   ),
 }));
 
-rs.mock('./TaskListView', () => ({
-  TaskListView: ({ entityType, entityId: _entityId, entityName, onBack }: any) => (
-    <div data-testid="task-list">
-      <div>Task List: {entityType} - {entityName}</div>
-      <button onClick={onBack}>Back</button>
-    </div>
-  ),
-}));
-
 describe('WineryView', () => {
   beforeEach(() => {
     rs.clearAllMocks();
@@ -329,40 +320,6 @@ describe('WineryView', () => {
       render(<WineryView initialWineId="wine-456" />);
       expect(screen.getByTestId('wine-details')).toBeInTheDocument();
       expect(screen.getByText('Wine Details: wine-456')).toBeInTheDocument();
-    });
-
-    test('renders task list for vintage when initialVintageTasksId provided', () => {
-      mockVintagesData.push({
-        id: 'vintage-tasks-123',
-        variety: 'Cabernet',
-        vintage_year: 2024,
-        current_stage: 'fermentation',
-        grape_source: 'own_vineyard',
-      });
-      render(<WineryView initialVintageTasksId="vintage-tasks-123" />);
-      expect(screen.getByTestId('task-list')).toBeInTheDocument();
-      expect(screen.getByText(/Task List: vintage/)).toBeInTheDocument();
-    });
-
-    test('renders task list for wine when initialWineTasksId provided', () => {
-      mockWinesData.push({
-        id: 'wine-tasks-456',
-        name: 'Reserve',
-        current_stage: 'aging',
-      });
-      render(<WineryView initialWineTasksId="wine-tasks-456" />);
-      expect(screen.getByTestId('task-list')).toBeInTheDocument();
-      expect(screen.getByText(/Task List: wine/)).toBeInTheDocument();
-    });
-
-    test('shows error when vintage not found for tasks', () => {
-      render(<WineryView initialVintageTasksId="non-existent" />);
-      expect(screen.getByText('VINTAGE NOT FOUND')).toBeInTheDocument();
-    });
-
-    test('shows error when wine not found for tasks', () => {
-      render(<WineryView initialWineTasksId="non-existent" />);
-      expect(screen.getByText('WINE NOT FOUND')).toBeInTheDocument();
     });
   });
 

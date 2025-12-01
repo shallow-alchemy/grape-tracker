@@ -41,16 +41,10 @@ export const App = () => {
           {(params) => <VineyardView initialBlockId={params?.id} />}
         </Route>
         <Route path="/vineyard">{() => <VineyardView />}</Route>
-        <Route path="/winery/vintages/:id/tasks">
-          {(params) => <WineryView initialVintageTasksId={params?.id} />}
-        </Route>
         <Route path="/winery/vintages/:id">
           {(params) => <WineryView initialVintageId={params?.id} />}
         </Route>
         <Route path="/winery/vintages">{() => <WineryView />}</Route>
-        <Route path="/winery/wines/:id/tasks">
-          {(params) => <WineryView initialWineTasksId={params?.id} />}
-        </Route>
         <Route path="/winery/wines/:id">
           {(params) => <WineryView initialWineId={params?.id} />}
         </Route>

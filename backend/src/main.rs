@@ -235,12 +235,18 @@ struct MetricAssessment {
     analysis: String,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+struct Recommendation {
+    title: String,
+    description: String,
+}
+
 #[derive(Serialize, Clone)]
 struct MeasurementGuidanceResponse {
     summary: String,
     metrics: Vec<MetricAssessment>,
     projections: Option<String>,
-    recommendations: Vec<String>,
+    recommendations: Vec<Recommendation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     from_cache: Option<bool>,
 }
@@ -1792,8 +1798,10 @@ Respond with JSON in this exact format:
   ],
   "projections": "How these measurements suggest the wine will develop (flavor, structure, etc.)",
   "recommendations": [
-    "Specific actionable recommendation 1",
-    "Specific actionable recommendation 2"
+    {{
+      "title": "Short 3-6 word action title",
+      "description": "Detailed explanation of what to do and why"
+    }}
   ]
 }}
 
@@ -1946,7 +1954,11 @@ fn parse_measurement_guidance_response(text: &str) -> MeasurementGuidanceRespons
                 .and_then(|r| r.as_array())
                 .map(|arr| {
                     arr.iter()
-                        .filter_map(|r| r.as_str().map(|s| s.to_string()))
+                        .filter_map(|r| {
+                            let title = r.get("title")?.as_str()?.to_string();
+                            let description = r.get("description")?.as_str()?.to_string();
+                            Some(Recommendation { title, description })
+                        })
                         .collect()
                 })
                 .unwrap_or_default();

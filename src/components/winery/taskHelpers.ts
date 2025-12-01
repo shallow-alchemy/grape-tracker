@@ -44,6 +44,15 @@ export const isOverdue = (dueDate: number, completedAt: number | null, skipped: 
   return dueDay < today;
 };
 
+export const isDueToday = (dueDate: number): boolean => {
+  if (!dueDate || dueDate < MIN_VALID_DATE) return false;
+
+  const today = new Date();
+  const dueDay = new Date(dueDate);
+
+  return dueDay.toDateString() === today.toDateString();
+};
+
 export const formatDueDate = (dueDate: number, prefix: string = 'Due'): string => {
   if (!dueDate || dueDate < MIN_VALID_DATE) {
     return 'No due date';

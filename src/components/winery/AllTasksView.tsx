@@ -3,7 +3,7 @@ import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { myTasks, myVintages, myWines, mySeasonalTasksByWeek } from '../../shared/queries';
-import { formatDueDate, isOverdue } from './taskHelpers';
+import { formatDueDate, isOverdue, isDueToday } from './taskHelpers';
 import { useZero } from '../../contexts/ZeroContext';
 import styles from '../../App.module.css';
 
@@ -93,37 +93,24 @@ export const AllTasksView = () => {
     }
   });
 
-  const groupedTasks = () => {
-    if (activeFilter !== 'active') {
-      return { ungrouped: [...filteredTasks].sort((a, b) => b.due_date - a.due_date) };
+  const getTaskSource = (task: any): string => {
+    if (task.entity_type === 'seasonal') {
+      return 'Seasonal';
+    } else if (task.entity_type === 'vintage') {
+      return getVintageName(task.entity_id);
+    } else {
+      return getWineName(task.entity_id);
     }
-
-    const vintageTasksMap: Record<string, any[]> = {};
-    const wineTasksMap: Record<string, any[]> = {};
-    const seasonalTasksList: any[] = [];
-
-    filteredTasks.forEach((task: any) => {
-      if (task.entity_type === 'seasonal') {
-        seasonalTasksList.push(task);
-      } else if (task.entity_type === 'vintage') {
-        const name = getVintageName(task.entity_id);
-        if (!vintageTasksMap[name]) vintageTasksMap[name] = [];
-        vintageTasksMap[name].push(task);
-      } else {
-        const name = getWineName(task.entity_id);
-        if (!wineTasksMap[name]) wineTasksMap[name] = [];
-        wineTasksMap[name].push(task);
-      }
-    });
-
-    Object.values(vintageTasksMap).forEach(tasks => tasks.sort((a, b) => a.due_date - b.due_date));
-    Object.values(wineTasksMap).forEach(tasks => tasks.sort((a, b) => a.due_date - b.due_date));
-    seasonalTasksList.sort((a, b) => a.priority - b.priority);
-
-    return { vintages: vintageTasksMap, wines: wineTasksMap, seasonal: seasonalTasksList };
   };
 
-  const groups = groupedTasks();
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    if (activeFilter === 'active') {
+      // Sort by due date ascending for active tasks
+      return a.due_date - b.due_date;
+    }
+    // Sort by due date descending for other tabs
+    return b.due_date - a.due_date;
+  });
 
   const counts = allQueriesSynced ? {
     active: filteredBySearch.filter((t: any) => !t.completed_at && !t.skipped).length,
@@ -142,8 +129,8 @@ export const AllTasksView = () => {
       return;
     }
     const route = task.entity_type === 'vintage'
-      ? `/winery/vintages/${task.entity_id}/tasks`
-      : `/winery/wines/${task.entity_id}/tasks`;
+      ? `/winery/vintages/${task.entity_id}`
+      : `/winery/wines/${task.entity_id}`;
     setLocation(route);
   };
 
@@ -168,6 +155,7 @@ export const AllTasksView = () => {
 
   const renderTaskCard = (task: any) => {
     const overdue = isOverdue(task.due_date, task.completed_at, task.skipped ? 1 : 0);
+    const dueToday = isDueToday(task.due_date);
     const completed = task.completed_at !== null && task.completed_at !== undefined;
     const skipped = task.skipped && !completed;
 
@@ -206,11 +194,14 @@ export const AllTasksView = () => {
               <div className={styles.allTaskCardDescription}>{task.description}</div>
             )}
             <div className={styles.allTaskCardMeta}>
-              <span className={overdue && !completed && !skipped ? styles.allTaskMetaOverdue : ''}>
+              <span className={styles.allTaskMetaSource}>{getTaskSource(task)}</span>
+              <span className={styles.allTaskMetaSeparator}>•</span>
+              <span className={
+                overdue && !completed && !skipped ? styles.allTaskMetaOverdue :
+                dueToday && !completed && !skipped ? styles.allTaskMetaDueToday : ''
+              }>
                 {formatDueDate(task.due_date)}
               </span>
-              <span className={styles.allTaskMetaSeparator}>•</span>
-              <span className={styles.allTaskMetaStage}>{task.stage?.replace(/_/g, ' ').toUpperCase()}</span>
             </div>
           </div>
         </div>
@@ -218,64 +209,6 @@ export const AllTasksView = () => {
     );
   };
 
-  const renderGroupedTasks = () => {
-    if ('ungrouped' in groups && groups.ungrouped) {
-      return groups.ungrouped.map(renderTaskCard);
-    }
-
-    const sections: React.ReactNode[] = [];
-
-    // Seasonal tasks section first
-    if (groups.seasonal && groups.seasonal.length > 0) {
-      sections.push(
-        <div key="seasonal" className={styles.allTaskGroup}>
-          <div className={styles.allTaskGroupHeader}>
-            <span className={styles.allTaskGroupType}>SEASONAL</span>
-            <span className={styles.allTaskGroupName}>This Week</span>
-          </div>
-          <div className={styles.allTaskGroupList}>
-            {groups.seasonal.map(renderTaskCard)}
-          </div>
-        </div>
-      );
-    }
-
-    if (groups.vintages && Object.keys(groups.vintages).length > 0) {
-      Object.entries(groups.vintages).forEach(([name, tasks]) => {
-        sections.push(
-          <div key={`vintage-${name}`} className={styles.allTaskGroup}>
-            <div className={styles.allTaskGroupHeader}>
-              <span className={styles.allTaskGroupType}>VINTAGE</span>
-              <span className={styles.allTaskGroupName}>{name}</span>
-            </div>
-            <div className={styles.allTaskGroupList}>
-              {tasks.map(renderTaskCard)}
-            </div>
-          </div>
-        );
-      });
-    }
-
-    if (groups.wines && Object.keys(groups.wines).length > 0) {
-      Object.entries(groups.wines).forEach(([name, tasks]) => {
-        sections.push(
-          <div key={`wine-${name}`} className={styles.allTaskGroup}>
-            <div className={styles.allTaskGroupHeader}>
-              <span className={styles.allTaskGroupType}>WINE</span>
-              <span className={styles.allTaskGroupName}>{name}</span>
-            </div>
-            <div className={styles.allTaskGroupList}>
-              {tasks.map(renderTaskCard)}
-            </div>
-          </div>
-        );
-      });
-    }
-
-    return sections.length > 0 ? sections : (
-      <div className={styles.tasksEmptyState}>No tasks found.</div>
-    );
-  };
 
   return (
     <div className={styles.vineyardContainer}>
@@ -326,7 +259,7 @@ export const AllTasksView = () => {
       <div className={styles.allTasksList}>
         {!allQueriesSynced ? (
           <div className={styles.tasksEmptyState}>Loading tasks...</div>
-        ) : filteredTasks.length > 0 ? renderGroupedTasks() : (
+        ) : sortedTasks.length > 0 ? sortedTasks.map(renderTaskCard) : (
           <div className={styles.tasksEmptyState}>
             {searchQuery ? 'No tasks found matching your search.' : `No ${activeFilter} tasks.`}
           </div>

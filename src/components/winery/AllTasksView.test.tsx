@@ -90,6 +90,13 @@ rs.mock('./taskHelpers', () => ({
     if (completedAt !== null || skipped === 1) return false;
     return dueDate < Date.now();
   },
+  isDueToday: (dueDate: number) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const taskDate = new Date(dueDate);
+    taskDate.setHours(0, 0, 0, 0);
+    return today.getTime() === taskDate.getTime();
+  },
 }));
 
 describe('AllTasksView', () => {
@@ -272,10 +279,10 @@ describe('AllTasksView', () => {
       const wineTask = screen.getByText('Upcoming Task');
       await user.click(wineTask);
 
-      expect(mockSetLocation).toHaveBeenCalledWith('/winery/wines/wine-2/tasks');
+      expect(mockSetLocation).toHaveBeenCalledWith('/winery/wines/wine-2');
     });
 
-    test('navigates to vintage task list when clicking vintage task', async () => {
+    test('navigates to vintage details when clicking vintage task', async () => {
       const user = userEvent.setup();
 
       render(<AllTasksView />);
@@ -283,7 +290,7 @@ describe('AllTasksView', () => {
       const vintageTask = screen.getByText('Overdue Task');
       await user.click(vintageTask);
 
-      expect(mockSetLocation).toHaveBeenCalledWith('/winery/vintages/vintage-1/tasks');
+      expect(mockSetLocation).toHaveBeenCalledWith('/winery/vintages/vintage-1');
     });
   });
 

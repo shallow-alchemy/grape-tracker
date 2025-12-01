@@ -10,7 +10,8 @@ type TaskCompletionModalProps = {
   onSuccess: (message: string) => void;
   taskId: string;
   taskName: string;
-  taskDescription: string;
+  taskDescription?: string;
+  taskNotes?: string;
   dueDate: number;
   currentlySkipped: boolean;
 };
@@ -22,11 +23,12 @@ export const TaskCompletionModal = ({
   taskId,
   taskName,
   taskDescription,
+  taskNotes,
   dueDate,
   currentlySkipped,
 }: TaskCompletionModalProps) => {
   const zero = useZero();
-  const [notes, setNotes] = useState('');
+  const [completionNotes, setCompletionNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -38,18 +40,23 @@ export const TaskCompletionModal = ({
 
     try {
       const now = Date.now();
+      // Append completion notes to existing notes
+      const updatedNotes = completionNotes.trim()
+        ? (taskNotes ? `${taskNotes}\n\n[${skip ? 'Skipped' : 'Completed'}] ${completionNotes.trim()}` : completionNotes.trim())
+        : taskNotes || '';
+
       await zero.mutate.task.update({
         id: taskId,
         completed_at: (skip ? null : now) as any,
         skipped: skip,
-        notes: notes.trim(),
+        notes: updatedNotes,
         updated_at: now,
       });
 
       const message = skip ? `Skipped: ${taskName}` : `Completed: ${taskName}`;
       onSuccess(message);
       onClose();
-      setNotes('');
+      setCompletionNotes('');
     } catch (error) {
       setFormError(`Failed to update task: ${error}`);
     } finally {
@@ -59,7 +66,7 @@ export const TaskCompletionModal = ({
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setNotes('');
+      setCompletionNotes('');
       setFormError(null);
       onClose();
     }
@@ -77,24 +84,37 @@ export const TaskCompletionModal = ({
           <div className={styles.taskCompletionName}>
             {taskName}
           </div>
-          {taskDescription && (
-            <div className={styles.taskCompletionDescription}>
-              {taskDescription}
-            </div>
-          )}
           <div className={overdue ? styles.taskCompletionDueDateOverdue : styles.taskCompletionDueDate}>
             Due: {formatDueDate(dueDate)}
           </div>
         </div>
 
+        {taskDescription && (
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>DESCRIPTION</label>
+            <div className={styles.taskModalScrollableText}>
+              {taskDescription}
+            </div>
+          </div>
+        )}
+
+        {taskNotes && (
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>NOTES</label>
+            <div className={styles.taskModalScrollableText}>
+              {taskNotes}
+            </div>
+          </div>
+        )}
+
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>NOTES (OPTIONAL)</label>
+          <label className={styles.formLabel}>ADD NOTE (OPTIONAL)</label>
           <textarea
             className={styles.formTextarea}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any notes about this task..."
-            rows={3}
+            value={completionNotes}
+            onChange={(e) => setCompletionNotes(e.target.value)}
+            placeholder="Add a note when completing..."
+            rows={2}
             disabled={isSubmitting}
           />
         </div>
