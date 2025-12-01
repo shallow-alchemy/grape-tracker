@@ -29,28 +29,33 @@ export const DeleteVintageConfirmModal = ({
 
   const zero = useZero();
 
-  const [winesData] = useQuery(myWinesByVintage(user?.id, vintage.id) as any) as any;
+  // Safe access - prevent crash if data not yet loaded
+  const [winesDataRaw] = useQuery(myWinesByVintage(user?.id, vintage.id) as any) as any;
+  const winesData = winesDataRaw || [];
 
-  const [stageHistoryData] = useQuery(
+  const [stageHistoryDataRaw] = useQuery(
     myStageHistoryByEntity(user?.id, 'vintage', vintage.id)
   ) as any;
+  const stageHistoryData = stageHistoryDataRaw || [];
 
-  const [measurementsData] = useQuery(
+  const [measurementsDataRaw] = useQuery(
     myMeasurementsByEntity(user?.id, 'vintage', vintage.id)
   ) as any;
+  const measurementsData = measurementsDataRaw || [];
 
-  const [tasksData] = useQuery(
+  const [tasksDataRaw] = useQuery(
     myTasksByEntity(user?.id, 'vintage', vintage.id)
   ) as any;
+  const tasksData = tasksDataRaw || [];
 
-  const [allWineTasksData] = useQuery(myTasksByEntity(user?.id, 'wine', winesData[0]?.id || 'none') as any) as any;
-  const wineTasksData = allWineTasksData.filter((t: any) => winesData.some((w: any) => w.id === t.entity_id));
+  const [allWineTasksDataRaw] = useQuery(myTasksByEntity(user?.id, 'wine', winesData[0]?.id || 'none') as any) as any;
+  const wineTasksData = (allWineTasksDataRaw || []).filter((t: any) => winesData.some((w: any) => w.id === t.entity_id));
 
-  const [allWineMeasurementsData] = useQuery(myMeasurementsByEntity(user?.id, 'wine', winesData[0]?.id || 'none') as any) as any;
-  const wineMeasurementsData = allWineMeasurementsData.filter((m: any) => winesData.some((w: any) => w.id === m.entity_id));
+  const [allWineMeasurementsDataRaw] = useQuery(myMeasurementsByEntity(user?.id, 'wine', winesData[0]?.id || 'none') as any) as any;
+  const wineMeasurementsData = (allWineMeasurementsDataRaw || []).filter((m: any) => winesData.some((w: any) => w.id === m.entity_id));
 
-  const [allWineStageHistoryData] = useQuery(myStageHistoryByEntity(user?.id, 'wine', winesData[0]?.id || 'none') as any) as any;
-  const wineStageHistoryData = allWineStageHistoryData.filter((s: any) => winesData.some((w: any) => w.id === s.entity_id));
+  const [allWineStageHistoryDataRaw] = useQuery(myStageHistoryByEntity(user?.id, 'wine', winesData[0]?.id || 'none') as any) as any;
+  const wineStageHistoryData = (allWineStageHistoryDataRaw || []).filter((s: any) => winesData.some((w: any) => w.id === s.entity_id));
 
   const handleDelete = async () => {
     setIsDeleting(true);

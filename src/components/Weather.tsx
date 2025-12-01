@@ -11,6 +11,10 @@ import { formatDueDate } from './winery/taskHelpers';
 import { SeasonalTaskCard } from './dashboard/SeasonalTaskCard';
 import styles from '../App.module.css';
 
+// Module-level cache - persists across component unmount/remount to prevent flash on navigation
+// See docs/engineering-principles.md "Zero Query Loading States" for pattern documentation
+let cachedTasksData: any[] | null = null;
+
 export const Weather = () => {
   const { user } = useUser();
   const zero = useZero();
@@ -26,7 +30,15 @@ export const Weather = () => {
 
   const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
 
-  const nextTask = tasksData
+  // Update module-level cache when we have real data
+  if (tasksData && tasksData.length > 0) {
+    cachedTasksData = tasksData;
+  }
+
+  // Use cached data if Zero is still syncing but we have previous data
+  const effectiveTasksData = tasksData && tasksData.length > 0 ? tasksData : cachedTasksData || [];
+
+  const nextTask = effectiveTasksData
     .filter((t: any) => !t.completed_at && !t.skipped)
     .sort((a: any, b: any) => a.due_date - b.due_date)
     .slice(0, 1);

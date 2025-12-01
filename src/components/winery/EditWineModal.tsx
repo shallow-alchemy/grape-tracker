@@ -19,7 +19,8 @@ export const EditWineModal = ({ isOpen, onClose, onSuccess, onDelete, wineId }: 
   const { user } = useUser();
   const zero = useZero();
   const [allWinesData] = useQuery(myWines(user?.id) as any) as any;
-  const wine = allWinesData.find((w: any) => w.id === wineId);
+  // Safe access - prevent crash if data not yet loaded
+  const wine = (allWinesData || []).find((w: any) => w.id === wineId);
 
   const [formData, setFormData] = useState({
     name: wine?.name || '',

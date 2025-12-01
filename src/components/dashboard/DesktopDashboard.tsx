@@ -6,6 +6,12 @@ import { formatDueDate } from '../winery/taskHelpers';
 import { formatStage } from '../winery/stages';
 import styles from '../../App.module.css';
 
+// Module-level caches - persist across component unmount/remount to prevent flash on navigation
+// See docs/engineering-principles.md "Zero Query Loading States" for pattern documentation
+let cachedVintagesData: any[] | null = null;
+let cachedMeasurementsData: any[] | null = null;
+let cachedTasksData: any[] | null = null;
+
 export const RecentActivity = () => {
   return (
     <div className={styles.desktopPanel}>
@@ -34,17 +40,29 @@ export const CurrentVintage = () => {
   const [vintagesData] = useQuery(myVintages(user?.id) as any) as any;
   const [measurementsData] = useQuery(myMeasurements(user?.id) as any) as any;
 
+  // Update module-level cache when we have real data
+  if (vintagesData && vintagesData.length > 0) {
+    cachedVintagesData = vintagesData;
+  }
+  if (measurementsData && measurementsData.length > 0) {
+    cachedMeasurementsData = measurementsData;
+  }
+
+  // Use cached data if Zero is still syncing but we have previous data
+  const effectiveVintagesData = vintagesData && vintagesData.length > 0 ? vintagesData : cachedVintagesData || [];
+  const effectiveMeasurementsData = measurementsData && measurementsData.length > 0 ? measurementsData : cachedMeasurementsData || [];
+
   const currentYear = new Date().getFullYear();
-  const currentYearVintages = (vintagesData || [])
+  const currentYearVintages = effectiveVintagesData
     .filter((v: any) => v.vintage_year === currentYear)
     .sort((a: any, b: any) => (b.harvest_date || 0) - (a.harvest_date || 0));
 
   const latestVintage = currentYearVintages.length > 0
     ? currentYearVintages[0]
-    : (vintagesData || []).sort((a: any, b: any) => b.vintage_year - a.vintage_year)[0];
+    : effectiveVintagesData.sort((a: any, b: any) => b.vintage_year - a.vintage_year)[0];
 
   const getHarvestMeasurement = (vintageId: string) => {
-    return (measurementsData || []).find(
+    return effectiveMeasurementsData.find(
       (m: any) => m.entity_type === 'vintage' && m.entity_id === vintageId && m.stage === 'harvest'
     );
   };
@@ -177,7 +195,15 @@ export const TaskListPanel = () => {
   const [, setLocation] = useLocation();
   const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
 
-  const upcomingTasks = tasksData
+  // Update module-level cache when we have real data
+  if (tasksData && tasksData.length > 0) {
+    cachedTasksData = tasksData;
+  }
+
+  // Use cached data if Zero is still syncing but we have previous data
+  const effectiveTasksData = tasksData && tasksData.length > 0 ? tasksData : cachedTasksData || [];
+
+  const upcomingTasks = effectiveTasksData
     .filter((t: any) => !t.completed_at && !t.skipped)
     .sort((a: any, b: any) => a.due_date - b.due_date)
     .slice(0, 4);

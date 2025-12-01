@@ -19,7 +19,8 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
   const zero = useZero();
   const [vintagesData] = useQuery(myVintages(user?.id) as any) as any;
 
-  const vintages = [...vintagesData].sort((a, b) => b.vintage_year - a.vintage_year);
+  // Safe access - prevent crash if data not yet loaded
+  const vintages = [...(vintagesData || [])].sort((a, b) => b.vintage_year - a.vintage_year);
 
   const [formData, setFormData] = useState({
     vintageId: initialVintageId || '',

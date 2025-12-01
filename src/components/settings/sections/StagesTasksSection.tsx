@@ -8,6 +8,10 @@ import { useZero } from '../../../contexts/ZeroContext';
 import styles from '../SettingsPage.module.css';
 import taskStyles from './StagesTasksSection.module.css';
 
+// Module-level cache - persists across component unmount/remount
+let cachedStagesData: Stage[] | null = null;
+let cachedTemplatesData: TaskTemplate[] | null = null;
+
 type StageApplicability = 'required' | 'optional' | 'hidden';
 
 type Stage = {
@@ -78,11 +82,24 @@ const generateId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().
 export const StagesTasksSection = () => {
   const { user } = useUser();
   const zero = useZero();
-  const [templatesData] = useQuery(taskTemplates(user?.id) as any) as any;
-  const [stagesData] = useQuery(allStages(user?.id) as any) as any;
+  const [templatesData, templatesStatus] = useQuery(taskTemplates(user?.id) as any) as any;
+  const [stagesData, stagesStatus] = useQuery(allStages(user?.id) as any) as any;
 
-  // Check if data has synced (undefined = still loading)
-  const isLoading = stagesData === undefined || templatesData === undefined;
+  // Update module-level cache when we have real data
+  if (stagesData?.length > 0) {
+    cachedStagesData = stagesData;
+  }
+  if (templatesData?.length > 0) {
+    cachedTemplatesData = templatesData;
+  }
+
+  // Use cached data if Zero is still syncing but we have previous data
+  const effectiveStagesData = stagesData?.length > 0 ? stagesData : cachedStagesData || stagesData;
+  const effectiveTemplatesData = templatesData?.length > 0 ? templatesData : cachedTemplatesData || templatesData;
+
+  // Only show loading on FIRST load - never show loading if we have cached data
+  const hasLoadedBefore = cachedStagesData !== null || cachedTemplatesData !== null;
+  const isLoading = !hasLoadedBefore && (stagesStatus?.type === 'unknown' || templatesStatus?.type === 'unknown');
 
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set(['crush']));
   const [filterWineType, setFilterWineType] = useState<WineType | 'all'>('all');
@@ -106,18 +123,18 @@ export const StagesTasksSection = () => {
   });
 
   const stages: Stage[] = useMemo(() => {
-    return (stagesData || [])
+    return (effectiveStagesData || [])
       .filter((s: Stage) => s.entity_type === 'wine')
       .filter((s: Stage) => showArchived || !s.is_archived)
       .sort((a: Stage, b: Stage) => a.sort_order - b.sort_order);
-  }, [stagesData, showArchived]);
+  }, [effectiveStagesData, showArchived]);
 
   const templates: TaskTemplate[] = useMemo(() => {
-    return (templatesData || [])
+    return (effectiveTemplatesData || [])
       .filter((t: TaskTemplate) => t.entity_type === 'wine')
       .filter((t: TaskTemplate) => showArchived || !t.is_archived)
       .sort((a: TaskTemplate, b: TaskTemplate) => a.sort_order - b.sort_order);
-  }, [templatesData, showArchived]);
+  }, [effectiveTemplatesData, showArchived]);
 
   const templatesByStage = useMemo(() => {
     const grouped = new Map<string, TaskTemplate[]>();
@@ -223,7 +240,7 @@ export const StagesTasksSection = () => {
     setIsUpdating('reset');
     try {
       // Unarchive all default stages
-      for (const stage of stagesData || []) {
+      for (const stage of effectiveStagesData || []) {
         if (stage.is_default && stage.is_archived) {
           await zero.mutate.stage.update({
             id: stage.id,
@@ -337,7 +354,7 @@ export const StagesTasksSection = () => {
 
   const stagesToShow = getStagesForFilter();
 
-  // Show loading state while Zero syncs data
+  // Show loading state when data hasn't loaded yet
   if (isLoading) {
     return (
       <div className={styles.sectionContent}>

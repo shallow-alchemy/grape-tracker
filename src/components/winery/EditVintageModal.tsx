@@ -40,7 +40,8 @@ export const EditVintageModal = ({
   const [allMeasurementsData] = useQuery(
     myMeasurementsByEntity(user?.id, 'vintage', vintage.id)
   ) as any;
-  const measurementsData = allMeasurementsData.filter((m: any) => m.stage === 'harvest');
+  // Safe access - prevent crash if data not yet loaded
+  const measurementsData = (allMeasurementsData || []).filter((m: any) => m.stage === 'harvest');
   const harvestMeasurement = measurementsData[0];
 
   const formatDateForInput = (timestamp: number): string => {

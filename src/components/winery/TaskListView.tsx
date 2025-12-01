@@ -9,6 +9,10 @@ import { formatDueDate, isOverdue } from './taskHelpers';
 import type { EntityType } from './stages';
 import styles from '../../App.module.css';
 
+// Module-level cache keyed by entityId - persists across component unmount/remount to prevent flash
+// See docs/engineering-principles.md "Zero Query Loading States" for pattern documentation
+const cachedTasksByEntity: Map<string, any[]> = new Map();
+
 type TaskListViewProps = {
   entityType: EntityType;
   entityId: string;
@@ -31,6 +35,15 @@ export const TaskListView = ({
     myTasksByEntity(user?.id, entityType, entityId)
   ) as any;
 
+  // Update module-level cache when we have real data
+  if (tasksData && tasksData.length > 0) {
+    cachedTasksByEntity.set(entityId, tasksData);
+  }
+
+  // Use cached data if Zero is still syncing but we have previous data
+  const cached = cachedTasksByEntity.get(entityId);
+  const effectiveTasksData = tasksData && tasksData.length > 0 ? tasksData : cached || [];
+
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -40,19 +53,19 @@ export const TaskListView = ({
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
-  const overdueTasks = tasksData.filter((t: any) =>
+  const overdueTasks = effectiveTasksData.filter((t: any) =>
     isOverdue(t.due_date, t.completed_at, t.skipped ? 1 : 0)
   );
 
-  const upcomingTasks = tasksData.filter((t: any) =>
+  const upcomingTasks = effectiveTasksData.filter((t: any) =>
     !t.completed_at && !t.skipped && t.due_date >= Date.now()
   );
 
-  const completedTasks = tasksData.filter((t: any) =>
+  const completedTasks = effectiveTasksData.filter((t: any) =>
     t.completed_at !== null && t.completed_at !== undefined
   );
 
-  const skippedTasks = tasksData.filter((t: any) =>
+  const skippedTasks = effectiveTasksData.filter((t: any) =>
     t.skipped && !t.completed_at
   );
 
@@ -177,7 +190,7 @@ export const TaskListView = ({
         </div>
       )}
 
-      {tasksData.length === 0 && (
+      {effectiveTasksData.length === 0 && (
         <div className={styles.detailSection}>
           <div className={styles.tasksEmptyState}>
             No tasks yet. Create one or advance the stage to generate tasks automatically.

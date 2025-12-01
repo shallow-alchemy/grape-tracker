@@ -25,22 +25,26 @@ export const DeleteWineConfirmModal = ({
 
   const zero = useZero();
   const [allWinesData] = useQuery(myWines(user?.id) as any) as any;
-  const wine = allWinesData.find((w: any) => w.id === wineId);
+  // Safe access - prevent crash if data not yet loaded
+  const wine = (allWinesData || []).find((w: any) => w.id === wineId);
 
   const [allVintagesData] = useQuery(myVintages(user?.id) as any) as any;
-  const vintage = allVintagesData.find((v: any) => v.id === wine?.vintage_id);
+  const vintage = (allVintagesData || []).find((v: any) => v.id === wine?.vintage_id);
 
-  const [stageHistoryData] = useQuery(
+  const [stageHistoryDataRaw] = useQuery(
     myStageHistoryByEntity(user?.id, 'wine', wineId)
   ) as any;
+  const stageHistoryData = stageHistoryDataRaw || [];
 
-  const [measurementsData] = useQuery(
+  const [measurementsDataRaw] = useQuery(
     myMeasurementsByEntity(user?.id, 'wine', wineId)
   ) as any;
+  const measurementsData = measurementsDataRaw || [];
 
-  const [tasksData] = useQuery(
+  const [tasksDataRaw] = useQuery(
     myTasksByEntity(user?.id, 'wine', wineId)
   ) as any;
+  const tasksData = tasksDataRaw || [];
 
   const handleDelete = async () => {
     if (!wine) return;

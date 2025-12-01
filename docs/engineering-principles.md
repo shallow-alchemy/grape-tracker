@@ -360,6 +360,120 @@ const vineUrl = `${origin}/vineyard/vine/${vine.id}`;
 const vineUrl = `${origin}/vineyard/vine/${vine.id}`;
 ```
 
+### Zero Query Loading States
+
+#### The Problem: Flash on Navigation
+
+Zero's `useQuery` hook returns data from local cache immediately, then syncs with the server. This creates a sequence:
+
+1. **Component mounts** → Zero returns `[]` (empty array from cache)
+2. **Server sync completes** → Zero returns `[...actualData]`
+
+If you show a loading UI when data is empty, users see a brief "Loading..." flash every time they navigate to a page - even when data has already been loaded before.
+
+#### The Solution: Module-Level Cache + Query Status
+
+```tsx
+// Module-level cache - persists across component unmount/remount
+let cachedData: Item[] | null = null;
+
+export const MyComponent = () => {
+  // Zero returns [data, status] tuple
+  const [data, status] = useQuery(myQuery(user?.id));
+
+  // Update cache when real data arrives
+  if (data?.length > 0) {
+    cachedData = data;
+  }
+
+  // Use cached data while Zero is syncing
+  const effectiveData = data?.length > 0 ? data : cachedData || data;
+
+  // Only show loading on FIRST load - never if we have cached data
+  const hasLoadedBefore = cachedData !== null;
+  const isLoading = !hasLoadedBefore && status?.type === 'unknown';
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  // Use effectiveData for rendering
+  return <Content data={effectiveData} />;
+};
+```
+
+#### Key Concepts
+
+**1. Zero Query Status Types:**
+- `type: 'unknown'` - Query is still syncing with server
+- `type: 'complete'` - Query has finished syncing
+- `type: 'error'` - Query encountered an error
+
+**2. Module-Level Cache:**
+- Persists across component unmount/remount (unlike refs or state)
+- Survives navigation away and back
+- Provides instant data on subsequent visits
+
+**3. Loading State Rules:**
+- **FIRST load**: Show loading UI while `status.type === 'unknown'` AND no cached data
+- **Subsequent loads**: NEVER show loading - use cached data, update when fresh data arrives
+
+#### Common Mistakes
+
+```tsx
+// ❌ BAD: Checking for undefined (Zero never returns undefined)
+const isLoading = data === undefined;
+
+// ❌ BAD: Checking for empty array (Zero returns [] from cache immediately)
+const isLoading = data.length === 0;
+
+// ❌ BAD: Always showing loading when syncing (causes flash on re-navigation)
+const isLoading = status?.type === 'unknown';
+
+// ✅ GOOD: Only loading on first load, use cache otherwise
+const hasLoadedBefore = cachedData !== null;
+const isLoading = !hasLoadedBefore && status?.type === 'unknown';
+```
+
+#### Multiple Queries Pattern
+
+When a component has multiple queries, cache each one and check all statuses:
+
+```tsx
+let cachedStagesData: Stage[] | null = null;
+let cachedTemplatesData: Template[] | null = null;
+
+export const MyComponent = () => {
+  const [stagesData, stagesStatus] = useQuery(stagesQuery(user?.id));
+  const [templatesData, templatesStatus] = useQuery(templatesQuery(user?.id));
+
+  // Update caches
+  if (stagesData?.length > 0) cachedStagesData = stagesData;
+  if (templatesData?.length > 0) cachedTemplatesData = templatesData;
+
+  // Use effective data
+  const effectiveStages = stagesData?.length > 0 ? stagesData : cachedStagesData || stagesData;
+  const effectiveTemplates = templatesData?.length > 0 ? templatesData : cachedTemplatesData || templatesData;
+
+  // Only loading on first load of EITHER query
+  const hasLoadedBefore = cachedStagesData !== null || cachedTemplatesData !== null;
+  const isLoading = !hasLoadedBefore &&
+    (stagesStatus?.type === 'unknown' || templatesStatus?.type === 'unknown');
+
+  // ...
+};
+```
+
+#### When to Show Loading
+
+| Scenario | Show Loading? |
+|----------|---------------|
+| First visit, Zero syncing | ✅ Yes |
+| First visit, Zero complete | ❌ No (show data) |
+| Return visit, Zero syncing | ❌ No (show cached) |
+| Return visit, Zero complete | ❌ No (show fresh data) |
+| Data genuinely empty (no records) | ❌ No (show empty state) |
+
 ### React Hooks Rules
 
 #### Hook Call Order
