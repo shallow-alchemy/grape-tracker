@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
@@ -9,6 +9,7 @@ import { Alerts } from './Alerts';
 import { WeatherAlertSettingsModal } from './weather/WeatherAlertSettingsModal';
 import { formatDueDate } from './winery/taskHelpers';
 import { SeasonalTaskCard } from './dashboard/SeasonalTaskCard';
+import { ActionLink } from './ActionLink';
 import styles from '../App.module.css';
 
 // Module-level cache - persists across component unmount/remount to prevent flash on navigation
@@ -27,6 +28,9 @@ export const Weather = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+  const [removedTaskId, setRemovedTaskId] = useState<string | null>(null);
+  const taskTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
 
@@ -39,9 +43,32 @@ export const Weather = () => {
   const effectiveTasksData = tasksData && tasksData.length > 0 ? tasksData : cachedTasksData || [];
 
   const nextTask = effectiveTasksData
-    .filter((t: any) => !t.completed_at && !t.skipped)
+    .filter((t: any) => !t.completed_at && !t.skipped && t.id !== removedTaskId)
     .sort((a: any, b: any) => a.due_date - b.due_date)
     .slice(0, 1);
+
+  const startTaskCompletion = useCallback((taskId: string) => {
+    setPendingTaskId(taskId);
+    if (taskTimeoutRef.current) {
+      clearTimeout(taskTimeoutRef.current);
+    }
+    taskTimeoutRef.current = setTimeout(async () => {
+      await zero.mutate.task.update({
+        id: taskId,
+        completed_at: Date.now(),
+      });
+      setRemovedTaskId(taskId);
+      setPendingTaskId(null);
+    }, 2000);
+  }, [zero]);
+
+  const undoTaskCompletion = useCallback(() => {
+    setPendingTaskId(null);
+    if (taskTimeoutRef.current) {
+      clearTimeout(taskTimeoutRef.current);
+      taskTimeoutRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('showHighTemps', JSON.stringify(showHighTemps));
@@ -135,36 +162,41 @@ export const Weather = () => {
         <div className={styles.whatsNextSplit}>
           <div className={styles.whatsNextTask}>
             {nextTask.length > 0 ? (
-              <div className={styles.seasonalTaskMain}>
-                <div
-                  className={styles.seasonalTaskName}
-                  onClick={() => {
-                    const task = nextTask[0];
-                    const route = task.entity_type === 'vintage'
-                      ? `/winery/vintages/${task.entity_id}/tasks`
-                      : `/winery/wines/${task.entity_id}/tasks`;
-                    setLocation(route);
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {nextTask[0].name.toUpperCase()}
+              <div className={`${styles.seasonalTaskMain} ${pendingTaskId === nextTask[0].id ? styles.taskItemPending : ''}`}>
+                <div className={styles.seasonalTaskNameRow}>
+                  <div
+                    className={`${styles.seasonalTaskName} ${pendingTaskId === nextTask[0].id ? styles.taskTextPending : ''}`}
+                    onClick={() => {
+                      const task = nextTask[0];
+                      const route = task.entity_type === 'vintage'
+                        ? `/winery/vintages/${task.entity_id}/tasks`
+                        : `/winery/wines/${task.entity_id}/tasks`;
+                      setLocation(route);
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {nextTask[0].name.toUpperCase()}
+                  </div>
+                  {pendingTaskId === nextTask[0].id ? (
+                    <ActionLink
+                      className={styles.seasonalTaskMoreLink}
+                      onClick={undoTaskCompletion}
+                    >
+                      Undo
+                    </ActionLink>
+                  ) : (
+                    <ActionLink
+                      className={styles.seasonalTaskMoreLink}
+                      onClick={() => startTaskCompletion(nextTask[0].id)}
+                    >
+                      →
+                    </ActionLink>
+                  )}
                 </div>
-                <div className={styles.seasonalTaskTiming}>{formatDueDate(nextTask[0].due_date)}</div>
+                <div className={`${styles.seasonalTaskTiming} ${pendingTaskId === nextTask[0].id ? styles.taskTextPending : ''}`}>{formatDueDate(nextTask[0].due_date)}</div>
                 {nextTask[0].description && (
-                  <div className={styles.seasonalTaskDetails}>{nextTask[0].description}</div>
+                  <div className={`${styles.seasonalTaskDetails} ${pendingTaskId === nextTask[0].id ? styles.taskTextPending : ''}`}>{nextTask[0].description}</div>
                 )}
-                <button
-                  type="button"
-                  className={styles.seasonalTaskMoreLink}
-                  onClick={async () => {
-                    await zero.mutate.task.update({
-                      id: nextTask[0].id,
-                      completed_at: Date.now(),
-                    });
-                  }}
-                >
-                  Mark complete →
-                </button>
               </div>
             ) : (
               <div className={styles.seasonalTaskMain}>

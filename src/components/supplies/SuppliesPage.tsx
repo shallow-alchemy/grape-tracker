@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
-import { Link } from 'wouter';
-import { FiChevronLeft, FiCheck, FiPackage } from 'react-icons/fi';
+import { useLocation } from 'wouter';
+import { FiCheck } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { myTasks, myVintages, myWines, mySupplyInstances, supplyTemplates } from '../../shared/queries';
 import { formatStage } from '../winery/stages';
 import { formatDueDate } from '../winery/taskHelpers';
-import styles from './SuppliesPage.module.css';
+import styles from '../../App.module.css';
 
 type FilterType = 'all' | 'needed' | 'acquired';
 
@@ -22,6 +22,7 @@ type SupplyWithContext = {
 export const SuppliesPage = () => {
   const { user } = useUser();
   const zero = useZero();
+  const [, setLocation] = useLocation();
   const [filter, setFilter] = useState<FilterType>('all');
 
   // Query all relevant data
@@ -133,7 +134,8 @@ export const SuppliesPage = () => {
     return sortedGroups;
   }, [filteredSupplies]);
 
-  const toggleVerified = async (instance: any) => {
+  const toggleVerified = async (e: React.MouseEvent, instance: any) => {
+    e.stopPropagation();
     const now = Date.now();
     await zero.mutate.supply_instance.update({
       id: instance.id,
@@ -154,95 +156,94 @@ export const SuppliesPage = () => {
   const acquiredCount = suppliesWithContext.filter(s => s.instance.verified_at).length;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <Link href="/" className={styles.backLink}>
-          <FiChevronLeft /> Back
-        </Link>
-        <h1 className={styles.title}>
-          <FiPackage className={styles.titleIcon} />
-          SUPPLIES
-        </h1>
+    <div className={styles.vineyardContainer}>
+      <div className={styles.vineyardHeader}>
+        <button className={styles.backButton} onClick={() => setLocation('/')}>
+          ← BACK TO DASHBOARD
+        </button>
+        <div className={styles.vineyardTitle}>SUPPLIES</div>
       </div>
 
-      <div className={styles.filters}>
+      <div className={styles.allTaskFilters}>
         <button
-          className={`${styles.filterButton} ${filter === 'all' ? styles.active : ''}`}
+          className={`${styles.allTaskFilterTab} ${filter === 'all' ? styles.allTaskFilterTabActive : ''}`}
           onClick={() => setFilter('all')}
         >
-          All ({suppliesWithContext.length})
+          ALL ({suppliesWithContext.length})
         </button>
         <button
-          className={`${styles.filterButton} ${filter === 'needed' ? styles.active : ''}`}
+          className={`${styles.allTaskFilterTab} ${filter === 'needed' ? styles.allTaskFilterTabActive : ''}`}
           onClick={() => setFilter('needed')}
         >
-          Needed ({neededCount})
+          NEEDED ({neededCount})
         </button>
         <button
-          className={`${styles.filterButton} ${filter === 'acquired' ? styles.active : ''}`}
+          className={`${styles.allTaskFilterTab} ${filter === 'acquired' ? styles.allTaskFilterTabActive : ''}`}
           onClick={() => setFilter('acquired')}
         >
-          Acquired ({acquiredCount})
+          ACQUIRED ({acquiredCount})
         </button>
       </div>
 
-      <div className={styles.content}>
+      <div className={styles.allTasksList}>
         {groupedSupplies.length === 0 ? (
-          <div className={styles.emptyState}>
-            <FiPackage className={styles.emptyIcon} />
-            <p>No supplies needed</p>
-            <p className={styles.emptySubtext}>
-              Supplies will appear here when you have upcoming tasks
-            </p>
+          <div className={styles.tasksEmptyState}>
+            {filter === 'all'
+              ? 'No supplies needed. Supplies will appear when you have upcoming tasks.'
+              : filter === 'needed'
+              ? 'All supplies acquired!'
+              : 'No supplies acquired yet.'}
           </div>
         ) : (
           groupedSupplies.map((group) => (
-            <div key={`${group.entityType}-${group.entity.id}`} className={styles.entityGroup}>
-              <div className={styles.entityHeader}>
-                <span className={styles.entityName}>
+            <div key={`${group.entityType}-${group.entity.id}`} className={styles.allTaskGroup}>
+              <div className={styles.allTaskGroupHeader}>
+                <span className={styles.allTaskGroupType}>{group.entityType.toUpperCase()}</span>
+                <span className={styles.allTaskGroupName}>
                   {getEntityName(group.entity, group.entityType)}
                 </span>
-                <span className={styles.entityType}>
-                  {group.entityType.toUpperCase()}
-                </span>
               </div>
-
-              {Array.from(group.stages.entries()).map(([stage, supplies]) => (
-                <div key={stage} className={styles.stageGroup}>
-                  <div className={styles.stageHeader}>
-                    {formatStage(stage)}
-                  </div>
-
-                  <div className={styles.supplyList}>
+              <div className={styles.allTaskGroupList}>
+                {Array.from(group.stages.entries()).map(([stage, supplies]) => (
+                  <div key={stage}>
+                    <div className={styles.supplyStageHeader}>
+                      {formatStage(stage)}
+                    </div>
                     {supplies
                       .sort((a, b) => a.task.due_date - b.task.due_date)
                       .map((supply) => (
                         <div
                           key={supply.instance.id}
-                          className={`${styles.supplyItem} ${supply.instance.verified_at ? styles.verified : ''}`}
-                          onClick={() => toggleVerified(supply.instance)}
+                          className={`${styles.allTaskCard} ${supply.instance.verified_at ? styles.allTaskCardDone : ''}`}
+                          onClick={(e) => toggleVerified(e, supply.instance)}
                         >
-                          <div className={styles.checkbox}>
-                            {supply.instance.verified_at && <FiCheck />}
+                          <div className={styles.allTaskCardMain}>
+                            <div className={`${styles.supplyCheckbox} ${supply.instance.verified_at ? styles.checked : ''}`}>
+                              {supply.instance.verified_at && <FiCheck />}
+                            </div>
+                            <div className={styles.allTaskCardContent}>
+                              <div className={styles.allTaskCardHeader}>
+                                <span className={`${styles.allTaskCardName} ${supply.instance.verified_at ? styles.allTaskCardNameDone : ''}`}>
+                                  {supply.template.name}
+                                </span>
+                                {supply.instance.calculated_quantity > 1 && (
+                                  <span className={styles.supplyQuantityBadge}>
+                                    x{supply.instance.calculated_quantity}
+                                  </span>
+                                )}
+                              </div>
+                              <div className={styles.allTaskCardMeta}>
+                                <span>{supply.task.name}</span>
+                                <span className={styles.allTaskMetaSeparator}>•</span>
+                                <span>{formatDueDate(supply.task.due_date)}</span>
+                              </div>
+                            </div>
                           </div>
-                          <div className={styles.supplyInfo}>
-                            <span className={styles.supplyName}>
-                              {supply.template.name}
-                            </span>
-                            <span className={styles.supplyMeta}>
-                              {supply.task.name} - {formatDueDate(supply.task.due_date)}
-                            </span>
-                          </div>
-                          {supply.instance.calculated_quantity > 1 && (
-                            <span className={styles.quantity}>
-                              x{supply.instance.calculated_quantity}
-                            </span>
-                          )}
                         </div>
                       ))}
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ))
         )}

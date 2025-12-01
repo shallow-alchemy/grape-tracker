@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { getBackendUrl } from '../../config';
 import { useVineyard } from '../vineyard-hooks';
 import { useZero } from '../../contexts/ZeroContext';
 import { mySeasonalTasksByWeek } from '../../shared/queries';
+import { ActionLink } from '../ActionLink';
 import styles from '../../App.module.css';
 
 // Get Monday of the current week (timestamp in milliseconds)
@@ -32,6 +33,9 @@ export const SeasonalTaskCard = ({ inline = false, headerOnly = false }: Seasona
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fetchAttemptedRef = useRef(false);
+  const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+  const [removedTaskId, setRemovedTaskId] = useState<string | null>(null);
+  const taskTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const containerClass = inline ? styles.seasonalTaskInline : styles.seasonalTaskCard;
 
@@ -82,11 +86,35 @@ export const SeasonalTaskCard = ({ inline = false, headerOnly = false }: Seasona
     }
   }, [vineyard, user?.id, zeroSynced, hasNoTasks, isLoading]);
 
+  const startTaskCompletion = useCallback((taskId: string) => {
+    setPendingTaskId(taskId);
+    if (taskTimeoutRef.current) {
+      clearTimeout(taskTimeoutRef.current);
+    }
+    taskTimeoutRef.current = setTimeout(async () => {
+      await zero.mutate.seasonal_task.update({
+        id: taskId,
+        completed_at: Date.now(),
+        updated_at: Date.now(),
+      });
+      setRemovedTaskId(taskId);
+      setPendingTaskId(null);
+    }, 2000);
+  }, [zero]);
+
+  const undoTaskCompletion = useCallback(() => {
+    setPendingTaskId(null);
+    if (taskTimeoutRef.current) {
+      clearTimeout(taskTimeoutRef.current);
+      taskTimeoutRef.current = null;
+    }
+  }, []);
+
   // Get season name for header
   const sortedTasks = [...tasks].sort((a: any, b: any) => a.priority - b.priority);
   const topTask = sortedTasks[0];
   const season = topTask?.season || 'Growing Season';
-  const incompleteTasks = sortedTasks.filter((t: any) => !t.completed_at);
+  const incompleteTasks = sortedTasks.filter((t: any) => !t.completed_at && t.id !== removedTaskId);
 
   // Header-only mode: just render the title
   if (headerOnly) {
@@ -129,28 +157,35 @@ export const SeasonalTaskCard = ({ inline = false, headerOnly = false }: Seasona
     );
   }
 
+  const currentTask = incompleteTasks[0];
+  const isPending = currentTask && pendingTaskId === currentTask.id;
+
   return (
     <div className={containerClass}>
       {incompleteTasks.length > 0 ? (
         <>
-          <div className={styles.seasonalTaskMain}>
-            <div className={styles.seasonalTaskName}>{incompleteTasks[0].task_name.toUpperCase()}</div>
-            <div className={styles.seasonalTaskTiming}>{incompleteTasks[0].timing}</div>
-            <div className={styles.seasonalTaskDetails}>{incompleteTasks[0].details}</div>
+          <div className={`${styles.seasonalTaskMain} ${isPending ? styles.taskItemPending : ''}`}>
+            <div className={styles.seasonalTaskNameRow}>
+              <div className={`${styles.seasonalTaskName} ${isPending ? styles.taskTextPending : ''}`}>{currentTask.task_name.toUpperCase()}</div>
+              {isPending ? (
+                <ActionLink
+                  className={styles.seasonalTaskMoreLink}
+                  onClick={undoTaskCompletion}
+                >
+                  Undo
+                </ActionLink>
+              ) : (
+                <ActionLink
+                  className={styles.seasonalTaskMoreLink}
+                  onClick={() => startTaskCompletion(currentTask.id)}
+                >
+                  →
+                </ActionLink>
+              )}
+            </div>
+            <div className={`${styles.seasonalTaskTiming} ${isPending ? styles.taskTextPending : ''}`}>{currentTask.timing}</div>
+            <div className={`${styles.seasonalTaskDetails} ${isPending ? styles.taskTextPending : ''}`}>{currentTask.details}</div>
           </div>
-          <button
-            type="button"
-            className={styles.seasonalTaskMoreLink}
-            onClick={async () => {
-              await zero.mutate.seasonal_task.update({
-                id: incompleteTasks[0].id,
-                completed_at: Date.now(),
-                updated_at: Date.now(),
-              });
-            }}
-          >
-            Mark complete →
-          </button>
         </>
       ) : (
         <div className={styles.seasonalTaskMain}>

@@ -44,7 +44,7 @@ export const isOverdue = (dueDate: number, completedAt: number | null, skipped: 
   return dueDay < today;
 };
 
-export const formatDueDate = (dueDate: number): string => {
+export const formatDueDate = (dueDate: number, prefix: string = 'Due'): string => {
   if (!dueDate || dueDate < MIN_VALID_DATE) {
     return 'No due date';
   }
@@ -66,11 +66,11 @@ export const formatDueDate = (dueDate: number): string => {
   }
 
   if (isToday) {
-    return 'Due today';
+    return `${prefix} today`;
   }
 
   if (isTomorrow) {
-    return 'Due tomorrow';
+    return `${prefix} tomorrow`;
   }
 
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });

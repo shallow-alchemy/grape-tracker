@@ -7,6 +7,7 @@ import { DashboardView } from './components/DashboardView';
 import { SyncStatusIndicator } from './components/SyncStatusIndicator';
 import { UserMenu } from './components/UserMenu';
 import { SettingsPage } from './components/settings/SettingsPage';
+import { SuppliesPage } from './components/supplies/SuppliesPage';
 import styles from './App.module.css';
 
 // App now uses the shared ZeroProvider from index.tsx
@@ -27,6 +28,7 @@ export const App = () => {
           </div>
         </header>
         <Route path="/" component={DashboardView} />
+        <Route path="/supplies" component={SuppliesPage} />
         <Route path="/tasks" component={AllTasksView} />
         <Route path="/settings/:section">
           {(params) => <SettingsPage section={params?.section} />}

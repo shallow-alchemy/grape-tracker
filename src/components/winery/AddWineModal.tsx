@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useZero } from '../../contexts/ZeroContext';
-import { myVintages } from '../../shared/queries';
+import { myVintages, taskTemplates, supplyTemplates } from '../../shared/queries';
 import { Modal } from '../Modal';
 import { getStagesForWineType, type WineType } from './stages';
+import { calculateDueDate } from './taskHelpers';
 import styles from '../../App.module.css';
 
 type AddWineModalProps = {
@@ -18,6 +19,8 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
   const { user } = useUser();
   const zero = useZero();
   const [vintagesData] = useQuery(myVintages(user?.id) as any) as any;
+  const [taskTemplatesData] = useQuery(taskTemplates(user?.id) as any) as any;
+  const [supplyTemplatesData] = useQuery(supplyTemplates(user?.id) as any) as any;
 
   // Safe access - prevent crash if data not yet loaded
   const vintages = [...(vintagesData || [])].sort((a, b) => b.vintage_year - a.vintage_year);
@@ -190,6 +193,62 @@ export const AddWineModal = ({ isOpen, onClose, onSuccess, initialVintageId }: A
         created_at: now,
         updated_at: now,
       });
+
+      // Create tasks for the initial stage
+      const allTemplates = taskTemplatesData || [];
+      const relevantTemplates = allTemplates.filter((template: any) => {
+        const stageMatch = template.stage === formData.currentStage;
+        const entityMatch = template.entity_type === 'wine';
+        const wineTypeMatch = !template.wine_type || template.wine_type === formData.wineType;
+        const enabled = !!template.default_enabled;
+        return stageMatch && entityMatch && wineTypeMatch && enabled;
+      });
+
+      const allSupplyTemplates = supplyTemplatesData || [];
+
+      for (const template of relevantTemplates) {
+        const dueDate = calculateDueDate(now, template.frequency, template.frequency_count);
+        const taskId = crypto.randomUUID();
+
+        await zero.mutate.task.insert({
+          id: taskId,
+          user_id: user!.id,
+          task_template_id: template.id,
+          entity_type: 'wine',
+          entity_id: wineId,
+          stage: formData.currentStage,
+          name: template.name,
+          description: template.description,
+          due_date: dueDate,
+          completed_at: null as any,
+          completed_by: '',
+          notes: '',
+          skipped: false,
+          created_at: now,
+          updated_at: now,
+        });
+
+        // Create supply instances for this task
+        const taskSupplyTemplates = allSupplyTemplates.filter(
+          (s: any) => s.task_template_id === template.id
+        );
+
+        for (const supplyTemplate of taskSupplyTemplates) {
+          await zero.mutate.supply_instance.insert({
+            id: crypto.randomUUID(),
+            user_id: user!.id,
+            supply_template_id: supplyTemplate.id,
+            task_id: taskId,
+            entity_type: 'wine',
+            entity_id: wineId,
+            calculated_quantity: supplyTemplate.quantity_fixed || 1,
+            verified_at: null,
+            verified_by: null,
+            created_at: now,
+            updated_at: now,
+          });
+        }
+      }
 
       const wineType = isBlend ? 'Blend' : 'Varietal';
       onSuccess(`${wineType} "${formData.name.trim().toUpperCase()}" created successfully`);

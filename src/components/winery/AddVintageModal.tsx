@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
+import { useQuery } from '@rocicorp/zero/react';
 import { Modal } from '../Modal';
 import { useZero } from '../../contexts/ZeroContext';
 import { useVineyard } from '../vineyard-hooks';
+import { taskTemplates, supplyTemplates } from '../../shared/queries';
+import { calculateDueDate } from './taskHelpers';
 import styles from '../../App.module.css';
 
 type AddVintageModalProps = {
@@ -23,6 +26,8 @@ export const AddVintageModal = ({
   const { user } = useUser();
   const zero = useZero();
   const vineyardData = useVineyard();
+  const [taskTemplatesData] = useQuery(taskTemplates(user?.id) as any) as any;
+  const [supplyTemplatesData] = useQuery(supplyTemplates(user?.id) as any) as any;
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
@@ -84,9 +89,10 @@ export const AddVintageModal = ({
             const now = Date.now();
             const varietySlug = variety.replace(/\s+/g, '-').toLowerCase();
             const supplierSlug = supplierName ? supplierName.replace(/\s+/g, '-').toLowerCase() : '';
+            const uniqueSuffix = crypto.randomUUID().slice(0, 8);
             const vintageId = grapeSource === 'purchased' && supplierSlug
-              ? `${vintageYear}-${varietySlug}-${supplierSlug}`
-              : `${vintageYear}-${varietySlug}`;
+              ? `${vintageYear}-${varietySlug}-${supplierSlug}-${uniqueSuffix}`
+              : `${vintageYear}-${varietySlug}-${uniqueSuffix}`;
 
             await zero.mutate.vintage.insert({
               id: vintageId,
@@ -139,6 +145,61 @@ export const AddVintageModal = ({
                 created_at: now,
                 updated_at: now,
               });
+            }
+
+            // Create tasks for the initial 'harvested' stage
+            const allTemplates = taskTemplatesData || [];
+            const relevantTemplates = allTemplates.filter((template: any) => {
+              const stageMatch = template.stage === 'harvested';
+              const entityMatch = template.entity_type === 'vintage';
+              const enabled = !!template.default_enabled;
+              return stageMatch && entityMatch && enabled;
+            });
+
+            const allSupplyTemplates = supplyTemplatesData || [];
+
+            for (const template of relevantTemplates) {
+              const dueDate = calculateDueDate(now, template.frequency, template.frequency_count);
+              const taskId = crypto.randomUUID();
+
+              await zero.mutate.task.insert({
+                id: taskId,
+                user_id: user!.id,
+                task_template_id: template.id,
+                entity_type: 'vintage',
+                entity_id: vintageId,
+                stage: 'harvested',
+                name: template.name,
+                description: template.description,
+                due_date: dueDate,
+                completed_at: null as any,
+                completed_by: '',
+                notes: '',
+                skipped: false,
+                created_at: now,
+                updated_at: now,
+              });
+
+              // Create supply instances for this task
+              const taskSupplyTemplates = allSupplyTemplates.filter(
+                (s: any) => s.task_template_id === template.id
+              );
+
+              for (const supplyTemplate of taskSupplyTemplates) {
+                await zero.mutate.supply_instance.insert({
+                  id: crypto.randomUUID(),
+                  user_id: user!.id,
+                  supply_template_id: supplyTemplate.id,
+                  task_id: taskId,
+                  entity_type: 'vintage',
+                  entity_id: vintageId,
+                  calculated_quantity: supplyTemplate.quantity_fixed || 1,
+                  verified_at: null,
+                  verified_by: null,
+                  created_at: now,
+                  updated_at: now,
+                });
+              }
             }
 
             onClose();

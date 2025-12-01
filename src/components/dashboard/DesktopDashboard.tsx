@@ -1,12 +1,13 @@
+import { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation, Link } from 'wouter';
-import { myTasks, myVintages, myMeasurements, supplyTemplates as supplyTemplatesQuery } from '../../shared/queries';
+import { myTasks, myVintages, myMeasurements, mySupplyInstances, supplyTemplates as supplyTemplatesQuery } from '../../shared/queries';
 import { formatDueDate } from '../winery/taskHelpers';
 import { formatStage } from '../winery/stages';
+import { useZero } from '../../contexts/ZeroContext';
+import { ActionLink } from '../ActionLink';
 import styles from '../../App.module.css';
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // Module-level caches - persist across component unmount/remount to prevent flash on navigation
 // See docs/engineering-principles.md "Zero Query Loading States" for pattern documentation
@@ -14,6 +15,7 @@ let cachedVintagesData: any[] | null = null;
 let cachedMeasurementsData: any[] | null = null;
 let cachedTasksData: any[] | null = null;
 let cachedSupplyTemplatesData: any[] | null = null;
+let cachedSupplyInstancesData: any[] | null = null;
 
 export const RecentActivity = () => {
   return (
@@ -166,8 +168,14 @@ export const CurrentVintage = () => {
 
 export const SuppliesNeeded = () => {
   const { user } = useUser();
+  const zero = useZero();
   const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
   const [supplyTemplatesData] = useQuery(supplyTemplatesQuery(user?.id) as any) as any;
+  const [supplyInstancesData] = useQuery(mySupplyInstances(user?.id) as any) as any;
+  const [pendingSupplies, setPendingSupplies] = useState<Set<string>>(new Set());
+  const [removedSupplies, setRemovedSupplies] = useState<Set<string>>(new Set());
+  const sharedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingSuppliesRef = useRef<Set<string>>(new Set());
 
   // Update module-level caches
   if (tasksData && tasksData.length > 0) {
@@ -176,63 +184,127 @@ export const SuppliesNeeded = () => {
   if (supplyTemplatesData && supplyTemplatesData.length > 0) {
     cachedSupplyTemplatesData = supplyTemplatesData;
   }
+  if (supplyInstancesData && supplyInstancesData.length > 0) {
+    cachedSupplyInstancesData = supplyInstancesData;
+  }
 
   const effectiveTasksData = tasksData && tasksData.length > 0 ? tasksData : cachedTasksData || [];
-  const effectiveSupplyData = supplyTemplatesData && supplyTemplatesData.length > 0 ? supplyTemplatesData : cachedSupplyTemplatesData || [];
+  const effectiveSupplyTemplates = supplyTemplatesData && supplyTemplatesData.length > 0 ? supplyTemplatesData : cachedSupplyTemplatesData || [];
+  const effectiveSupplyInstances = supplyInstancesData && supplyInstancesData.length > 0 ? supplyInstancesData : cachedSupplyInstancesData || [];
 
-  // Get upcoming tasks (not completed, not skipped)
-  const upcomingTasks = effectiveTasksData
-    .filter((t: any) => !t.completed_at && !t.skipped)
-    .sort((a: any, b: any) => a.due_date - b.due_date);
-
-  // Build a map of task_template_id -> tasks
-  const tasksByTemplateId = new Map<string, any[]>();
-  for (const task of upcomingTasks) {
-    const existing = tasksByTemplateId.get(task.task_template_id) || [];
-    existing.push(task);
-    tasksByTemplateId.set(task.task_template_id, existing);
+  // Build lookup maps
+  const taskMap = new Map<string, any>();
+  for (const task of effectiveTasksData) {
+    taskMap.set(task.id, task);
   }
 
-  // Find supplies that are due based on lead_time_days
-  const now = Date.now();
-  const suppliesNeeded: { supply: any; task: any }[] = [];
-
-  for (const supply of effectiveSupplyData) {
-    const tasksForTemplate = tasksByTemplateId.get(supply.task_template_id) || [];
-    for (const task of tasksForTemplate) {
-      const leadTimeMs = (supply.lead_time_days || 7) * MS_PER_DAY;
-      const surfaceDate = task.due_date - leadTimeMs;
-      if (surfaceDate <= now) {
-        suppliesNeeded.push({ supply, task });
-      }
-    }
+  const templateMap = new Map<string, any>();
+  for (const template of effectiveSupplyTemplates) {
+    templateMap.set(template.id, template);
   }
 
-  // Sort by task due date and limit to 6 items
-  const sortedSupplies = suppliesNeeded
-    .sort((a, b) => a.task.due_date - b.task.due_date)
+  // Get supply instances for upcoming tasks (not completed, not skipped, not verified)
+  const suppliesNeeded = effectiveSupplyInstances
+    .map((instance: any) => {
+      const task = taskMap.get(instance.task_id);
+      const template = templateMap.get(instance.supply_template_id);
+      if (!task || !template) return null;
+      if (task.completed_at || task.skipped) return null;
+      if (removedSupplies.has(instance.id)) return null;
+      return { instance, task, template };
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => {
+      // Sort: unverified first, then by due date
+      if (a.instance.verified_at && !b.instance.verified_at) return 1;
+      if (!a.instance.verified_at && b.instance.verified_at) return -1;
+      return a.task.due_date - b.task.due_date;
+    })
     .slice(0, 6);
+
+  const resetSharedTimeout = useCallback(() => {
+    if (sharedTimeoutRef.current) {
+      clearTimeout(sharedTimeoutRef.current);
+    }
+    sharedTimeoutRef.current = setTimeout(async () => {
+      const suppliesToVerify = Array.from(pendingSuppliesRef.current);
+      if (suppliesToVerify.length === 0) return;
+
+      const now = Date.now();
+      for (const instanceId of suppliesToVerify) {
+        await zero.mutate.supply_instance.update({
+          id: instanceId,
+          verified_at: now,
+          verified_by: user?.id,
+          updated_at: now,
+        });
+      }
+      setRemovedSupplies(prev => {
+        const next = new Set(prev);
+        suppliesToVerify.forEach(id => next.add(id));
+        return next;
+      });
+      setPendingSupplies(new Set());
+      pendingSuppliesRef.current = new Set();
+    }, 2000);
+  }, [zero, user?.id]);
+
+  const startSupplyVerification = useCallback((e: React.MouseEvent, instance: any) => {
+    e.stopPropagation();
+    setPendingSupplies(prev => {
+      const next = new Set(prev).add(instance.id);
+      pendingSuppliesRef.current = next;
+      return next;
+    });
+    resetSharedTimeout();
+  }, [resetSharedTimeout]);
+
+  const undoSupplyVerification = useCallback((e: React.MouseEvent, instanceId: string) => {
+    e.stopPropagation();
+    setPendingSupplies(prev => {
+      const next = new Set(prev);
+      next.delete(instanceId);
+      pendingSuppliesRef.current = next;
+      return next;
+    });
+    resetSharedTimeout();
+  }, [resetSharedTimeout]);
 
   return (
     <div className={styles.desktopPanel}>
       <div className={styles.panelTitleRow}>
         <h2 className={styles.panelTitle}>SUPPLIES NEEDED</h2>
-        <Link href="/settings" className={styles.panelLink}>MANAGE</Link>
+        <Link href="/supplies" className={styles.panelLink}>VIEW ALL</Link>
       </div>
-      <div className={styles.suppliesList}>
-        {sortedSupplies.length > 0 ? (
-          sortedSupplies.map(({ supply, task }) => (
-            <div key={`${supply.id}-${task.id}`} className={styles.supplyItem}>
-              <span className={styles.supplyName}>{supply.name.toUpperCase()}</span>
-              <span className={styles.supplyReason}>
-                {task.name.toUpperCase()} - {formatDueDate(task.due_date)}
-              </span>
-            </div>
-          ))
+      <div className={styles.taskList}>
+        {suppliesNeeded.length > 0 ? (
+          suppliesNeeded.map(({ instance, task, template }: any) => {
+            const isPending = pendingSupplies.has(instance.id);
+            return (
+              <div key={instance.id} className={`${styles.taskItem} ${isPending ? styles.taskItemPending : ''}`}>
+                <span className={`${styles.taskText} ${isPending ? styles.taskTextPending : ''}`}>
+                  {template.name.toUpperCase()}
+                </span>
+                <span className={styles.taskActions}>
+                  {!isPending && (
+                    <span className={styles.taskDate}>{formatDueDate(task.due_date, 'Needed')}</span>
+                  )}
+                  {isPending ? (
+                    <ActionLink onClick={(e) => undoSupplyVerification(e, instance.id)}>
+                      Undo
+                    </ActionLink>
+                  ) : (
+                    <ActionLink onClick={(e) => startSupplyVerification(e, instance)}>
+                      →
+                    </ActionLink>
+                  )}
+                </span>
+              </div>
+            );
+          })
         ) : (
-          <div className={styles.supplyItem}>
-            <span className={styles.supplyName}>NO SUPPLIES NEEDED</span>
-            <span className={styles.supplyReason}>ALL STOCKED UP</span>
+          <div className={styles.taskItem}>
+            <span className={styles.taskText}>NO SUPPLIES NEEDED</span>
           </div>
         )}
       </div>
@@ -242,8 +314,12 @@ export const SuppliesNeeded = () => {
 
 export const TaskListPanel = () => {
   const { user } = useUser();
-  const [, setLocation] = useLocation();
+  const zero = useZero();
   const [tasksData] = useQuery(myTasks(user?.id) as any) as any;
+  const [pendingTasks, setPendingTasks] = useState<Set<string>>(new Set());
+  const [removedTasks, setRemovedTasks] = useState<Set<string>>(new Set());
+  const sharedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingTasksRef = useRef<Set<string>>(new Set());
 
   // Update module-level cache when we have real data
   if (tasksData && tasksData.length > 0) {
@@ -254,9 +330,57 @@ export const TaskListPanel = () => {
   const effectiveTasksData = tasksData && tasksData.length > 0 ? tasksData : cachedTasksData || [];
 
   const upcomingTasks = effectiveTasksData
-    .filter((t: any) => !t.completed_at && !t.skipped)
+    .filter((t: any) => !t.completed_at && !t.skipped && !removedTasks.has(t.id))
     .sort((a: any, b: any) => a.due_date - b.due_date)
     .slice(0, 4);
+
+  const resetSharedTimeout = useCallback(() => {
+    if (sharedTimeoutRef.current) {
+      clearTimeout(sharedTimeoutRef.current);
+    }
+    sharedTimeoutRef.current = setTimeout(async () => {
+      const tasksToComplete = Array.from(pendingTasksRef.current);
+      if (tasksToComplete.length === 0) return;
+
+      const now = Date.now();
+      for (const taskId of tasksToComplete) {
+        await zero.mutate.task.update({
+          id: taskId,
+          completed_at: now,
+          completed_by: user?.id || '',
+          updated_at: now,
+        });
+      }
+      setRemovedTasks(prev => {
+        const next = new Set(prev);
+        tasksToComplete.forEach(id => next.add(id));
+        return next;
+      });
+      setPendingTasks(new Set());
+      pendingTasksRef.current = new Set();
+    }, 2000);
+  }, [zero, user?.id]);
+
+  const startTaskCompletion = useCallback((e: React.MouseEvent, task: any) => {
+    e.stopPropagation();
+    setPendingTasks(prev => {
+      const next = new Set(prev).add(task.id);
+      pendingTasksRef.current = next;
+      return next;
+    });
+    resetSharedTimeout();
+  }, [resetSharedTimeout]);
+
+  const undoTaskCompletion = useCallback((e: React.MouseEvent, taskId: string) => {
+    e.stopPropagation();
+    setPendingTasks(prev => {
+      const next = new Set(prev);
+      next.delete(taskId);
+      pendingTasksRef.current = next;
+      return next;
+    });
+    resetSharedTimeout();
+  }, [resetSharedTimeout]);
 
   return (
     <div className={styles.desktopPanel}>
@@ -266,21 +390,30 @@ export const TaskListPanel = () => {
       </div>
       <div className={styles.taskList}>
         {upcomingTasks.length > 0 ? (
-          upcomingTasks.map((task: any) => (
-            <div
-              key={task.id}
-              className={`${styles.taskItem} ${styles.clickableActivityText}`}
-              onClick={() => {
-                const route = task.entity_type === 'vintage'
-                  ? `/winery/vintages/${task.entity_id}/tasks`
-                  : `/winery/wines/${task.entity_id}/tasks`;
-                setLocation(route);
-              }}
-            >
-              <span className={styles.taskText}>{task.name.toUpperCase()}</span>
-              <span className={styles.taskDate}>{formatDueDate(task.due_date)}</span>
-            </div>
-          ))
+          upcomingTasks.map((task: any) => {
+            const isPending = pendingTasks.has(task.id);
+            return (
+              <div key={task.id} className={`${styles.taskItem} ${isPending ? styles.taskItemPending : ''}`}>
+                <span className={`${styles.taskText} ${isPending ? styles.taskTextPending : ''}`}>
+                  {task.name.toUpperCase()}
+                </span>
+                <span className={styles.taskActions}>
+                  {!isPending && (
+                    <span className={styles.taskDate}>{formatDueDate(task.due_date)}</span>
+                  )}
+                  {isPending ? (
+                    <ActionLink onClick={(e) => undoTaskCompletion(e, task.id)}>
+                      Undo
+                    </ActionLink>
+                  ) : (
+                    <ActionLink onClick={(e) => startTaskCompletion(e, task)}>
+                      →
+                    </ActionLink>
+                  )}
+                </span>
+              </div>
+            );
+          })
         ) : (
           <div className={styles.taskItem}>
             <span className={styles.taskText}>NO UPCOMING TASKS</span>
