@@ -164,7 +164,7 @@ export const Weather = () => {
                   {isPending(nextTask[0].id) ? (
                     <ActionLink
                       className={styles.seasonalTaskMoreLink}
-                      onClick={undoCompletion}
+                      onClick={() => undoCompletion(nextTask[0].id)}
                     >
                       Undo
                     </ActionLink>

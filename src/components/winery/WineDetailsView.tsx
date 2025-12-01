@@ -754,7 +754,7 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
                         {taskPending ? (
                           <ActionLink onClick={(e) => {
                             e.stopPropagation();
-                            undoCompletion();
+                            undoCompletion(task.id);
                           }}>
                             Undo
                           </ActionLink>

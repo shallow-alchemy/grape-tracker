@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { getBackendUrl } from '../../config';
@@ -19,6 +19,9 @@ const getWeekStart = (): number => {
   return monday.getTime();
 };
 
+// Module-level flag to prevent duplicate API calls across component instances
+let fetchAttemptedForWeek: number | null = null;
+
 type SeasonalTaskCardProps = {
   inline?: boolean;
   headerOnly?: boolean;
@@ -33,7 +36,6 @@ export const SeasonalTaskCard = ({ inline = false, headerOnly = false }: Seasona
   const [tasksData] = useQuery(mySeasonalTasksByWeek(user?.id, weekStart) as any) as any;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fetchAttemptedRef = useRef(false);
 
   const { removedTaskId, startCompletion, undoCompletion, isPending } = useDebouncedCompletion(
     async (taskId) => {
@@ -53,8 +55,8 @@ export const SeasonalTaskCard = ({ inline = false, headerOnly = false }: Seasona
   const hasNoTasks = tasks.length === 0;
 
   const fetchSeasonalTasks = async () => {
-    if (!vineyard || !user?.id || fetchAttemptedRef.current) return;
-    fetchAttemptedRef.current = true;
+    if (!vineyard || !user?.id || fetchAttemptedForWeek === weekStart) return;
+    fetchAttemptedForWeek = weekStart;
 
     setIsLoading(true);
     setError(null);
@@ -89,10 +91,10 @@ export const SeasonalTaskCard = ({ inline = false, headerOnly = false }: Seasona
 
   // Fetch tasks if Zero has synced and returned empty for this week
   useEffect(() => {
-    if (vineyard && user?.id && zeroSynced && hasNoTasks && !isLoading && !fetchAttemptedRef.current) {
+    if (vineyard && user?.id && zeroSynced && hasNoTasks && !isLoading && fetchAttemptedForWeek !== weekStart) {
       fetchSeasonalTasks();
     }
-  }, [vineyard, user?.id, zeroSynced, hasNoTasks, isLoading]);
+  }, [vineyard, user?.id, zeroSynced, hasNoTasks, isLoading, weekStart]);
 
   // Get season name for header
   const sortedTasks = [...tasks].sort((a: any, b: any) => a.priority - b.priority);
@@ -154,7 +156,7 @@ export const SeasonalTaskCard = ({ inline = false, headerOnly = false }: Seasona
               {currentTaskPending ? (
                 <ActionLink
                   className={styles.seasonalTaskMoreLink}
-                  onClick={undoCompletion}
+                  onClick={() => undoCompletion(currentTask.id)}
                 >
                   Undo
                 </ActionLink>

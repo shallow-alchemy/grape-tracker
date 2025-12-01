@@ -343,7 +343,7 @@ export const VintageDetailsView = ({ vintageId, onBack, onWineClick }: VintageDe
                         {taskPending ? (
                           <ActionLink onClick={(e) => {
                             e.stopPropagation();
-                            undoCompletion();
+                            undoCompletion(task.id);
                           }}>
                             Undo
                           </ActionLink>
