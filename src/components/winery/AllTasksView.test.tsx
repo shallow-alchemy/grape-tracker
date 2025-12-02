@@ -271,7 +271,7 @@ describe('AllTasksView', () => {
       expect(mockSetLocation).toHaveBeenCalledWith('/');
     });
 
-    test('navigates to wine task list when clicking wine task', async () => {
+    test('opens task modal when clicking wine task', async () => {
       const user = userEvent.setup();
 
       render(<AllTasksView />);
@@ -279,10 +279,11 @@ describe('AllTasksView', () => {
       const wineTask = screen.getByText('Upcoming Task');
       await user.click(wineTask);
 
-      expect(mockSetLocation).toHaveBeenCalledWith('/winery/wines/wine-2');
+      // Modal should open with task completion form
+      expect(screen.getByText('COMPLETE TASK')).toBeInTheDocument();
     });
 
-    test('navigates to vintage details when clicking vintage task', async () => {
+    test('opens task modal when clicking vintage task', async () => {
       const user = userEvent.setup();
 
       render(<AllTasksView />);
@@ -290,7 +291,8 @@ describe('AllTasksView', () => {
       const vintageTask = screen.getByText('Overdue Task');
       await user.click(vintageTask);
 
-      expect(mockSetLocation).toHaveBeenCalledWith('/winery/vintages/vintage-1');
+      // Modal should open with task completion form
+      expect(screen.getByText('COMPLETE TASK')).toBeInTheDocument();
     });
   });
 

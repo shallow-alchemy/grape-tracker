@@ -11,7 +11,7 @@ import { EditWineModal } from './EditWineModal';
 import { StageTransitionModal } from './StageTransitionModal';
 import { AddMeasurementModal } from './AddMeasurementModal';
 import { getStagesForWineType, type WineType } from './stages';
-import { formatDueDate, isDueToday, isOverdue } from './taskHelpers';
+import { TaskRow } from './TaskRow';
 import { TaskCompletionModal } from './TaskCompletionModal';
 import { CreateTaskModal } from './CreateTaskModal';
 import { useDebouncedCompletion } from '../../hooks/useDebouncedCompletion';
@@ -736,53 +736,16 @@ export const WineDetailsView = ({ wineId, onBack }: WineDetailsViewProps) => {
             </div>
             {activeTasks.length > 0 ? (
               <div className={styles.flexColumnGap}>
-                {activeTasks.sort((a: any, b: any) => a.due_date - b.due_date).map((task: any) => {
-                  const overdue = isOverdue(task.due_date, task.completed_at, task.skipped ? 1 : 0);
-                  const dueToday = isDueToday(task.due_date);
-                  const taskPending = isPending(task.id);
-                  return (
-                    <div
-                      key={task.id}
-                      className={`${styles.stageHistoryCard} ${overdue && !taskPending ? styles.taskCardOverdue : ''} ${taskPending ? styles.taskItemPending : ''}`}
-                      onClick={() => !taskPending && setSelectedTask(task)}
-                      style={{ cursor: taskPending ? 'default' : 'pointer' }}
-                    >
-                      <div className={styles.stageHistoryHeader}>
-                        <div className={`${styles.stageHistoryTitle} ${taskPending ? styles.taskTextPending : ''}`}>
-                          {task.name}
-                        </div>
-                        {taskPending ? (
-                          <ActionLink onClick={(e) => {
-                            e.stopPropagation();
-                            undoCompletion(task.id);
-                          }}>
-                            Undo
-                          </ActionLink>
-                        ) : (
-                          <ActionLink onClick={(e) => {
-                            e.stopPropagation();
-                            startCompletion(task.id);
-                          }}>
-                            →
-                          </ActionLink>
-                        )}
-                      </div>
-                      <div className={styles.stageHistoryBody}>
-                        {task.description && (
-                          <div className={`${styles.taskDescriptionClamp} ${taskPending ? styles.taskTextPending : ''}`}>
-                            {task.description}
-                          </div>
-                        )}
-                        <div className={`${styles.taskMetaRow} ${taskPending ? styles.taskTextPending : ''}`}>
-                          <span className={dueToday || overdue ? styles.taskDateUrgent : ''}>
-                            {formatDueDate(task.due_date)}
-                          </span>
-                          {task.notes && <span className={styles.taskHasNotes}>• Has note</span>}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {activeTasks.sort((a: any, b: any) => a.due_date - b.due_date).map((task: any) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    isPending={isPending(task.id)}
+                    onComplete={() => startCompletion(task.id)}
+                    onUndo={() => undoCompletion(task.id)}
+                    onClick={() => setSelectedTask(task)}
+                  />
+                ))}
               </div>
             ) : (
               <div className={styles.tasksEmptyState}>No active tasks</div>

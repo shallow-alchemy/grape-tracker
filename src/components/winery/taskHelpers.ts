@@ -34,7 +34,7 @@ const getStartOfDay = (date: Date): Date => {
   return d;
 };
 
-export const isOverdue = (dueDate: number, completedAt: number | null, skipped: number): boolean => {
+export const isOverdue = (dueDate: number | null | undefined, completedAt: number | null | undefined, skipped: number): boolean => {
   if (!dueDate || dueDate < MIN_VALID_DATE) return false;
   if (completedAt || skipped !== 0) return false;
 
@@ -44,7 +44,7 @@ export const isOverdue = (dueDate: number, completedAt: number | null, skipped: 
   return dueDay < today;
 };
 
-export const isDueToday = (dueDate: number): boolean => {
+export const isDueToday = (dueDate: number | null | undefined): boolean => {
   if (!dueDate || dueDate < MIN_VALID_DATE) return false;
 
   const today = new Date();
@@ -53,7 +53,7 @@ export const isDueToday = (dueDate: number): boolean => {
   return dueDay.toDateString() === today.toDateString();
 };
 
-export const formatDueDate = (dueDate: number, prefix: string = 'Due'): string => {
+export const formatDueDate = (dueDate: number | null | undefined, prefix: string = 'Due'): string => {
   if (!dueDate || dueDate < MIN_VALID_DATE) {
     return 'No due date';
   }

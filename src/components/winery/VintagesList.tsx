@@ -3,8 +3,11 @@ import { FiPlus } from 'react-icons/fi';
 import { useZero } from '../../contexts/ZeroContext';
 import { useVintages, useWines, useMeasurements, useTasks } from '../vineyard-hooks';
 import { CreateTaskModal } from './CreateTaskModal';
+import { TaskCompletionModal } from './TaskCompletionModal';
+import { TaskRow } from './TaskRow';
 import { WarningBadge } from '../WarningBadge';
 import { ActionLink } from '../ActionLink';
+import { useDebouncedCompletion } from '../../hooks/useDebouncedCompletion';
 import styles from '../../App.module.css';
 
 const formatWineStatus = (status: string): string => {
@@ -32,7 +35,22 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
 
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [taskModalVintageId, setTaskModalVintageId] = useState<string>('');
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const showSuccessMessage = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
+  const { removedTaskId, startCompletion, undoCompletion, isPending } = useDebouncedCompletion(
+    async (taskId) => {
+      await zero.mutate.task.update({
+        id: taskId,
+        completed_at: Date.now(),
+      });
+    }
+  );
 
   const harvestMeasurements: any = new Map(
     measurementsData.map((m: any) => [m.entity_id, m])
@@ -124,241 +142,243 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
           </div>
 
           <div className={styles.featuredVintageContent}>
-            <div className={styles.flexColumnGap}>
-            <div className={styles.featuredMetricsGrid}>
-              {featuredVintage.harvest_date && (
-                <div className={styles.featuredMetricItem}>
-                  <div className={styles.featuredMetricLabel}>HARVEST DATE</div>
-                  <div className={styles.featuredMetricValue}>{formatDate(featuredVintage.harvest_date)}</div>
-                </div>
-              )}
-
-              {featuredVintage.harvest_weight_lbs !== null && featuredVintage.harvest_weight_lbs !== undefined && (
-                <div className={styles.featuredMetricItem}>
-                  <div className={styles.featuredMetricLabel}>WEIGHT</div>
-                  <div className={styles.featuredMetricValue}>{featuredVintage.harvest_weight_lbs} LBS</div>
-                </div>
-              )}
-
-              {featuredVintage.harvest_volume_gallons !== null && featuredVintage.harvest_volume_gallons !== undefined && (
-                <div className={styles.featuredMetricItem}>
-                  <div className={styles.featuredMetricLabel}>VOLUME</div>
-                  <div className={styles.featuredMetricValue}>{featuredVintage.harvest_volume_gallons} GAL</div>
-                </div>
-              )}
-            </div>
-
-            {(harvestMeasurements.get(featuredVintage.id)?.brix !== null && harvestMeasurements.get(featuredVintage.id)?.brix !== undefined ||
-              harvestMeasurements.get(featuredVintage.id)?.ph !== null && harvestMeasurements.get(featuredVintage.id)?.ph !== undefined ||
-              harvestMeasurements.get(featuredVintage.id)?.ta !== null && harvestMeasurements.get(featuredVintage.id)?.ta !== undefined) && (
-              <div className={styles.measurementsSection}>
-                <div className={`${styles.featuredMetricLabel} ${styles.taskCardText}`}>MEASUREMENTS</div>
-                <div className={styles.measurementsFlex}>
-                  {harvestMeasurements.get(featuredVintage.id)?.brix !== null && harvestMeasurements.get(featuredVintage.id)?.brix !== undefined && (
+            <div className={styles.featuredLeftColumn}>
+              {/* Top: Vintage Details (fixed) */}
+              <div className={styles.featuredDetailsSection}>
+                <div className={styles.featuredMetricsGrid}>
+                  {featuredVintage.harvest_date && (
                     <div className={styles.featuredMetricItem}>
-                      <div className={styles.featuredMetricLabel}>BRIX</div>
-                      <div className={styles.featuredMetricValue}>{harvestMeasurements.get(featuredVintage.id)?.brix}°</div>
+                      <div className={styles.featuredMetricLabel}>HARVEST DATE</div>
+                      <div className={styles.featuredMetricValue}>{formatDate(featuredVintage.harvest_date)}</div>
                     </div>
                   )}
 
-                  {harvestMeasurements.get(featuredVintage.id)?.ph !== null && harvestMeasurements.get(featuredVintage.id)?.ph !== undefined && (
+                  {featuredVintage.harvest_weight_lbs !== null && featuredVintage.harvest_weight_lbs !== undefined && (
                     <div className={styles.featuredMetricItem}>
-                      <div className={styles.featuredMetricLabel}>PH</div>
-                      <div className={styles.featuredMetricValue}>{harvestMeasurements.get(featuredVintage.id)?.ph}</div>
+                      <div className={styles.featuredMetricLabel}>WEIGHT</div>
+                      <div className={styles.featuredMetricValue}>{featuredVintage.harvest_weight_lbs} LBS</div>
                     </div>
                   )}
 
-                  {harvestMeasurements.get(featuredVintage.id)?.ta !== null && harvestMeasurements.get(featuredVintage.id)?.ta !== undefined && (
+                  {featuredVintage.harvest_volume_gallons !== null && featuredVintage.harvest_volume_gallons !== undefined && (
                     <div className={styles.featuredMetricItem}>
-                      <div className={styles.featuredMetricLabel}>TA</div>
-                      <div className={styles.featuredMetricValue}>{harvestMeasurements.get(featuredVintage.id)?.ta} G/L</div>
+                      <div className={styles.featuredMetricLabel}>VOLUME</div>
+                      <div className={styles.featuredMetricValue}>{featuredVintage.harvest_volume_gallons} GAL</div>
                     </div>
                   )}
                 </div>
+
+                {(harvestMeasurements.get(featuredVintage.id)?.brix !== null && harvestMeasurements.get(featuredVintage.id)?.brix !== undefined ||
+                  harvestMeasurements.get(featuredVintage.id)?.ph !== null && harvestMeasurements.get(featuredVintage.id)?.ph !== undefined ||
+                  harvestMeasurements.get(featuredVintage.id)?.ta !== null && harvestMeasurements.get(featuredVintage.id)?.ta !== undefined) && (
+                  <div className={styles.measurementsSection}>
+                    <div className={`${styles.featuredMetricLabel} ${styles.taskCardText}`}>MEASUREMENTS</div>
+                    <div className={styles.measurementsFlex}>
+                      {harvestMeasurements.get(featuredVintage.id)?.brix !== null && harvestMeasurements.get(featuredVintage.id)?.brix !== undefined && (
+                        <div className={styles.featuredMetricItem}>
+                          <div className={styles.featuredMetricLabel}>BRIX</div>
+                          <div className={styles.featuredMetricValue}>{harvestMeasurements.get(featuredVintage.id)?.brix}°</div>
+                        </div>
+                      )}
+
+                      {harvestMeasurements.get(featuredVintage.id)?.ph !== null && harvestMeasurements.get(featuredVintage.id)?.ph !== undefined && (
+                        <div className={styles.featuredMetricItem}>
+                          <div className={styles.featuredMetricLabel}>PH</div>
+                          <div className={styles.featuredMetricValue}>{harvestMeasurements.get(featuredVintage.id)?.ph}</div>
+                        </div>
+                      )}
+
+                      {harvestMeasurements.get(featuredVintage.id)?.ta !== null && harvestMeasurements.get(featuredVintage.id)?.ta !== undefined && (
+                        <div className={styles.featuredMetricItem}>
+                          <div className={styles.featuredMetricLabel}>TA</div>
+                          <div className={styles.featuredMetricValue}>{harvestMeasurements.get(featuredVintage.id)?.ta} G/L</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {featuredVintage.block_ids && Array.isArray(featuredVintage.block_ids) && featuredVintage.block_ids.length > 0 && (
+                  <div className={styles.featuredVintageBlocks}>
+                    <span className={styles.featuredBlockLabel}>BLOCKS:</span>
+                    <span className={styles.featuredBlockCount}>{getBlockCount(featuredVintage.block_ids as string[])}</span>
+                  </div>
+                )}
               </div>
-            )}
 
-            {featuredVintage.block_ids && Array.isArray(featuredVintage.block_ids) && featuredVintage.block_ids.length > 0 && (
-              <div className={styles.featuredVintageBlocks}>
-                <span className={styles.featuredBlockLabel}>BLOCKS:</span>
-                <span className={styles.featuredBlockCount}>{getBlockCount(featuredVintage.block_ids as string[])}</span>
-              </div>
-            )}
+              {/* Middle: Wines (flexible, scrollable) */}
+              <div className={styles.featuredWinesSection}>
+                <div className={styles.winesSectionHeader}>
+                  <div className={styles.featuredBlockLabel}>
+                    WINES ({(() => {
+                      const count = winesData.filter((wine: any) => {
+                        if (wine.vintage_id === featuredVintage.id) return true;
+                        if (wine.blend_components && Array.isArray(wine.blend_components)) {
+                          return wine.blend_components.some((component: any) => component.vintage_id === featuredVintage.id);
+                        }
+                        return false;
+                      }).length;
+                      return count;
+                    })()})
+                  </div>
+                  <ActionLink
+                    className={styles.addButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCreateWine(featuredVintage.id);
+                    }}
+                  >
+                    Add <FiPlus />
+                  </ActionLink>
+                </div>
 
-            <div className={styles.winesContainerSection}>
-              <div className={styles.winesSectionHeader}>
-                <div className={styles.featuredBlockLabel}>
-                  WINES ({(() => {
-                    const count = winesData.filter((wine: any) => {
-                      if (wine.vintage_id === featuredVintage.id) return true;
+                <div className={styles.featuredWinesScrollable}>
+                  {(() => {
+                    const vintageWines = winesData.filter((wine: any) => {
+                      if (wine.vintage_id === featuredVintage.id) {
+                        return true;
+                      }
                       if (wine.blend_components && Array.isArray(wine.blend_components)) {
                         return wine.blend_components.some((component: any) => component.vintage_id === featuredVintage.id);
                       }
                       return false;
+                    }).sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+                    return vintageWines.length > 0 ? (
+                      <div className={styles.winesContainer}>
+                        {vintageWines.map((wine: any) => {
+                          const isBlend = wine.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
+                          return (
+                            <div
+                              key={wine.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onWineClick(wine.id);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.stopPropagation();
+                                  onWineClick(wine.id);
+                                }
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              className={styles.wineCardSmall}
+                            >
+                              <div className={styles.wineCardSmallContent}>
+                                <div className={styles.wineCardSmallTitle}>
+                                  <span>{wine.name}</span>
+                                  <span className={styles.wineCardSmallBadge}>
+                                    {isBlend ? 'BLEND' : 'VARIETAL'}
+                                  </span>
+                                </div>
+                                <div className={styles.wineCardSmallSubtext}>
+                                  {wine.wine_type.toUpperCase()} • {wine.current_volume_gallons} GAL • {formatWineStatus(wine.status)}
+                                </div>
+                              </div>
+                              <div className={styles.wineCardSmallArrow}>
+                                →
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className={styles.tasksEmptyState}>No wines yet</div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Bottom: Notes (fixed height, inner scroll) */}
+              {featuredVintage.notes && (
+                <div className={styles.featuredNotesSection}>
+                  <div className={styles.featuredNotesLabel}>NOTES</div>
+                  <div className={styles.featuredNotesScrollable}>{featuredVintage.notes}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Right column: Tasks (full height) */}
+            <div className={styles.featuredTasksSection}>
+              <div className={styles.winesSectionHeader}>
+                <div className={styles.featuredMetricLabel}>
+                  TASKS ({(() => {
+                    const vintageWineIds = winesData
+                      .filter((wine: any) => {
+                        if (wine.vintage_id === featuredVintage.id) return true;
+                        if (wine.blend_components && Array.isArray(wine.blend_components)) {
+                          return wine.blend_components.some((component: any) => component.vintage_id === featuredVintage.id);
+                        }
+                        return false;
+                      })
+                      .map((wine: any) => wine.id);
+
+                    return tasksData.filter((task: any) => {
+                      if (task.skipped) return false;
+                      if (task.completed_at) return false;
+                      if (task.id === removedTaskId) return false;
+                      if (task.entity_type === 'vintage' && task.entity_id === featuredVintage.id) return true;
+                      if (task.entity_type === 'wine' && vintageWineIds.includes(task.entity_id)) return true;
+                      return false;
                     }).length;
-                    return count;
                   })()})
                 </div>
                 <ActionLink
                   className={styles.addButton}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onCreateWine(featuredVintage.id);
+                    setTaskModalVintageId(featuredVintage.id);
+                    setShowCreateTaskModal(true);
                   }}
                 >
                   Add <FiPlus />
                 </ActionLink>
               </div>
+              <div className={styles.featuredTasksScrollable}>
+                {(() => {
+                  const vintageWineIds = winesData
+                    .filter((wine: any) => {
+                      if (wine.vintage_id === featuredVintage.id) return true;
+                      if (wine.blend_components && Array.isArray(wine.blend_components)) {
+                        return wine.blend_components.some((component: any) => component.vintage_id === featuredVintage.id);
+                      }
+                      return false;
+                    })
+                    .map((wine: any) => wine.id);
 
-              {(() => {
-                const vintageWines = winesData.filter((wine: any) => {
-                  if (wine.vintage_id === featuredVintage.id) {
-                    return true;
-                  }
-                  if (wine.blend_components && Array.isArray(wine.blend_components)) {
-                    return wine.blend_components.some((component: any) => component.vintage_id === featuredVintage.id);
-                  }
-                  return false;
-                }).sort((a: any, b: any) => a.name.localeCompare(b.name));
+                  const vintageTasks = tasksData
+                    .filter((task: any) => {
+                      if (task.skipped) return false;
+                      if (task.completed_at) return false;
+                      if (task.id === removedTaskId) return false;
+                      if (task.entity_type === 'vintage' && task.entity_id === featuredVintage.id) return true;
+                      if (task.entity_type === 'wine' && vintageWineIds.includes(task.entity_id)) return true;
+                      return false;
+                    })
+                    .sort((a: any, b: any) => (a.due_date || 0) - (b.due_date || 0));
 
-                return vintageWines.length > 0 ? (
-                  <div className={styles.winesContainer}>
-                    {vintageWines.map((wine: any) => {
-                      const isBlend = wine.blend_components && Array.isArray(wine.blend_components) && wine.blend_components.length > 0;
-                      return (
-                        <div
-                          key={wine.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onWineClick(wine.id);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.stopPropagation();
-                              onWineClick(wine.id);
-                            }
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          className={styles.wineCardSmall}
-                        >
-                          <div className={styles.wineCardSmallContent}>
-                            <div className={styles.wineCardSmallTitle}>
-                              <span>{wine.name}</span>
-                              <span className={styles.wineCardSmallBadge}>
-                                {isBlend ? 'BLEND' : 'VARIETAL'}
-                              </span>
-                            </div>
-                            <div className={styles.wineCardSmallSubtext}>
-                              {wine.wine_type.toUpperCase()} • {wine.current_volume_gallons} GAL • {formatWineStatus(wine.status)}
-                            </div>
-                          </div>
-                          <div className={styles.wineCardSmallArrow}>
-                            →
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null;
-              })()}
-            </div>
-
-            {featuredVintage.notes && (
-              <div className={styles.featuredVintageNotes}>
-                <div className={styles.featuredNotesLabel}>NOTES</div>
-                <div className={styles.featuredNotesText}>{featuredVintage.notes}</div>
-              </div>
-            )}
-            </div>
-
-            {(() => {
-              const vintageWineIds = winesData
-                .filter((wine: any) => {
-                  if (wine.vintage_id === featuredVintage.id) return true;
-                  if (wine.blend_components && Array.isArray(wine.blend_components)) {
-                    return wine.blend_components.some((component: any) => component.vintage_id === featuredVintage.id);
-                  }
-                  return false;
-                })
-                .map((wine: any) => wine.id);
-
-              const vintageTasks = tasksData
-                .filter((task: any) => {
-                  if (task.skipped) return false;
-                  if (task.entity_type === 'vintage' && task.entity_id === featuredVintage.id) return true;
-                  if (task.entity_type === 'wine' && vintageWineIds.includes(task.entity_id)) return true;
-                  return false;
-                })
-                .sort((a: any, b: any) => {
-                  const aCompleted = a.completed_at !== null && a.completed_at !== undefined;
-                  const bCompleted = b.completed_at !== null && b.completed_at !== undefined;
-                  if (aCompleted && !bCompleted) return 1;
-                  if (!aCompleted && bCompleted) return -1;
-                  return (a.due_date || 0) - (b.due_date || 0);
-                });
-
-              return vintageTasks.length > 0 ? (
-                <div className={styles.tasksContainerOuter}>
-                  <div className={styles.tasksContainerInner}>
-                    <div className={styles.winesSectionHeader}>
-                      <div className={styles.featuredMetricLabel}>
-                        TASKS ({vintageTasks.filter((t: any) => !t.completed_at).length})
-                      </div>
-                      <ActionLink
-                        className={styles.addButton}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTaskModalVintageId(featuredVintage.id);
-                          setShowCreateTaskModal(true);
-                        }}
-                      >
-                        Add <FiPlus />
-                      </ActionLink>
-                    </div>
-                  <div className={styles.tasksList}>
-                    {vintageTasks.map((task: any) => {
-                      const isCompleted = task.completed_at !== null && task.completed_at !== undefined;
-                      const hasDueDate = task.due_date && task.due_date > 946684800000;
+                  return vintageTasks.length > 0 ? (
+                    vintageTasks.map((task: any) => {
                       const wine = task.entity_type === 'wine' ? winesData.find((w: any) => w.id === task.entity_id) : null;
                       return (
-                        <div
+                        <TaskRow
                           key={task.id}
-                          className={`${styles.taskCard} ${isCompleted ? styles.taskCardCompleted : styles.taskCardActive}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isCompleted}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={() => {
-                              zero.mutate.task.update({
-                                id: task.id,
-                                completed_at: isCompleted ? undefined : Date.now()
-                              });
-                            }}
-                            className={styles.taskCheckbox}
-                          />
-                          <div className={styles.taskCardContent}>
-                            <div className={`${hasDueDate || wine ? styles.taskCardText : ''} ${isCompleted ? styles.taskCardTextCompleted : ''}`}>
-                              {task.name || task.description}
-                            </div>
-                            <div className={styles.taskCardMeta}>
-                              {wine && <span className={styles.taskCardWine}>{wine.name}</span>}
-                              {hasDueDate && (
-                                <span className={styles.taskCardDate}>
-                                  {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                          task={task}
+                          isPending={isPending(task.id)}
+                          onComplete={() => startCompletion(task.id)}
+                          onUndo={() => undoCompletion(task.id)}
+                          onClick={() => setSelectedTask(task)}
+                          contextLabel={wine?.name}
+                        />
                       );
-                    })}
-                  </div>
-                  </div>
-                </div>
-              ) : null;
-            })()}
+                    })
+                  ) : (
+                    <div className={styles.tasksEmptyState}>No active tasks</div>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -458,13 +478,24 @@ export const VintagesList = ({ onVintageClick, onWineClick, onCreateWine }: Vint
             setShowCreateTaskModal(false);
             setTaskModalVintageId('');
           }}
-          onSuccess={(message) => {
-            setSuccessMessage(message);
-            setTimeout(() => setSuccessMessage(null), 3000);
-          }}
+          onSuccess={showSuccessMessage}
           entityType="vintage"
           entityId={taskModalVintageId}
           currentStage={vintages.find(v => v.id === taskModalVintageId)?.current_stage || ''}
+        />
+      )}
+
+      {selectedTask && (
+        <TaskCompletionModal
+          isOpen={!!selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onSuccess={showSuccessMessage}
+          taskId={selectedTask.id}
+          taskName={selectedTask.name}
+          taskDescription={selectedTask.description}
+          taskNotes={selectedTask.notes}
+          dueDate={selectedTask.due_date}
+          currentlySkipped={selectedTask.skipped}
         />
       )}
     </>

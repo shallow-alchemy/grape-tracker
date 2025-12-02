@@ -702,6 +702,73 @@ See **Photo Management** (Vineyard Priority 2) for full implementation plan.
 - [ ] Fail PR if tests fail or coverage drops
 - [ ] Deploy previews for PRs (Netlify)
 
+### Telemetry & Logging Infrastructure
+**Status:** 🔲 Not Started
+
+Unified logging for error alerting, warnings, and user action tracking. Send all logs to one platform, alert on specific patterns.
+
+**Requirements:**
+- Error alerting (immediate notification for failures)
+- Warning tracking (AI call issues, slow queries)
+- User action logging (informative, non-alerting)
+- Structured logs with query/filter capability
+- Cost-effective (not Datadog-level pricing)
+
+**Platform Options:**
+
+1. **Axiom** ← Top Choice
+   - 500GB/month free tier
+   - SQL-like query language
+   - Create monitors/alerts on any log pattern
+   - ~$25/month paid tier if needed
+
+2. **Better Stack (LogTail)**
+   - Clean UI, built for logs + alerting
+   - 1GB free, $24/month for 30GB
+   - Good Slack/PagerDuty integrations
+
+3. **Highlight.io**
+   - Open source (self-host) or hosted
+   - Combines errors + logs + session replay
+   - See user actions before errors occurred
+
+**Implementation:**
+- [ ] Select platform and create account
+- [ ] Add logging client to frontend (user actions, errors)
+- [ ] Add logging to backend (API calls, AI requests, errors)
+- [ ] Structured log format: `{ level, action, userId, metadata }`
+- [ ] Configure alerts for `level: 'error'` patterns
+- [ ] Dashboard for monitoring AI call success rates
+
+---
+
+### Soft Delete Pattern (App-Wide)
+**Status:** 🔲 Not Started
+
+Move from hard deletes to soft deletes across all tables. Data remains for analytics/learning while appearing deleted to users.
+
+**Benefits:**
+- Data retention for analytics and ML improvements
+- Undo capability for accidental deletes
+- Audit trail (know what was deleted and when)
+- Prevents duplicate AI calls (e.g., seasonal tasks: check if tasks were generated but dismissed)
+
+**Implementation:**
+- [ ] Add `deleted_at BIGINT NULL` column to all relevant tables
+- [ ] Update Zero schema to include `deleted_at`
+- [ ] Update all queries to filter `WHERE deleted_at IS NULL`
+- [ ] Change delete mutations to `UPDATE ... SET deleted_at = NOW()`
+- [ ] Optional: periodic purge of records deleted >90 days
+
+**Tables Affected:**
+- `vine`, `block`, `vineyard`
+- `vintage`, `wine`, `measurement`
+- `task`, `seasonal_task`, `task_template`
+- `pruning_log`, `stage_history`
+- `supply_instance`, `supply_template`
+
+**Privacy Note:** If GDPR/true deletion needed later, add hard delete option for compliance requests.
+
 ---
 
 ## TECHNICAL DEBT

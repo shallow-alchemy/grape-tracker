@@ -1686,10 +1686,6 @@
   /* No padding - let content align with left side */
 }
 
-.seasonalTaskInline .seasonalTaskDetails {
-  -webkit-line-clamp: 1;
-}
-
 .seasonalTaskHeader {
   display: flex;
   justify-content: space-between;
@@ -1741,7 +1737,11 @@
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
   letter-spacing: 0.05em;
-  line-height: 1;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .seasonalTaskTiming {
@@ -1757,7 +1757,7 @@
   line-height: 1.4;
   margin-top: var(--spacing-xs);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -2138,6 +2138,10 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .taskDate {
@@ -2175,6 +2179,19 @@
 
 .taskHasNotes {
   color: var(--color-text-muted);
+}
+
+.taskContextLabel {
+  color: var(--color-primary);
+  margin-right: var(--spacing-xs);
+}
+
+.taskRowTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 0;
 }
 
 .taskActions {
@@ -2836,12 +2853,17 @@
   box-shadow: 0 0 20px rgba(101, 161, 101, 0.2);
   grid-column: 1 / -1;
   grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+  height: 500px;
 }
 
 @media (max-width: 768px) {
   .featuredVintageCard {
     grid-column: 1;
     grid-row: span 1;
+    height: auto;
+    max-height: 600px;
   }
 }
 
@@ -2889,12 +2911,84 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-xl);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {
   .featuredVintageContent {
     grid-template-columns: 1fr;
   }
+}
+
+/* Left column layout */
+.featuredLeftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.featuredDetailsSection {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.featuredWinesSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.featuredWinesScrollable {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.featuredNotesSection {
+  flex-shrink: 0;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  background: var(--color-background);
+  border: var(--spacing-px) solid var(--color-border);
+}
+
+.featuredNotesScrollable {
+  flex: 1;
+  overflow-y: auto;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+/* Right column layout */
+.featuredTasksSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.featuredTasksScrollable {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 .featuredMetricsGrid {
@@ -3769,6 +3863,11 @@
   background-color: rgba(138, 150, 138, 0.05);
 }
 
+.stageHistoryCard:hover {
+  border-color: var(--color-primary-500);
+  background-color: rgba(58, 122, 58, 0.1);
+}
+
 .stageHistoryCardCurrent {
   background-color: rgba(58, 122, 58, 0.1);
 }
@@ -3817,9 +3916,8 @@
 
 .stageHistoryBody {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--spacing-md);
+  flex-direction: column;
+  gap: var(--spacing-xs);
   font-size: var(--font-size-xs);
   font-family: var(--font-body);
   color: var(--color-text-secondary);
@@ -3974,9 +4072,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  min-width: 250px;
-  max-width: 300px;
   width: 100%;
+}
+
+.tasksScrollable {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 250px;
+  overflow-y: auto;
 }
 
 .tasksList {
@@ -4200,6 +4304,10 @@
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .allTaskCardMeta {

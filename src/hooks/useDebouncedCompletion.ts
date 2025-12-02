@@ -4,7 +4,8 @@ type CompletionMutator = (taskId: string) => Promise<void>;
 
 type UseDebouncedCompletionResult = {
   pendingTaskId: string | null;  // Kept for backwards compat, returns first pending
-  removedTaskId: string | null;
+  removedTaskId: string | null;  // Kept for backwards compat, returns first removed
+  removedTaskIds: Set<string>;   // Full set of removed task IDs
   startCompletion: (taskId: string) => void;
   undoCompletion: (taskId: string) => void;
   isPending: (taskId: string) => boolean;
@@ -64,6 +65,7 @@ export const useDebouncedCompletion = (
   return {
     pendingTaskId,
     removedTaskId,
+    removedTaskIds,
     startCompletion,
     undoCompletion,
     isPending,

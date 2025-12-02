@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { myTasks, myVintages, myWines, mySeasonalTasksByWeek } from '../../shared/queries';
 import { formatDueDate, isOverdue, isDueToday } from './taskHelpers';
 import { useZero } from '../../contexts/ZeroContext';
+import { useDebouncedCompletion } from '../../hooks/useDebouncedCompletion';
+import { TaskRow } from './TaskRow';
+import { TaskCompletionModal } from './TaskCompletionModal';
 import styles from '../../App.module.css';
 
 type FilterTab = 'active' | 'completed' | 'skipped' | 'all';
@@ -31,6 +34,8 @@ export const AllTasksView = () => {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('active');
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const weekStart = getWeekStart();
   const weekEnd = getWeekEnd();
@@ -39,6 +44,30 @@ export const AllTasksView = () => {
   const [vintagesData] = useQuery(myVintages(user?.id) as any) as any;
   const [winesData] = useQuery(myWines(user?.id) as any) as any;
   const [seasonalTasksData] = useQuery(mySeasonalTasksByWeek(user?.id, weekStart) as any) as any;
+
+  // Track which task IDs are seasonal for the completion callback
+  const seasonalTaskIds = new Set((seasonalTasksData || []).map((st: any) => st.id));
+
+  // Debounced completion handler that works for both regular and seasonal tasks
+  const handleTaskComplete = useCallback(async (taskId: string) => {
+    if (seasonalTaskIds.has(taskId)) {
+      await zero.mutate.seasonal_task.update({
+        id: taskId,
+        completed_at: Date.now(),
+        updated_at: Date.now(),
+      });
+    } else {
+      await zero.mutate.task.update({
+        id: taskId,
+        completed_at: Date.now(),
+        updated_at: Date.now(),
+      });
+    }
+  }, [zero, seasonalTaskIds]);
+
+  const { removedTaskIds, startCompletion, undoCompletion, isPending } = useDebouncedCompletion(
+    handleTaskComplete
+  );
 
   // Wait for all queries to sync before rendering (undefined = still syncing)
   const allQueriesSynced = tasksData !== undefined && seasonalTasksData !== undefined;
@@ -79,23 +108,24 @@ export const AllTasksView = () => {
   const filteredTasks = filteredBySearch.filter((task: any) => {
     const completed = task.completed_at !== null && task.completed_at !== undefined;
     const skipped = !!task.skipped;
+    const pendingRemoval = removedTaskIds.has(task.id);
 
     switch (activeFilter) {
       case 'active':
-        return !completed && !skipped;
+        return !completed && !skipped && !pendingRemoval;
       case 'completed':
         return completed;
       case 'skipped':
         return skipped && !completed;
       case 'all':
       default:
-        return true;
+        return !pendingRemoval || completed || skipped;
     }
   });
 
   const getTaskSource = (task: any): string => {
     if (task.entity_type === 'seasonal') {
-      return 'Seasonal';
+      return 'Vineyard';
     } else if (task.entity_type === 'vintage') {
       return getVintageName(task.entity_id);
     } else {
@@ -134,26 +164,31 @@ export const AllTasksView = () => {
     setLocation(route);
   };
 
-  const handleToggleComplete = (e: React.MouseEvent, task: any) => {
-    e.stopPropagation();
-    const completed = task.completed_at !== null && task.completed_at !== undefined;
+  // Render active task using TaskRow with debounce
+  const renderActiveTaskRow = (task: any) => {
+    // Only allow clicking to open modal for non-seasonal tasks
+    const handleClick = task.entity_type !== 'seasonal' ? () => setSelectedTask(task) : undefined;
 
-    if (task.entity_type === 'seasonal') {
-      zero.mutate.seasonal_task.update({
-        id: task.id,
-        completed_at: completed ? undefined : Date.now(),
-        updated_at: Date.now(),
-      });
-    } else {
-      zero.mutate.task.update({
-        id: task.id,
-        completed_at: completed ? undefined : Date.now(),
-        updated_at: Date.now(),
-      });
-    }
+    return (
+      <TaskRow
+        key={task.id}
+        task={task}
+        isPending={isPending(task.id)}
+        onComplete={() => startCompletion(task.id)}
+        onUndo={() => undoCompletion(task.id)}
+        onClick={handleClick}
+        contextLabel={getTaskSource(task)}
+      />
+    );
   };
 
-  const renderTaskCard = (task: any) => {
+  const showSuccessMessage = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
+  // Render completed/skipped/all task card (view-only, no debounce needed)
+  const renderHistoryTaskCard = (task: any) => {
     const overdue = isOverdue(task.due_date, task.completed_at, task.skipped ? 1 : 0);
     const dueToday = isDueToday(task.due_date);
     const completed = task.completed_at !== null && task.completed_at !== undefined;
@@ -166,23 +201,11 @@ export const AllTasksView = () => {
         className={`${styles.allTaskCard} ${overdue ? styles.allTaskCardOverdue : ''} ${completed || skipped ? styles.allTaskCardDone : ''}`}
       >
         <div className={styles.allTaskCardMain}>
-          {activeFilter === 'active' && (
-            <input
-              type="checkbox"
-              checked={completed}
-              onClick={(e) => handleToggleComplete(e, task)}
-              onChange={() => {}}
-              className={styles.allTaskCheckbox}
-            />
-          )}
           <div className={styles.allTaskCardContent}>
             <div className={styles.allTaskCardHeader}>
               <span className={`${styles.allTaskCardName} ${completed || skipped ? styles.allTaskCardNameDone : ''}`}>
                 {task.name}
               </span>
-              {overdue && !completed && !skipped && (
-                <span className={styles.allTaskBadgeOverdue}>OVERDUE</span>
-              )}
               {completed && (
                 <span className={styles.allTaskBadgeCompleted}>COMPLETED</span>
               )}
@@ -259,12 +282,36 @@ export const AllTasksView = () => {
       <div className={styles.allTasksList}>
         {!allQueriesSynced ? (
           <div className={styles.tasksEmptyState}>Loading tasks...</div>
-        ) : sortedTasks.length > 0 ? sortedTasks.map(renderTaskCard) : (
+        ) : sortedTasks.length > 0 ? (
+          activeFilter === 'active'
+            ? sortedTasks.map(renderActiveTaskRow)
+            : sortedTasks.map(renderHistoryTaskCard)
+        ) : (
           <div className={styles.tasksEmptyState}>
             {searchQuery ? 'No tasks found matching your search.' : `No ${activeFilter} tasks.`}
           </div>
         )}
       </div>
+
+      {successMessage && (
+        <div className={styles.successMessage}>
+          {successMessage}
+        </div>
+      )}
+
+      {selectedTask && (
+        <TaskCompletionModal
+          isOpen={!!selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onSuccess={showSuccessMessage}
+          taskId={selectedTask.id}
+          taskName={selectedTask.name}
+          taskDescription={selectedTask.description}
+          taskNotes={selectedTask.notes}
+          dueDate={selectedTask.due_date}
+          currentlySkipped={selectedTask.skipped}
+        />
+      )}
     </div>
   );
 };
