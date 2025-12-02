@@ -2,7 +2,7 @@ import { test, describe, expect, afterEach, rs } from '@rstest/core';
 import { render, screen, cleanup } from '@testing-library/react';
 import {
   DesktopDashboard,
-  RecentActivity,
+  VineyardSummary,
   CurrentVintage,
   SuppliesNeeded,
   TaskListPanel,
@@ -85,11 +85,29 @@ const mockMeasurements = [
   },
 ];
 
+const mockVines = [
+  { id: 'vine-1', health: 'GOOD' },
+  { id: 'vine-2', health: 'GOOD' },
+  { id: 'vine-3', health: 'FAIR' },
+  { id: 'vine-4', health: 'NEEDS ATTENTION' },
+  { id: 'vine-5', health: 'EXCELLENT' },
+];
+
+const mockBlocks = [
+  { id: 'block-1', name: 'Block A' },
+  { id: 'block-2', name: 'Block B' },
+];
+
 // Mock queries to return objects with customQueryID for useQuery pattern
 rs.mock('../../shared/queries', () => ({
   myTasks: () => ({ customQueryID: { name: 'myTasks' } }),
   myVintages: () => ({ customQueryID: { name: 'myVintages' } }),
   myMeasurements: () => ({ customQueryID: { name: 'myMeasurements' } }),
+  myVines: () => ({ customQueryID: { name: 'myVines' } }),
+  myBlocks: () => ({ customQueryID: { name: 'myBlocks' } }),
+  myWines: () => ({ customQueryID: { name: 'myWines' } }),
+  supplyTemplates: () => ({ customQueryID: { name: 'supplyTemplates' } }),
+  mySupplyInstances: () => ({ customQueryID: { name: 'mySupplyInstances' } }),
 }));
 
 rs.mock('@rocicorp/zero/react', () => ({
@@ -103,6 +121,21 @@ rs.mock('@rocicorp/zero/react', () => ({
     }
     if (queryName === 'myMeasurements') {
       return [mockMeasurements];
+    }
+    if (queryName === 'myVines') {
+      return [mockVines];
+    }
+    if (queryName === 'myBlocks') {
+      return [mockBlocks];
+    }
+    if (queryName === 'myWines') {
+      return [[]];
+    }
+    if (queryName === 'supplyTemplates') {
+      return [[]];
+    }
+    if (queryName === 'mySupplyInstances') {
+      return [[]];
     }
     return [[]];
   },
@@ -122,30 +155,41 @@ rs.mock('wouter', () => ({
 }));
 
 
-describe('RecentActivity', () => {
+describe('VineyardSummary', () => {
   afterEach(() => {
     cleanup();
   });
 
-  test('renders title', () => {
-    render(<RecentActivity />);
-    expect(screen.getByText('RECENT ACTIVITY')).toBeInTheDocument();
+  test('renders title and view link', () => {
+    render(<VineyardSummary />);
+    expect(screen.getByText('VINEYARD')).toBeInTheDocument();
+    expect(screen.getByText('VIEW')).toBeInTheDocument();
   });
 
-  test('renders activity items', () => {
-    render(<RecentActivity />);
-
-    expect(screen.getByText('VINE A-123 SCANNED')).toBeInTheDocument();
-    expect(screen.getByText('BATCH B-456 UPDATED')).toBeInTheDocument();
-    expect(screen.getByText('HARVEST LOG CREATED')).toBeInTheDocument();
+  test('renders vine count', () => {
+    render(<VineyardSummary />);
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('VINES')).toBeInTheDocument();
   });
 
-  test('renders activity times', () => {
-    render(<RecentActivity />);
+  test('renders block count', () => {
+    render(<VineyardSummary />);
+    // 2 blocks - check both label and that it appears in the stats
+    expect(screen.getByText('BLOCKS')).toBeInTheDocument();
+  });
 
-    expect(screen.getByText('10:23 AM')).toBeInTheDocument();
-    expect(screen.getByText('09:45 AM')).toBeInTheDocument();
-    expect(screen.getByText('08:12 AM')).toBeInTheDocument();
+  test('renders vines needing attention', () => {
+    render(<VineyardSummary />);
+    // 1 FAIR + 1 NEEDS ATTENTION = 2
+    expect(screen.getByText('NEED ATTENTION')).toBeInTheDocument();
+    // Check there are two "2" values (blocks and needs attention)
+    expect(screen.getAllByText('2')).toHaveLength(2);
+  });
+
+  test('renders current stage', () => {
+    render(<VineyardSummary />);
+    expect(screen.getByText('CURRENT STAGE')).toBeInTheDocument();
+    expect(screen.getByText('DORMANT')).toBeInTheDocument();
   });
 });
 
@@ -157,8 +201,8 @@ describe('CurrentVintage', () => {
   test('renders title and view all link', () => {
     render(<CurrentVintage />);
 
-    expect(screen.getByText('CURRENT VINTAGE')).toBeInTheDocument();
-    expect(screen.getByText('VIEW ALL VINTAGES')).toBeInTheDocument();
+    expect(screen.getByText('WINERY')).toBeInTheDocument();
+    expect(screen.getByText('VIEW ALL')).toBeInTheDocument();
   });
 
   test('renders vintage name', () => {
@@ -193,29 +237,17 @@ describe('SuppliesNeeded', () => {
     cleanup();
   });
 
-  test('renders title and view inventory link', () => {
+  test('renders title and view all link', () => {
     render(<SuppliesNeeded />);
 
     expect(screen.getByText('SUPPLIES NEEDED')).toBeInTheDocument();
-    expect(screen.getByText('VIEW INVENTORY')).toBeInTheDocument();
+    expect(screen.getByText('VIEW ALL')).toBeInTheDocument();
   });
 
-  test('renders supply items', () => {
+  test('renders empty state when no supplies needed', () => {
     render(<SuppliesNeeded />);
 
-    expect(screen.getByText('YEAST (RED STAR)')).toBeInTheDocument();
-    expect(screen.getByText('POTASSIUM METABISULFATE')).toBeInTheDocument();
-    expect(screen.getByText('CARBOYS (5 GAL)')).toBeInTheDocument();
-    expect(screen.getByText('SANITIZER')).toBeInTheDocument();
-  });
-
-  test('renders supply reasons', () => {
-    render(<SuppliesNeeded />);
-
-    const harvestReasons = screen.getAllByText('HARVEST - NOV 20');
-    expect(harvestReasons).toHaveLength(2);
-    expect(screen.getByText('SECONDARY FERMENT')).toBeInTheDocument();
-    expect(screen.getByText('EQUIPMENT MAINT')).toBeInTheDocument();
+    expect(screen.getByText('NO SUPPLIES NEEDED')).toBeInTheDocument();
   });
 });
 
@@ -258,11 +290,11 @@ describe('DesktopDashboard', () => {
   test('renders all sub-components', () => {
     render(<DesktopDashboard />);
 
-    // Check for RecentActivity
-    expect(screen.getByText('RECENT ACTIVITY')).toBeInTheDocument();
+    // Check for VineyardSummary
+    expect(screen.getByText('VINEYARD')).toBeInTheDocument();
 
-    // Check for CurrentVintage
-    expect(screen.getByText('CURRENT VINTAGE')).toBeInTheDocument();
+    // Check for Winery (formerly CurrentVintage)
+    expect(screen.getByText('WINERY')).toBeInTheDocument();
 
     // Check for SuppliesNeeded
     expect(screen.getByText('SUPPLIES NEEDED')).toBeInTheDocument();
@@ -271,10 +303,11 @@ describe('DesktopDashboard', () => {
     expect(screen.getByText('TASK LIST')).toBeInTheDocument();
   });
 
-  test('renders recent activity items', () => {
+  test('renders vineyard stats', () => {
     render(<DesktopDashboard />);
 
-    expect(screen.getByText('VINE A-123 SCANNED')).toBeInTheDocument();
+    expect(screen.getByText('VINES')).toBeInTheDocument();
+    expect(screen.getByText('BLOCKS')).toBeInTheDocument();
   });
 
   test('renders vintage information', () => {
@@ -283,10 +316,10 @@ describe('DesktopDashboard', () => {
     expect(screen.getByText('2024 CABERNET SAUVIGNON')).toBeInTheDocument();
   });
 
-  test('renders supply items', () => {
+  test('renders supplies section', () => {
     render(<DesktopDashboard />);
 
-    expect(screen.getByText('YEAST (RED STAR)')).toBeInTheDocument();
+    expect(screen.getByText('SUPPLIES NEEDED')).toBeInTheDocument();
   });
 
   test('renders task items', () => {

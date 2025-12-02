@@ -2167,6 +2167,75 @@
   color: var(--color-primary-400);
 }
 
+/* Vineyard Summary Styles */
+.vineyardStats {
+  display: flex;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+}
+
+.vineyardStatRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+}
+
+.vineyardStatValue {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-400);
+}
+
+.vineyardStatWarning {
+  color: var(--color-warning);
+}
+
+.vineyardStatLabel {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.vineyardStage {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface-elevated);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.vineyardStageLabel {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+}
+
+.vineyardStageValue {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-accent);
+  text-transform: uppercase;
+}
+
+/* Wine Stats Summary */
+.wineStatsSummary {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: var(--spacing-px) solid var(--color-border);
+}
+
 .tastingNote {
   padding: var(--spacing-md);
   background: var(--color-surface-elevated);

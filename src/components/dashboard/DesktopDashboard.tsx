@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation, Link } from 'wouter';
-import { myTasks, myVintages, myMeasurements, mySupplyInstances, supplyTemplates as supplyTemplatesQuery } from '../../shared/queries';
+import { myTasks, myVintages, myMeasurements, mySupplyInstances, supplyTemplates as supplyTemplatesQuery, myVines, myBlocks, myWines } from '../../shared/queries';
 import { formatDueDate } from '../winery/taskHelpers';
 import { formatStage } from '../winery/stages';
 import { useZero } from '../../contexts/ZeroContext';
@@ -17,24 +17,73 @@ let cachedMeasurementsData: any[] | null = null;
 let cachedTasksData: any[] | null = null;
 let cachedSupplyTemplatesData: any[] | null = null;
 let cachedSupplyInstancesData: any[] | null = null;
+let cachedVinesData: any[] | null = null;
+let cachedBlocksData: any[] | null = null;
+let cachedWinesData: any[] | null = null;
 
-export const RecentActivity = () => {
+export const VineyardSummary = () => {
+  const { user } = useUser();
+  const [vinesData] = useQuery(myVines(user?.id) as any) as any;
+  const [blocksData] = useQuery(myBlocks(user?.id) as any) as any;
+
+  // Update module-level caches
+  if (vinesData && vinesData.length > 0) {
+    cachedVinesData = vinesData;
+  }
+  if (blocksData && blocksData.length > 0) {
+    cachedBlocksData = blocksData;
+  }
+
+  const effectiveVinesData = vinesData && vinesData.length > 0 ? vinesData : cachedVinesData || [];
+  const effectiveBlocksData = blocksData && blocksData.length > 0 ? blocksData : cachedBlocksData || [];
+
+  const isLoading = vinesData === undefined && cachedVinesData === null;
+
+  const totalVines = effectiveVinesData.length;
+  const totalBlocks = effectiveBlocksData.length;
+  // Count any vine that's not in excellent or good health
+  const healthyStates = ['EXCELLENT', 'GOOD'];
+  const concerningVines = effectiveVinesData.filter(
+    (v: any) => v.health && !healthyStates.includes(v.health.toUpperCase())
+  ).length;
+
+  if (isLoading) {
+    return (
+      <div className={styles.desktopPanel}>
+        <div className={styles.panelTitleRow}>
+          <h2 className={styles.panelTitle}>VINEYARD</h2>
+          <Link href="/vineyard" className={styles.panelLink}>VIEW</Link>
+        </div>
+        <VintageListSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.desktopPanel}>
-      <h2 className={styles.panelTitle}>RECENT ACTIVITY</h2>
-      <div className={styles.activityList}>
-        <div className={styles.activityItem}>
-          <span className={styles.activityTime}>10:23 AM</span>
-          <span className={styles.activityText}>VINE A-123 SCANNED</span>
+      <div className={styles.panelTitleRow}>
+        <h2 className={styles.panelTitle}>VINEYARD</h2>
+        <Link href="/vineyard" className={styles.panelLink}>VIEW</Link>
+      </div>
+      <div className={styles.vineyardStats}>
+        <div className={styles.vineyardStatRow}>
+          <span className={styles.vineyardStatValue}>{totalVines}</span>
+          <span className={styles.vineyardStatLabel}>{totalVines === 1 ? 'VINE' : 'VINES'}</span>
         </div>
-        <div className={styles.activityItem}>
-          <span className={styles.activityTime}>09:45 AM</span>
-          <span className={styles.activityText}>BATCH B-456 UPDATED</span>
+        <div className={styles.vineyardStatRow}>
+          <span className={styles.vineyardStatValue}>{totalBlocks}</span>
+          <span className={styles.vineyardStatLabel}>{totalBlocks === 1 ? 'BLOCK' : 'BLOCKS'}</span>
         </div>
-        <div className={styles.activityItem}>
-          <span className={styles.activityTime}>08:12 AM</span>
-          <span className={styles.activityText}>HARVEST LOG CREATED</span>
-        </div>
+        {concerningVines > 0 && (
+          <div className={styles.vineyardStatRow}>
+            <span className={`${styles.vineyardStatValue} ${styles.vineyardStatWarning}`}>{concerningVines}</span>
+            <span className={styles.vineyardStatLabel}>NEED ATTENTION</span>
+          </div>
+        )}
+      </div>
+      <div className={styles.vineyardStage}>
+        <span className={styles.vineyardStageLabel}>CURRENT STAGE</span>
+        <span className={styles.vineyardStageValue}>DORMANT</span>
       </div>
     </div>
   );
@@ -45,6 +94,7 @@ export const CurrentVintage = () => {
   const [, setLocation] = useLocation();
   const [vintagesData] = useQuery(myVintages(user?.id) as any) as any;
   const [measurementsData] = useQuery(myMeasurements(user?.id) as any) as any;
+  const [winesData] = useQuery(myWines(user?.id) as any) as any;
 
   // Update module-level cache when we have real data
   if (vintagesData && vintagesData.length > 0) {
@@ -53,10 +103,40 @@ export const CurrentVintage = () => {
   if (measurementsData && measurementsData.length > 0) {
     cachedMeasurementsData = measurementsData;
   }
+  if (winesData && winesData.length > 0) {
+    cachedWinesData = winesData;
+  }
 
   // Use cached data if Zero is still syncing but we have previous data
   const effectiveVintagesData = vintagesData && vintagesData.length > 0 ? vintagesData : cachedVintagesData || [];
   const effectiveMeasurementsData = measurementsData && measurementsData.length > 0 ? measurementsData : cachedMeasurementsData || [];
+  const effectiveWinesData = winesData && winesData.length > 0 ? winesData : cachedWinesData || [];
+
+  // Wine stats
+  const bottledStages = ['bottling', 'bottle_aging'];
+  const fermentingStages = ['primary_fermentation', 'malolactic_fermentation'];
+  const agingStages = ['aging', 'racking', 'fining_filtering', 'blending'];
+
+  const fermentingGallons = effectiveWinesData
+    .filter((w: any) => fermentingStages.includes(w.current_stage))
+    .reduce((sum: number, w: any) => sum + (w.current_volume_gallons || 0), 0);
+  const agingGallons = effectiveWinesData
+    .filter((w: any) => agingStages.includes(w.current_stage))
+    .reduce((sum: number, w: any) => sum + (w.current_volume_gallons || 0), 0);
+  const bottledGallons = effectiveWinesData
+    .filter((w: any) => bottledStages.includes(w.current_stage))
+    .reduce((sum: number, w: any) => sum + (w.current_volume_gallons || 0), 0);
+  // ~5 bottles per gallon (750ml bottles, 1 gal = 3785ml)
+  const bottlesProduced = Math.round(bottledGallons * 5);
+
+  const hasWineStats = effectiveWinesData.length > 0;
+
+  // Build wine stats summary parts (fermenting → aging → bottled)
+  const wineStatsParts: string[] = [];
+  if (fermentingGallons > 0) wineStatsParts.push(`${fermentingGallons} gal fermenting`);
+  if (agingGallons > 0) wineStatsParts.push(`${agingGallons} gal aging`);
+  if (bottlesProduced > 0) wineStatsParts.push(`${bottlesProduced} bottles`);
+  const wineStatsSummary = wineStatsParts.join(' · ');
 
   // Show skeleton while initial data is loading (no cached data and still syncing)
   const isLoading = vintagesData === undefined && cachedVintagesData === null;
@@ -80,7 +160,7 @@ export const CurrentVintage = () => {
     return (
       <div className={styles.desktopPanel}>
         <div className={styles.panelTitleRow}>
-          <h2 className={styles.panelTitle}>{currentYear} VINTAGES</h2>
+          <h2 className={styles.panelTitle}>WINERY</h2>
           <Link href="/winery/vintages" className={styles.panelLink}>VIEW ALL</Link>
         </div>
         <VintageListSkeleton />
@@ -92,9 +172,12 @@ export const CurrentVintage = () => {
     return (
       <div className={styles.desktopPanel}>
         <div className={styles.panelTitleRow}>
-          <h2 className={styles.panelTitle}>CURRENT VINTAGE</h2>
-          <Link href="/winery/vintages" className={styles.panelLink}>VIEW ALL VINTAGES</Link>
+          <h2 className={styles.panelTitle}>WINERY</h2>
+          <Link href="/winery/vintages" className={styles.panelLink}>VIEW ALL</Link>
         </div>
+        {hasWineStats && wineStatsSummary && (
+          <div className={styles.wineStatsSummary}>{wineStatsSummary}</div>
+        )}
         <div className={styles.emptyPanelText}>No vintages yet. Add your first harvest to get started.</div>
       </div>
     );
@@ -104,9 +187,12 @@ export const CurrentVintage = () => {
     return (
       <div className={styles.desktopPanel}>
         <div className={styles.panelTitleRow}>
-          <h2 className={styles.panelTitle}>{currentYear} VINTAGES</h2>
+          <h2 className={styles.panelTitle}>WINERY</h2>
           <Link href="/winery/vintages" className={styles.panelLink}>VIEW ALL</Link>
         </div>
+        {hasWineStats && wineStatsSummary && (
+          <div className={styles.wineStatsSummary}>{wineStatsSummary}</div>
+        )}
         <div className={styles.vintageList}>
           {currentYearVintages.map((vintage: any) => {
             const measurement = getHarvestMeasurement(vintage.id);
@@ -134,9 +220,12 @@ export const CurrentVintage = () => {
   return (
     <div className={styles.desktopPanel}>
       <div className={styles.panelTitleRow}>
-        <h2 className={styles.panelTitle}>CURRENT VINTAGE</h2>
-        <Link href="/winery/vintages" className={styles.panelLink}>VIEW ALL VINTAGES</Link>
+        <h2 className={styles.panelTitle}>WINERY</h2>
+        <Link href="/winery/vintages" className={styles.panelLink}>VIEW ALL</Link>
       </div>
+      {hasWineStats && wineStatsSummary && (
+        <div className={styles.wineStatsSummary}>{wineStatsSummary}</div>
+      )}
       <div
         className={`${styles.vintageName} ${styles.clickableActivityText}`}
         onClick={() => setLocation(`/winery/vintages/${latestVintage.id}`)}
@@ -454,7 +543,7 @@ export const DesktopDashboard = () => {
   return (
     <div className={styles.desktopDashboard}>
       <div className={styles.desktopRow}>
-        <RecentActivity />
+        <VineyardSummary />
         <CurrentVintage />
       </div>
       <div className={styles.desktopRow}>
