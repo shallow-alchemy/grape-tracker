@@ -7,6 +7,7 @@ import { formatDueDate } from '../winery/taskHelpers';
 import { formatStage } from '../winery/stages';
 import { useZero } from '../../contexts/ZeroContext';
 import { ActionLink } from '../ActionLink';
+import { TaskListSkeleton, VintageListSkeleton } from '../Skeleton';
 import styles from '../../App.module.css';
 
 // Module-level caches - persist across component unmount/remount to prevent flash on navigation
@@ -57,6 +58,9 @@ export const CurrentVintage = () => {
   const effectiveVintagesData = vintagesData && vintagesData.length > 0 ? vintagesData : cachedVintagesData || [];
   const effectiveMeasurementsData = measurementsData && measurementsData.length > 0 ? measurementsData : cachedMeasurementsData || [];
 
+  // Show skeleton while initial data is loading (no cached data and still syncing)
+  const isLoading = vintagesData === undefined && cachedVintagesData === null;
+
   const currentYear = new Date().getFullYear();
   const currentYearVintages = effectiveVintagesData
     .filter((v: any) => v.vintage_year === currentYear)
@@ -71,6 +75,18 @@ export const CurrentVintage = () => {
       (m: any) => m.entity_type === 'vintage' && m.entity_id === vintageId && m.stage === 'harvest'
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className={styles.desktopPanel}>
+        <div className={styles.panelTitleRow}>
+          <h2 className={styles.panelTitle}>{currentYear} VINTAGES</h2>
+          <Link href="/winery/vintages" className={styles.panelLink}>VIEW ALL</Link>
+        </div>
+        <VintageListSkeleton />
+      </div>
+    );
+  }
 
   if (!latestVintage) {
     return (
@@ -192,6 +208,9 @@ export const SuppliesNeeded = () => {
   const effectiveSupplyTemplates = supplyTemplatesData && supplyTemplatesData.length > 0 ? supplyTemplatesData : cachedSupplyTemplatesData || [];
   const effectiveSupplyInstances = supplyInstancesData && supplyInstancesData.length > 0 ? supplyInstancesData : cachedSupplyInstancesData || [];
 
+  // Show skeleton while initial data is loading
+  const isLoading = supplyInstancesData === undefined && cachedSupplyInstancesData === null;
+
   // Build lookup maps
   const taskMap = new Map<string, any>();
   for (const task of effectiveTasksData) {
@@ -277,7 +296,9 @@ export const SuppliesNeeded = () => {
         <Link href="/supplies" className={styles.panelLink}>VIEW ALL</Link>
       </div>
       <div className={styles.taskList}>
-        {suppliesNeeded.length > 0 ? (
+        {isLoading ? (
+          <TaskListSkeleton />
+        ) : suppliesNeeded.length > 0 ? (
           suppliesNeeded.map(({ instance, task, template }: any) => {
             const isPending = pendingSupplies.has(instance.id);
             return (
@@ -328,6 +349,9 @@ export const TaskListPanel = () => {
 
   // Use cached data if Zero is still syncing but we have previous data
   const effectiveTasksData = tasksData && tasksData.length > 0 ? tasksData : cachedTasksData || [];
+
+  // Show skeleton while initial data is loading
+  const isLoading = tasksData === undefined && cachedTasksData === null;
 
   const upcomingTasks = effectiveTasksData
     .filter((t: any) => !t.completed_at && !t.skipped && !removedTasks.has(t.id))
@@ -389,7 +413,9 @@ export const TaskListPanel = () => {
         <Link href="/tasks" className={styles.panelLink}>VIEW ALL</Link>
       </div>
       <div className={styles.taskList}>
-        {upcomingTasks.length > 0 ? (
+        {isLoading ? (
+          <TaskListSkeleton />
+        ) : upcomingTasks.length > 0 ? (
           upcomingTasks.map((task: any) => {
             const isPending = pendingTasks.has(task.id);
             return (

@@ -306,6 +306,9 @@
 }
 
 .warningHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-family: var(--font-heading);
   font-size: var(--font-size-sm);
   color: var(--color-warning);
@@ -321,6 +324,183 @@
   color: var(--color-text-primary);
   padding: var(--spacing-sm) 0;
   font-weight: var(--font-weight-medium);
+}
+
+/* Terminal-style alert line */
+.terminalAlert {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-lg);
+  background: linear-gradient(90deg, rgba(212, 133, 11, 0.15) 0%, rgba(212, 133, 11, 0.05) 100%);
+  border-bottom: 1px solid var(--color-warning);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.terminalAlertFadeOut {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.terminalAlertIcon {
+  color: var(--color-warning);
+  font-size: var(--font-size-sm);
+  animation: terminalBlink 1.5s ease-in-out infinite;
+}
+
+@keyframes terminalBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.terminalAlertText {
+  flex: 1;
+  color: var(--color-warning);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.terminalAlertDismiss {
+  background: none;
+  border: none;
+  color: var(--color-warning);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  line-height: 1;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.terminalAlertDismiss:hover {
+  opacity: 1;
+}
+
+/* Alerts indicator in header */
+.alertsIndicator {
+  position: relative;
+}
+
+.alertsButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  transition: color 0.2s;
+}
+
+.alertsButton:hover {
+  color: var(--color-text-primary);
+}
+
+.alertsButtonActive {
+  color: var(--color-warning);
+}
+
+.alertsButtonActive:hover {
+  color: var(--color-warning);
+}
+
+.alertsBadge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--color-warning);
+  color: var(--color-background);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alertsDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--spacing-sm);
+  min-width: 280px;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.alertsDropdownHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(212, 133, 11, 0.1);
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--color-warning);
+  letter-spacing: 0.1em;
+}
+
+.alertsDropdownDismiss {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.alertsDropdownDismiss:hover {
+  color: var(--color-text-primary);
+}
+
+.alertsDropdownList {
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.alertsDropdownItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+
+.alertsDropdownIcon {
+  color: var(--color-warning);
+  flex-shrink: 0;
+}
+
+.alertsDropdownText {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  line-height: 1.4;
 }
 
 .seasonalActivities {
@@ -5021,4 +5201,130 @@
 .chartTooltipBadgeConcern {
   background: var(--color-error-bg);
   color: var(--color-error);
+}
+
+/* ============================================
+   SKELETON LOADERS
+   ============================================ */
+
+@keyframes skeletonPulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.skeleton {
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+.skeletonCircle {
+  border-radius: 50%;
+}
+
+.skeletonRect {
+  border-radius: var(--radius-md);
+}
+
+/* Task list skeleton */
+.skeletonTaskList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.skeletonTaskItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+}
+
+/* Vintage list skeleton */
+.skeletonVintageList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.skeletonVintageItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) 0;
+}
+
+.skeletonVintageMeta {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Weather skeleton - matches .forecastContent structure */
+.skeletonForecastContent {
+  display: block;
+}
+
+.skeletonTodayWeather {
+  display: none;
+}
+
+.skeletonForecastDays {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.skeletonForecastDay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background: var(--color-surface-elevated);
+  border: var(--spacing-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+@media (min-width: 768px) {
+  .skeletonForecastContent {
+    display: flex;
+    gap: var(--spacing-xl);
+    align-items: stretch;
+    height: 120px;
+  }
+
+  .skeletonTodayWeather {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-xs);
+    background: var(--color-surface-elevated);
+    border: var(--spacing-px) solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    min-width: 200px;
+    flex-shrink: 0;
+  }
+
+  .skeletonForecastDays {
+    grid-template-columns: repeat(10, 1fr);
+    flex: 1;
+  }
+
+  .skeletonForecastDay {
+    max-height: 120px;
+  }
+}
+
+/* What's Next skeleton - columns rendered inside whatsNextSplit grid */
+.skeletonWhatsNextTask,
+.skeletonWhatsNextSeasonal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }

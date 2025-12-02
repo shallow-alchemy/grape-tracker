@@ -3,14 +3,15 @@ import { useQuery } from '@rocicorp/zero/react';
 import { useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { useZero } from '../contexts/ZeroContext';
+import { useAlerts } from '../contexts/AlertsContext';
 import { myTasks } from '../shared/queries';
 import { fetchWeather, getWeatherIcon, WeatherData } from '../utils/weather';
 import { useDebouncedCompletion } from '../hooks/useDebouncedCompletion';
-import { Alerts } from './Alerts';
 import { WeatherAlertSettingsModal } from './weather/WeatherAlertSettingsModal';
 import { formatDueDate } from './winery/taskHelpers';
 import { SeasonalTaskCard } from './dashboard/SeasonalTaskCard';
 import { ActionLink } from './ActionLink';
+import { WeatherSkeleton, WhatsNextSkeleton } from './Skeleton';
 import styles from '../App.module.css';
 
 // Module-level cache - persists across component unmount/remount to prevent flash on navigation
@@ -20,6 +21,7 @@ let cachedTasksData: any[] | null = null;
 export const Weather = () => {
   const { user } = useUser();
   const zero = useZero();
+  const { setAlerts } = useAlerts();
   const [, setLocation] = useLocation();
   const [showHighTemps, setShowHighTemps] = useState(() => {
     const saved = localStorage.getItem('showHighTemps');
@@ -69,6 +71,7 @@ export const Weather = () => {
                 position.coords.longitude
               );
               setWeatherData(data);
+              setAlerts(data.alerts || []);
               setLoading(false);
             } catch (err) {
               console.error(err)
@@ -80,6 +83,7 @@ export const Weather = () => {
             try {
               const data = await fetchWeather(37.7749, -122.4194);
               setWeatherData(data);
+              setAlerts(data.alerts || []);
               setLoading(false);
             } catch (err) {
               console.error('Weather fetch error (location denied):', err);
@@ -92,6 +96,7 @@ export const Weather = () => {
         try {
           const data = await fetchWeather(37.7749, -122.4194);
           setWeatherData(data);
+          setAlerts(data.alerts || []);
           setLoading(false);
         } catch (err) {
           console.error('Weather fetch error (no geolocation):', err);
@@ -113,9 +118,20 @@ export const Weather = () => {
   if (loading) {
     return (
       <section className={styles.weatherSection}>
+        <div className={styles.seasonalActivities}>
+          <div className={styles.whatsNextHeaderRow}>
+            <div className={styles.activityHeader}>WHAT'S NEXT</div>
+            <SeasonalTaskCard headerOnly />
+          </div>
+          <div className={styles.whatsNextSplit}>
+            <WhatsNextSkeleton />
+          </div>
+        </div>
         <div className={styles.forecast}>
-          <div className={styles.forecastHeader}>WEATHER</div>
-          <div className={styles.condition}>LOADING WEATHER...</div>
+          <div className={styles.forecastHeaderRow}>
+            <div className={styles.forecastHeader}>10-DAY FORECAST</div>
+          </div>
+          <WeatherSkeleton />
         </div>
       </section>
     );
@@ -136,8 +152,6 @@ export const Weather = () => {
 
   return (
     <section className={styles.weatherSection}>
-      <Alerts alerts={weatherData.alerts} />
-
       <div className={styles.seasonalActivities}>
         <div className={styles.whatsNextHeaderRow}>
           <div className={styles.activityHeader}>WHAT'S NEXT</div>

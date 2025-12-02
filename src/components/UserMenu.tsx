@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { FiUser, FiSettings, FiLogOut } from 'react-icons/fi';
+import { useSyncStatus } from '../hooks/useSyncStatus';
 import styles from './UserMenu.module.css';
 
 export const UserMenu = () => {
@@ -10,6 +11,7 @@ export const UserMenu = () => {
   const [, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { isHealthy, errorMessage, getStatusText } = useSyncStatus();
 
   const handleClickOutside = (event: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -64,6 +66,7 @@ export const UserMenu = () => {
             <FiUser className={styles.avatarIcon} />
           </span>
         )}
+        <span className={`${styles.statusDot} ${isHealthy ? styles.statusDotHealthy : styles.statusDotError}`} />
       </button>
 
       {isOpen && (
@@ -76,6 +79,16 @@ export const UserMenu = () => {
               {user?.primaryEmailAddress?.emailAddress || ''}
             </span>
           </div>
+
+          <div className={styles.divider} />
+
+          <div className={styles.syncStatus}>
+            <span className={`${styles.syncDot} ${isHealthy ? styles.syncDotHealthy : styles.syncDotError}`} />
+            <span className={styles.syncText}>{getStatusText()}</span>
+          </div>
+          {errorMessage && (
+            <div className={styles.syncError}>{errorMessage}</div>
+          )}
 
           <div className={styles.divider} />
 

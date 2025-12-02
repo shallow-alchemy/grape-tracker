@@ -3,6 +3,7 @@
 }
 
 .menuTrigger {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,7 +14,7 @@
   background: var(--color-surface-elevated);
   cursor: pointer;
   transition: all var(--transition-fast);
-  overflow: hidden;
+  overflow: visible;
   padding: 0;
 }
 
@@ -32,6 +33,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: var(--radius-full);
 }
 
 .avatarInitials {
@@ -132,4 +134,63 @@
 
 .menuItem:hover .menuIcon {
   color: var(--color-text-secondary);
+}
+
+/* Status dot on avatar */
+.statusDot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+.statusDotHealthy {
+  background: var(--color-success);
+}
+
+.statusDotError {
+  background: var(--color-error);
+}
+
+/* Sync status in dropdown */
+.syncStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+}
+
+.syncDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.syncDotHealthy {
+  background: var(--color-success);
+}
+
+.syncDotError {
+  background: var(--color-error);
+}
+
+.syncText {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.syncError {
+  padding: var(--spacing-xs) var(--spacing-lg);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  line-height: 1.4;
 }
