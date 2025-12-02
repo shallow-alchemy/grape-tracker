@@ -42,6 +42,14 @@ import {
   mySupplyInstances,
   mySupplyInstancesByTask,
   mySupplyInstancesByEntity,
+  myBlockStageHistory,
+  myBlockStageHistoryByBlock,
+  vineyardStages,
+  generalTaskTemplates,
+  allGeneralTaskTemplates,
+  generalTaskTemplatesByScope,
+  myGeneralTasks,
+  myGeneralTasksByScope,
 } from './queries.js';
 
 const app = new Hono();
@@ -95,6 +103,14 @@ const validatedQueries = {
   [mySupplyInstances.queryName]: withValidation(mySupplyInstances),
   [mySupplyInstancesByTask.queryName]: withValidation(mySupplyInstancesByTask),
   [mySupplyInstancesByEntity.queryName]: withValidation(mySupplyInstancesByEntity),
+  [myBlockStageHistory.queryName]: withValidation(myBlockStageHistory),
+  [myBlockStageHistoryByBlock.queryName]: withValidation(myBlockStageHistoryByBlock),
+  [vineyardStages.queryName]: withValidation(vineyardStages),
+  [generalTaskTemplates.queryName]: withValidation(generalTaskTemplates),
+  [allGeneralTaskTemplates.queryName]: withValidation(allGeneralTaskTemplates),
+  [generalTaskTemplatesByScope.queryName]: withValidation(generalTaskTemplatesByScope),
+  [myGeneralTasks.queryName]: withValidation(myGeneralTasks),
+  [myGeneralTasksByScope.queryName]: withValidation(myGeneralTasksByScope),
 };
 
 // Extract user ID from request headers

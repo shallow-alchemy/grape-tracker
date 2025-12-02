@@ -303,6 +303,41 @@ const supplyInstanceTable = table('supply_instance')
   })
   .primaryKey('id');
 
+const generalTaskTemplateTable = table('general_task_template')
+  .columns({
+    id: string(),
+    user_id: string(),
+    name: string(),
+    description: string(),
+    scope: string(),  // 'vineyard' or 'winery'
+    frequency: string(),
+    frequency_count: number(),
+    frequency_unit: string(),
+    is_enabled: boolean(),
+    is_archived: boolean(),
+    sort_order: number(),
+    created_at: number(),
+    updated_at: number(),
+  })
+  .primaryKey('id');
+
+const generalTaskTable = table('general_task')
+  .columns({
+    id: string(),
+    user_id: string(),
+    template_id: string(),
+    name: string(),
+    description: string(),
+    scope: string(),
+    due_date: number().optional(),
+    completed_at: number().optional(),
+    skipped: boolean(),
+    notes: string(),
+    created_at: number(),
+    updated_at: number(),
+  })
+  .primaryKey('id');
+
 export const schema = createSchema({
   tables: [
     userTable,
@@ -323,6 +358,8 @@ export const schema = createSchema({
     measurementAnalysisTable,
     supplyTemplateTable,
     supplyInstanceTable,
+    generalTaskTemplateTable,
+    generalTaskTable,
   ],
 });
 
@@ -526,6 +563,28 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
         },
       },
       block_stage_history: {
+        row: {
+          select: ANYONE_CAN,
+          insert: ANYONE_CAN,
+          update: {
+            preMutation: ANYONE_CAN,
+            postMutation: ANYONE_CAN,
+          },
+          delete: ANYONE_CAN,
+        },
+      },
+      general_task_template: {
+        row: {
+          select: ANYONE_CAN,
+          insert: ANYONE_CAN,
+          update: {
+            preMutation: ANYONE_CAN,
+            postMutation: ANYONE_CAN,
+          },
+          delete: ANYONE_CAN,
+        },
+      },
+      general_task: {
         row: {
           select: ANYONE_CAN,
           insert: ANYONE_CAN,

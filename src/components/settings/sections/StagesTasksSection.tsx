@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useQuery } from '@rocicorp/zero/react';
 import { FiChevronDown, FiChevronRight, FiCheck, FiX, FiPlus, FiEdit2, FiTrash2, FiRefreshCw, FiArchive, FiPackage } from 'react-icons/fi';
-import { taskTemplates, allStages, supplyTemplates as supplyTemplatesQuery } from '../../../shared/queries';
+import { taskTemplates, allStages, supplyTemplates as supplyTemplatesQuery, vineyardStages, allGeneralTaskTemplates } from '../../../shared/queries';
 import { type WineType } from '../../winery/stages';
 import { useZero } from '../../../contexts/ZeroContext';
 import styles from '../SettingsPage.module.css';
@@ -12,6 +12,20 @@ import taskStyles from './StagesTasksSection.module.css';
 let cachedStagesData: Stage[] | null = null;
 let cachedTemplatesData: TaskTemplate[] | null = null;
 let cachedSupplyTemplatesData: SupplyTemplate[] | null = null;
+let cachedVineyardStagesData: Stage[] | null = null;
+let cachedGeneralTaskTemplatesData: GeneralTaskTemplate[] | null = null;
+
+// Vineyard seasonal stage labels for display
+const VINEYARD_STAGE_LABELS: Record<string, string> = {
+  dormant: 'Dormant',
+  bud_break: 'Bud Break',
+  flowering: 'Flowering',
+  fruit_set: 'Fruit Set',
+  veraison: 'Veraison',
+  ripening: 'Ripening',
+  harvest: 'Harvest',
+  post_harvest: 'Post-Harvest',
+};
 
 type StageApplicability = 'required' | 'optional' | 'hidden';
 
@@ -61,6 +75,22 @@ type SupplyTemplate = {
   updated_at: number;
 };
 
+type GeneralTaskTemplate = {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string;
+  scope: string;  // 'vineyard' or 'winery'
+  frequency: string;
+  frequency_count: number;
+  frequency_unit: string;
+  is_enabled: boolean;
+  is_archived: boolean;
+  sort_order: number;
+  created_at: number;
+  updated_at: number;
+};
+
 const WINE_TYPES: { value: WineType; label: string }[] = [
   { value: 'red', label: 'Red' },
   { value: 'white', label: 'White' },
@@ -101,6 +131,8 @@ export const StagesTasksSection = () => {
   const [templatesData, templatesStatus] = useQuery(taskTemplates(user?.id) as any) as any;
   const [stagesData, stagesStatus] = useQuery(allStages(user?.id) as any) as any;
   const [supplyTemplatesData] = useQuery(supplyTemplatesQuery(user?.id) as any) as any;
+  const [vineyardStagesData] = useQuery(vineyardStages(user?.id) as any) as any;
+  const [generalTaskTemplatesData] = useQuery(allGeneralTaskTemplates(user?.id) as any) as any;
 
   // Update module-level cache when we have real data
   if (stagesData?.length > 0) {
@@ -112,17 +144,27 @@ export const StagesTasksSection = () => {
   if (supplyTemplatesData?.length > 0) {
     cachedSupplyTemplatesData = supplyTemplatesData;
   }
+  if (vineyardStagesData?.length > 0) {
+    cachedVineyardStagesData = vineyardStagesData;
+  }
+  if (generalTaskTemplatesData?.length > 0) {
+    cachedGeneralTaskTemplatesData = generalTaskTemplatesData;
+  }
 
   // Use cached data if Zero is still syncing but we have previous data
   const effectiveStagesData = stagesData?.length > 0 ? stagesData : cachedStagesData || stagesData;
   const effectiveTemplatesData = templatesData?.length > 0 ? templatesData : cachedTemplatesData || templatesData;
   const effectiveSupplyTemplatesData = supplyTemplatesData?.length > 0 ? supplyTemplatesData : cachedSupplyTemplatesData || supplyTemplatesData;
+  const effectiveVineyardStagesData = vineyardStagesData?.length > 0 ? vineyardStagesData : cachedVineyardStagesData || vineyardStagesData;
+  const effectiveGeneralTaskTemplatesData = generalTaskTemplatesData?.length > 0 ? generalTaskTemplatesData : cachedGeneralTaskTemplatesData || generalTaskTemplatesData;
 
   // Only show loading on FIRST load - never show loading if we have cached data
   const hasLoadedBefore = cachedStagesData !== null || cachedTemplatesData !== null;
   const isLoading = !hasLoadedBefore && (stagesStatus?.type === 'unknown' || templatesStatus?.type === 'unknown');
 
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set(['crush']));
+  const [expandedVineyardStages, setExpandedVineyardStages] = useState<Set<string>>(new Set(['dormant']));
+  const [expandedGeneralScopes, setExpandedGeneralScopes] = useState<Set<string>>(new Set(['vineyard']));
   const [filterWineType, setFilterWineType] = useState<WineType | 'all'>('all');
   const [showArchived, setShowArchived] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -155,6 +197,16 @@ export const StagesTasksSection = () => {
     notes: '',
   });
 
+  // General task editing state
+  const [editingGeneralTask, setEditingGeneralTask] = useState<GeneralTaskTemplate | null>(null);
+  const [addingGeneralTaskScope, setAddingGeneralTaskScope] = useState<string | null>(null);
+  const [newGeneralTask, setNewGeneralTask] = useState({
+    name: '',
+    description: '',
+    frequency: 'once',
+    frequency_count: 1,
+  });
+
   const stages: Stage[] = useMemo(() => {
     return (effectiveStagesData || [])
       .filter((s: Stage) => s.entity_type === 'wine')
@@ -162,9 +214,24 @@ export const StagesTasksSection = () => {
       .sort((a: Stage, b: Stage) => a.sort_order - b.sort_order);
   }, [effectiveStagesData, showArchived]);
 
+  // Vineyard seasonal stages
+  const vineyardStagesList: Stage[] = useMemo(() => {
+    return (effectiveVineyardStagesData || [])
+      .filter((s: Stage) => showArchived || !s.is_archived)
+      .sort((a: Stage, b: Stage) => a.sort_order - b.sort_order);
+  }, [effectiveVineyardStagesData, showArchived]);
+
   const templates: TaskTemplate[] = useMemo(() => {
     return (effectiveTemplatesData || [])
       .filter((t: TaskTemplate) => t.entity_type === 'wine')
+      .filter((t: TaskTemplate) => showArchived || !t.is_archived)
+      .sort((a: TaskTemplate, b: TaskTemplate) => a.sort_order - b.sort_order);
+  }, [effectiveTemplatesData, showArchived]);
+
+  // Vineyard task templates
+  const vineyardTemplates: TaskTemplate[] = useMemo(() => {
+    return (effectiveTemplatesData || [])
+      .filter((t: TaskTemplate) => t.entity_type === 'block')
       .filter((t: TaskTemplate) => showArchived || !t.is_archived)
       .sort((a: TaskTemplate, b: TaskTemplate) => a.sort_order - b.sort_order);
   }, [effectiveTemplatesData, showArchived]);
@@ -184,6 +251,38 @@ export const StagesTasksSection = () => {
 
     return grouped;
   }, [templates, filterWineType]);
+
+  // Group vineyard templates by stage
+  const vineyardTemplatesByStage = useMemo(() => {
+    const grouped = new Map<string, TaskTemplate[]>();
+
+    for (const template of vineyardTemplates) {
+      const stageTemplates = grouped.get(template.stage) || [];
+      stageTemplates.push(template);
+      grouped.set(template.stage, stageTemplates);
+    }
+
+    return grouped;
+  }, [vineyardTemplates]);
+
+  // General task templates grouped by scope
+  const generalTaskTemplates: GeneralTaskTemplate[] = useMemo(() => {
+    return (effectiveGeneralTaskTemplatesData || [])
+      .filter((t: GeneralTaskTemplate) => showArchived || !t.is_archived)
+      .sort((a: GeneralTaskTemplate, b: GeneralTaskTemplate) => a.sort_order - b.sort_order);
+  }, [effectiveGeneralTaskTemplatesData, showArchived]);
+
+  const generalTasksByScope = useMemo(() => {
+    const grouped = new Map<string, GeneralTaskTemplate[]>();
+
+    for (const template of generalTaskTemplates) {
+      const scopeTasks = grouped.get(template.scope) || [];
+      scopeTasks.push(template);
+      grouped.set(template.scope, scopeTasks);
+    }
+
+    return grouped;
+  }, [generalTaskTemplates]);
 
   // Group supply templates by task template ID
   const supplyTemplates: SupplyTemplate[] = useMemo(() => {
@@ -209,6 +308,30 @@ export const StagesTasksSection = () => {
         next.delete(stage);
       } else {
         next.add(stage);
+      }
+      return next;
+    });
+  };
+
+  const toggleVineyardStage = (stage: string) => {
+    setExpandedVineyardStages(prev => {
+      const next = new Set(prev);
+      if (next.has(stage)) {
+        next.delete(stage);
+      } else {
+        next.add(stage);
+      }
+      return next;
+    });
+  };
+
+  const toggleGeneralScope = (scope: string) => {
+    setExpandedGeneralScopes(prev => {
+      const next = new Set(prev);
+      if (next.has(scope)) {
+        next.delete(scope);
+      } else {
+        next.add(scope);
       }
       return next;
     });
@@ -476,6 +599,107 @@ export const StagesTasksSection = () => {
     }
   };
 
+  // General task template handlers
+  const handleToggleGeneralTaskEnabled = async (template: GeneralTaskTemplate) => {
+    setIsUpdating(template.id);
+    try {
+      await (zero.mutate as any).general_task_template.update({
+        id: template.id,
+        is_enabled: !template.is_enabled,
+        updated_at: Date.now(),
+      });
+    } catch (err) {
+      console.error('Failed to toggle general task:', err);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const handleArchiveGeneralTask = async (template: GeneralTaskTemplate) => {
+    setIsUpdating(template.id);
+    try {
+      await (zero.mutate as any).general_task_template.update({
+        id: template.id,
+        is_archived: !template.is_archived,
+        updated_at: Date.now(),
+      });
+    } catch (err) {
+      console.error('Failed to archive general task:', err);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const handleSaveGeneralTask = async (template: GeneralTaskTemplate) => {
+    setIsUpdating(template.id);
+    try {
+      await (zero.mutate as any).general_task_template.update({
+        id: template.id,
+        name: template.name,
+        description: template.description,
+        frequency: template.frequency,
+        frequency_count: template.frequency_count,
+        updated_at: Date.now(),
+      });
+      setEditingGeneralTask(null);
+    } catch (err) {
+      console.error('Failed to update general task:', err);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const handleAddGeneralTask = async (scope: string) => {
+    if (!newGeneralTask.name) return;
+
+    setIsUpdating('new-general-task');
+    try {
+      const scopeTasks = generalTasksByScope.get(scope) || [];
+      const maxOrder = Math.max(...scopeTasks.map(t => t.sort_order), 0);
+
+      await (zero.mutate as any).general_task_template.insert({
+        id: generateId('gtt'),
+        user_id: user?.id || '',
+        name: newGeneralTask.name,
+        description: newGeneralTask.description,
+        scope: scope,
+        frequency: newGeneralTask.frequency,
+        frequency_count: newGeneralTask.frequency_count,
+        frequency_unit: newGeneralTask.frequency === 'once' ? '' : newGeneralTask.frequency.replace('ly', 's'),
+        is_enabled: true,
+        is_archived: false,
+        sort_order: maxOrder + 1,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+      });
+      setNewGeneralTask({ name: '', description: '', frequency: 'once', frequency_count: 1 });
+      setAddingGeneralTaskScope(null);
+    } catch (err) {
+      console.error('Failed to add general task:', err);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const formatGeneralTaskFrequency = (template: GeneralTaskTemplate): string => {
+    if (!template.frequency || template.frequency === 'once') {
+      return 'Once';
+    }
+    if (template.frequency === 'daily') {
+      return template.frequency_count === 1 ? 'Daily' : `${template.frequency_count}x Daily`;
+    }
+    if (template.frequency === 'weekly') {
+      return template.frequency_count === 1 ? 'Weekly' : `Every ${template.frequency_count} Weeks`;
+    }
+    if (template.frequency === 'biweekly') {
+      return 'Every 2 Weeks';
+    }
+    if (template.frequency === 'monthly') {
+      return template.frequency_count === 1 ? 'Monthly' : `Every ${template.frequency_count} Months`;
+    }
+    return template.frequency;
+  };
+
   const getStagesForFilter = (): Stage[] => {
     if (filterWineType === 'all') {
       return stages;
@@ -601,9 +825,15 @@ export const StagesTasksSection = () => {
         </div>
       )}
 
-      {/* Stages accordion */}
-      <div className={taskStyles.stagesContainer}>
-        {stagesToShow.map((stage) => {
+      {/* Winemaking Stages */}
+      <div className={styles.subsection}>
+        <h3 className={styles.subsectionTitle}>Winemaking Stages</h3>
+        <p className={styles.subsectionDescription}>
+          Configure winemaking stages and the tasks that are created when a wine enters each stage.
+        </p>
+
+        <div className={taskStyles.stagesContainer}>
+          {stagesToShow.map((stage) => {
           const stageTemplates = templatesByStage.get(stage.value) || [];
           const isExpanded = expandedStages.has(stage.value);
           const enabledCount = stageTemplates.filter(t => t.default_enabled && !t.is_archived).length;
@@ -1130,26 +1360,503 @@ export const StagesTasksSection = () => {
             </div>
           );
         })}
-      </div>
-
-      {/* Future sections placeholder */}
-      <div className={styles.subsection}>
-        <h3 className={styles.subsectionTitle}>Vineyard Seasonal Tasks</h3>
-        <p className={styles.subsectionDescription}>
-          Configure task templates for vineyard seasonal stages.
-        </p>
-        <div className={styles.placeholder}>
-          <p>Coming in a future update</p>
         </div>
       </div>
 
+      {/* Vineyard Seasonal Tasks */}
+      <div className={styles.subsection}>
+        <h3 className={styles.subsectionTitle}>Vineyard Seasonal Tasks</h3>
+        <p className={styles.subsectionDescription}>
+          Configure task templates for vineyard seasonal stages. Tasks are created when a block transitions to each stage.
+        </p>
+
+        <div className={taskStyles.stagesContainer}>
+          {vineyardStagesList.map((stage) => {
+            const stageTemplates = vineyardTemplatesByStage.get(stage.value) || [];
+            const isExpanded = expandedVineyardStages.has(stage.value);
+            const enabledCount = stageTemplates.filter(t => t.default_enabled && !t.is_archived).length;
+            const stageLabel = VINEYARD_STAGE_LABELS[stage.value] || stage.label;
+
+            return (
+              <div
+                key={stage.id}
+                className={`${taskStyles.stageSection} ${stage.is_archived ? taskStyles.archivedStage : ''}`}
+              >
+                <div className={taskStyles.stageHeader}>
+                  <button
+                    className={taskStyles.stageExpandButton}
+                    onClick={() => toggleVineyardStage(stage.value)}
+                  >
+                    <span className={taskStyles.stageChevron}>
+                      {isExpanded ? <FiChevronDown /> : <FiChevronRight />}
+                    </span>
+                    <span className={taskStyles.stageName}>{stageLabel}</span>
+                    <span className={taskStyles.stageCount}>
+                      {enabledCount}/{stageTemplates.filter(t => !t.is_archived).length} tasks
+                    </span>
+                    {stage.is_archived && (
+                      <span className={taskStyles.archivedBadge}>Archived</span>
+                    )}
+                  </button>
+                </div>
+
+                {isExpanded && (
+                  <div className={taskStyles.stageContent}>
+                    {stage.description && (
+                      <p className={taskStyles.stageDescription}>{stage.description}</p>
+                    )}
+
+                    {stageTemplates.length === 0 ? (
+                      <div className={taskStyles.emptyState}>
+                        No task templates for this stage
+                      </div>
+                    ) : (
+                      <div className={taskStyles.taskList}>
+                        {stageTemplates.map((template) => {
+                          const taskSupplies = suppliesByTaskTemplate.get(template.id) || [];
+                          const isSuppliesExpanded = expandedTaskForSupplies === template.id;
+
+                          return (
+                            <div key={template.id} className={taskStyles.taskItemWrapper}>
+                              <div
+                                className={`${taskStyles.taskItem} ${!template.default_enabled ? taskStyles.taskDisabled : ''} ${template.is_archived ? taskStyles.taskArchived : ''}`}
+                              >
+                                <button
+                                  className={`${taskStyles.toggleButton} ${template.default_enabled ? taskStyles.toggleEnabled : taskStyles.toggleDisabled}`}
+                                  onClick={() => handleToggleEnabled(template)}
+                                  disabled={isUpdating === template.id}
+                                  title={template.default_enabled ? 'Disable task' : 'Enable task'}
+                                >
+                                  {template.default_enabled ? <FiCheck /> : <FiX />}
+                                </button>
+
+                                <div className={taskStyles.taskInfo}>
+                                  <div className={taskStyles.taskName}>
+                                    {template.name}
+                                    {template.is_archived && (
+                                      <span className={taskStyles.archivedBadge}>Archived</span>
+                                    )}
+                                  </div>
+                                  {template.description && (
+                                    <div className={taskStyles.taskDescription}>
+                                      {template.description}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className={taskStyles.taskFrequency}>
+                                  {formatFrequency(template)}
+                                </div>
+
+                                <div className={taskStyles.taskActions}>
+                                  <button
+                                    onClick={() => toggleTaskSupplies(template.id)}
+                                    className={`${taskStyles.iconButton} ${taskSupplies.length > 0 ? taskStyles.hasSupplies : ''}`}
+                                    title={`Supplies (${taskSupplies.length})`}
+                                  >
+                                    <FiPackage />
+                                    {taskSupplies.length > 0 && (
+                                      <span className={taskStyles.supplyCount}>{taskSupplies.length}</span>
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingTask(template)}
+                                    className={taskStyles.iconButton}
+                                    title="Edit task"
+                                  >
+                                    <FiEdit2 />
+                                  </button>
+                                  <button
+                                    onClick={() => handleArchiveTask(template)}
+                                    className={taskStyles.iconButton}
+                                    title={template.is_archived ? 'Restore task' : 'Archive task'}
+                                    disabled={isUpdating === template.id}
+                                  >
+                                    {template.is_archived ? <FiRefreshCw /> : <FiTrash2 />}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Supplies section for vineyard tasks */}
+                              {isSuppliesExpanded && (
+                                <div className={taskStyles.suppliesSection}>
+                                  <div className={taskStyles.suppliesHeader}>
+                                    <FiPackage /> Supplies for this task
+                                  </div>
+
+                                  {taskSupplies.length === 0 && addingSupplyToTask !== template.id && (
+                                    <div className={taskStyles.noSupplies}>
+                                      No supplies configured
+                                    </div>
+                                  )}
+
+                                  {taskSupplies.map((supply) => (
+                                    <div
+                                      key={supply.id}
+                                      className={`${taskStyles.supplyItem} ${supply.is_archived ? taskStyles.supplyArchived : ''}`}
+                                    >
+                                      <div className={taskStyles.supplyInfo}>
+                                        <span className={taskStyles.supplyName}>
+                                          {supply.name}
+                                          {supply.is_archived && (
+                                            <span className={taskStyles.archivedBadge}>Archived</span>
+                                          )}
+                                        </span>
+                                        <span className={taskStyles.supplyDetails}>
+                                          {supply.quantity_formula || `${supply.quantity_fixed} needed`}
+                                          <span className={taskStyles.leadTime}>{supply.lead_time_days}d lead</span>
+                                        </span>
+                                      </div>
+                                      <div className={taskStyles.supplyActions}>
+                                        <button
+                                          onClick={() => setEditingSupply(supply)}
+                                          className={taskStyles.iconButton}
+                                          title="Edit supply"
+                                        >
+                                          <FiEdit2 />
+                                        </button>
+                                        <button
+                                          onClick={() => handleArchiveSupply(supply)}
+                                          className={taskStyles.iconButton}
+                                          title={supply.is_archived ? 'Restore supply' : 'Archive supply'}
+                                          disabled={isUpdating === supply.id}
+                                        >
+                                          {supply.is_archived ? <FiRefreshCw /> : <FiArchive />}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+
+                                  <button
+                                    className={taskStyles.addSupplyButton}
+                                    onClick={() => setAddingSupplyToTask(template.id)}
+                                  >
+                                    <FiPlus /> Add Supply
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Add task to vineyard stage */}
+                    {addingTaskToStage === stage.value ? (
+                      <div className={taskStyles.addTaskForm}>
+                        <input
+                          type="text"
+                          placeholder="Task name"
+                          value={newTask.name}
+                          onChange={(e) => setNewTask(prev => ({ ...prev, name: e.target.value }))}
+                          className={taskStyles.formInput}
+                        />
+                        <textarea
+                          placeholder="Description (optional)"
+                          value={newTask.description}
+                          onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                          className={taskStyles.formTextarea}
+                        />
+                        <div className={taskStyles.formRow}>
+                          <select
+                            value={newTask.frequency}
+                            onChange={(e) => setNewTask(prev => ({ ...prev, frequency: e.target.value }))}
+                            className={taskStyles.formSelect}
+                          >
+                            {FREQUENCY_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                          {newTask.frequency !== 'once' && (
+                            <input
+                              type="number"
+                              min="1"
+                              value={newTask.frequency_count}
+                              onChange={(e) => setNewTask(prev => ({ ...prev, frequency_count: parseInt(e.target.value) || 1 }))}
+                              className={taskStyles.formInputSmall}
+                              placeholder="Count"
+                            />
+                          )}
+                        </div>
+                        <div className={taskStyles.formActions}>
+                          <button onClick={() => setAddingTaskToStage(null)} className={taskStyles.cancelButton}>
+                            Cancel
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!newTask.name) return;
+                              setIsUpdating('new-task');
+                              try {
+                                const stageTasks = vineyardTemplatesByStage.get(stage.value) || [];
+                                const maxOrder = Math.max(...stageTasks.map(t => t.sort_order), 0);
+                                await zero.mutate.task_template.insert({
+                                  id: generateId('vtt'),
+                                  user_id: user?.id || '',
+                                  vineyard_id: 'default',
+                                  stage: stage.value,
+                                  entity_type: 'block',
+                                  wine_type: '',
+                                  name: newTask.name,
+                                  description: newTask.description,
+                                  frequency: newTask.frequency,
+                                  frequency_count: newTask.frequency_count,
+                                  frequency_unit: newTask.frequency === 'once' ? '' : newTask.frequency.replace('ly', 's'),
+                                  default_enabled: true,
+                                  is_archived: false,
+                                  sort_order: maxOrder + 1,
+                                  created_at: Date.now(),
+                                  updated_at: Date.now(),
+                                });
+                                setNewTask({ name: '', description: '', wine_type: '', frequency: 'once', frequency_count: 1 });
+                                setAddingTaskToStage(null);
+                              } catch (err) {
+                                console.error('Failed to add vineyard task:', err);
+                              } finally {
+                                setIsUpdating(null);
+                              }
+                            }}
+                            className={taskStyles.saveButton}
+                            disabled={!newTask.name || isUpdating === 'new-task'}
+                          >
+                            Add Task
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        className={taskStyles.addTaskButton}
+                        onClick={() => setAddingTaskToStage(stage.value)}
+                      >
+                        <FiPlus /> Add Task
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* General Tasks */}
       <div className={styles.subsection}>
         <h3 className={styles.subsectionTitle}>General Tasks</h3>
         <p className={styles.subsectionDescription}>
-          Create recurring or one-time tasks not tied to any specific stage.
+          Create recurring or one-time tasks not tied to any specific stage. Can be attached to either the vineyard or winery.
         </p>
-        <div className={styles.placeholder}>
-          <p>Coming in a future update</p>
+
+        <div className={taskStyles.stagesContainer}>
+          {(['vineyard', 'winery'] as const).map((scope) => {
+            const scopeTemplates = generalTasksByScope.get(scope) || [];
+            const isExpanded = expandedGeneralScopes.has(scope);
+            const enabledCount = scopeTemplates.filter(t => t.is_enabled && !t.is_archived).length;
+            const scopeLabel = scope === 'vineyard' ? 'Vineyard Tasks' : 'Winery Tasks';
+            const scopeDescription = scope === 'vineyard'
+              ? 'General tasks for vineyard operations and maintenance'
+              : 'General tasks for winery operations and maintenance';
+
+            return (
+              <div key={scope} className={taskStyles.stageSection}>
+                <div className={taskStyles.stageHeader}>
+                  <button
+                    className={taskStyles.stageExpandButton}
+                    onClick={() => toggleGeneralScope(scope)}
+                  >
+                    <span className={taskStyles.stageChevron}>
+                      {isExpanded ? <FiChevronDown /> : <FiChevronRight />}
+                    </span>
+                    <span className={taskStyles.stageName}>{scopeLabel}</span>
+                    <span className={taskStyles.stageCount}>
+                      {enabledCount}/{scopeTemplates.filter(t => !t.is_archived).length} tasks
+                    </span>
+                  </button>
+                </div>
+
+                {isExpanded && (
+                  <div className={taskStyles.stageContent}>
+                    <p className={taskStyles.stageDescription}>{scopeDescription}</p>
+
+                    {scopeTemplates.length === 0 ? (
+                      <div className={taskStyles.emptyState}>
+                        No general tasks configured for {scope}
+                      </div>
+                    ) : (
+                      <div className={taskStyles.taskList}>
+                        {scopeTemplates.map((template) => {
+                          const isTaskEditing = editingGeneralTask?.id === template.id;
+
+                          if (isTaskEditing) {
+                            return (
+                              <div key={template.id} className={taskStyles.taskEditForm}>
+                                <input
+                                  type="text"
+                                  value={editingGeneralTask.name}
+                                  onChange={(e) => setEditingGeneralTask({ ...editingGeneralTask, name: e.target.value })}
+                                  className={taskStyles.formInput}
+                                  placeholder="Task name"
+                                />
+                                <textarea
+                                  value={editingGeneralTask.description}
+                                  onChange={(e) => setEditingGeneralTask({ ...editingGeneralTask, description: e.target.value })}
+                                  className={taskStyles.formTextarea}
+                                  placeholder="Description"
+                                />
+                                <div className={taskStyles.formRow}>
+                                  <select
+                                    value={editingGeneralTask.frequency}
+                                    onChange={(e) => setEditingGeneralTask({ ...editingGeneralTask, frequency: e.target.value })}
+                                    className={taskStyles.formSelect}
+                                  >
+                                    {FREQUENCY_OPTIONS.map(opt => (
+                                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                    <option value="biweekly">Biweekly</option>
+                                  </select>
+                                  {editingGeneralTask.frequency !== 'once' && editingGeneralTask.frequency !== 'biweekly' && (
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      value={editingGeneralTask.frequency_count}
+                                      onChange={(e) => setEditingGeneralTask({ ...editingGeneralTask, frequency_count: parseInt(e.target.value) || 1 })}
+                                      className={taskStyles.formInputSmall}
+                                    />
+                                  )}
+                                </div>
+                                <div className={taskStyles.formActions}>
+                                  <button onClick={() => setEditingGeneralTask(null)} className={taskStyles.cancelButton}>
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => handleSaveGeneralTask(editingGeneralTask)}
+                                    className={taskStyles.saveButton}
+                                    disabled={isUpdating === template.id}
+                                  >
+                                    Save
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div
+                              key={template.id}
+                              className={`${taskStyles.taskItem} ${!template.is_enabled ? taskStyles.taskDisabled : ''} ${template.is_archived ? taskStyles.taskArchived : ''}`}
+                            >
+                              <button
+                                className={`${taskStyles.toggleButton} ${template.is_enabled ? taskStyles.toggleEnabled : taskStyles.toggleDisabled}`}
+                                onClick={() => handleToggleGeneralTaskEnabled(template)}
+                                disabled={isUpdating === template.id}
+                                title={template.is_enabled ? 'Disable task' : 'Enable task'}
+                              >
+                                {template.is_enabled ? <FiCheck /> : <FiX />}
+                              </button>
+
+                              <div className={taskStyles.taskInfo}>
+                                <div className={taskStyles.taskName}>
+                                  {template.name}
+                                  {template.is_archived && (
+                                    <span className={taskStyles.archivedBadge}>Archived</span>
+                                  )}
+                                </div>
+                                {template.description && (
+                                  <div className={taskStyles.taskDescription}>
+                                    {template.description}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className={taskStyles.taskFrequency}>
+                                {formatGeneralTaskFrequency(template)}
+                              </div>
+
+                              <div className={taskStyles.taskActions}>
+                                <button
+                                  onClick={() => setEditingGeneralTask(template)}
+                                  className={taskStyles.iconButton}
+                                  title="Edit task"
+                                >
+                                  <FiEdit2 />
+                                </button>
+                                <button
+                                  onClick={() => handleArchiveGeneralTask(template)}
+                                  className={taskStyles.iconButton}
+                                  title={template.is_archived ? 'Restore task' : 'Archive task'}
+                                  disabled={isUpdating === template.id}
+                                >
+                                  {template.is_archived ? <FiRefreshCw /> : <FiTrash2 />}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Add general task form */}
+                    {addingGeneralTaskScope === scope ? (
+                      <div className={taskStyles.addTaskForm}>
+                        <input
+                          type="text"
+                          placeholder="Task name"
+                          value={newGeneralTask.name}
+                          onChange={(e) => setNewGeneralTask(prev => ({ ...prev, name: e.target.value }))}
+                          className={taskStyles.formInput}
+                        />
+                        <textarea
+                          placeholder="Description (optional)"
+                          value={newGeneralTask.description}
+                          onChange={(e) => setNewGeneralTask(prev => ({ ...prev, description: e.target.value }))}
+                          className={taskStyles.formTextarea}
+                        />
+                        <div className={taskStyles.formRow}>
+                          <select
+                            value={newGeneralTask.frequency}
+                            onChange={(e) => setNewGeneralTask(prev => ({ ...prev, frequency: e.target.value }))}
+                            className={taskStyles.formSelect}
+                          >
+                            {FREQUENCY_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                            <option value="biweekly">Biweekly</option>
+                          </select>
+                          {newGeneralTask.frequency !== 'once' && newGeneralTask.frequency !== 'biweekly' && (
+                            <input
+                              type="number"
+                              min="1"
+                              value={newGeneralTask.frequency_count}
+                              onChange={(e) => setNewGeneralTask(prev => ({ ...prev, frequency_count: parseInt(e.target.value) || 1 }))}
+                              className={taskStyles.formInputSmall}
+                              placeholder="Count"
+                            />
+                          )}
+                        </div>
+                        <div className={taskStyles.formActions}>
+                          <button onClick={() => setAddingGeneralTaskScope(null)} className={taskStyles.cancelButton}>
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleAddGeneralTask(scope)}
+                            className={taskStyles.saveButton}
+                            disabled={!newGeneralTask.name || isUpdating === 'new-general-task'}
+                          >
+                            Add Task
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        className={taskStyles.addTaskButton}
+                        onClick={() => setAddingGeneralTaskScope(scope)}
+                      >
+                        <FiPlus /> Add Task
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -298,6 +298,36 @@ var supplyInstanceTable = (0, import_zero.table)("supply_instance").columns({
   created_at: (0, import_zero.number)(),
   updated_at: (0, import_zero.number)()
 }).primaryKey("id");
+var generalTaskTemplateTable = (0, import_zero.table)("general_task_template").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  name: (0, import_zero.string)(),
+  description: (0, import_zero.string)(),
+  scope: (0, import_zero.string)(),
+  // 'vineyard' or 'winery'
+  frequency: (0, import_zero.string)(),
+  frequency_count: (0, import_zero.number)(),
+  frequency_unit: (0, import_zero.string)(),
+  is_enabled: (0, import_zero.boolean)(),
+  is_archived: (0, import_zero.boolean)(),
+  sort_order: (0, import_zero.number)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var generalTaskTable = (0, import_zero.table)("general_task").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  template_id: (0, import_zero.string)(),
+  name: (0, import_zero.string)(),
+  description: (0, import_zero.string)(),
+  scope: (0, import_zero.string)(),
+  due_date: (0, import_zero.number)().optional(),
+  completed_at: (0, import_zero.number)().optional(),
+  skipped: (0, import_zero.boolean)(),
+  notes: (0, import_zero.string)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
 var schema = (0, import_zero.createSchema)({
   tables: [
     userTable,
@@ -317,7 +347,9 @@ var schema = (0, import_zero.createSchema)({
     seasonalTaskTable,
     measurementAnalysisTable,
     supplyTemplateTable,
-    supplyInstanceTable
+    supplyInstanceTable,
+    generalTaskTemplateTable,
+    generalTaskTable
   ]
 });
 var builder = (0, import_zero.createBuilder)(schema);
@@ -513,6 +545,28 @@ var permissions = (0, import_zero.definePermissions)(
         }
       },
       block_stage_history: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      general_task_template: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      general_task: {
         row: {
           select: import_zero.ANYONE_CAN,
           insert: import_zero.ANYONE_CAN,

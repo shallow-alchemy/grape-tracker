@@ -380,3 +380,55 @@ export const vineyardStages = syncedQueryWithContext(
       .where('is_archived', false);
   }
 );
+
+// General task template queries - returns all templates (global or user-created)
+export const generalTaskTemplates = syncedQueryWithContext(
+  'generalTaskTemplates',
+  z.tuple([]),
+  (_userID: string | undefined) => {
+    // General task templates can be global (user_id = '') - no user filter needed
+    return builder.general_task_template.where('is_archived', false);
+  }
+);
+
+// All general task templates including archived (for settings management)
+export const allGeneralTaskTemplates = syncedQueryWithContext(
+  'allGeneralTaskTemplates',
+  z.tuple([]),
+  (_userID: string | undefined) => {
+    return builder.general_task_template;
+  }
+);
+
+// General task templates filtered by scope
+export const generalTaskTemplatesByScope = syncedQueryWithContext(
+  'generalTaskTemplatesByScope',
+  z.tuple([z.string()]),
+  (_userID: string | undefined, scope: string) => {
+    return builder.general_task_template
+      .where('scope', scope)
+      .where('is_archived', false);
+  }
+);
+
+// User's general tasks
+export const myGeneralTasks = syncedQueryWithContext(
+  'myGeneralTasks',
+  z.tuple([]),
+  (userID: string | undefined) => {
+    if (!userID) return builder.general_task.where('id', '___never_match___');
+    return builder.general_task.where('user_id', userID);
+  }
+);
+
+// User's general tasks by scope
+export const myGeneralTasksByScope = syncedQueryWithContext(
+  'myGeneralTasksByScope',
+  z.tuple([z.string()]),
+  (userID: string | undefined, scope: string) => {
+    if (!userID) return builder.general_task.where('id', '___never_match___');
+    return builder.general_task
+      .where('user_id', userID)
+      .where('scope', scope);
+  }
+);
