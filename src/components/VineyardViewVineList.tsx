@@ -47,6 +47,22 @@ export const VineyardViewVineList = ({ selectedBlock, navigateToVine, navigateTo
     return labels[block.trainingMethod] || block.trainingMethod;
   };
 
+  // Get stage label for a block
+  const getStageLabel = (block: { currentStage: string | null }) => {
+    if (!block.currentStage) return 'DORMANT';
+    const labels: Record<string, string> = {
+      dormant: 'DORMANT',
+      bud_break: 'BUD BREAK',
+      flowering: 'FLOWERING',
+      fruit_set: 'FRUIT SET',
+      veraison: 'VERAISON',
+      ripening: 'RIPENING',
+      harvest: 'HARVEST',
+      post_harvest: 'POST-HARVEST',
+    };
+    return labels[block.currentStage] || block.currentStage.toUpperCase().replace(/_/g, ' ');
+  };
+
   return (
     <div className={styles.vineList}>
       {/* Show block cards when no block is selected */}
@@ -58,12 +74,13 @@ export const VineyardViewVineList = ({ selectedBlock, navigateToVine, navigateTo
               const vineCount = getVineCountForBlock(block.id);
               const varieties = getVarietiesForBlock(block.id);
               const trainingLabel = getTrainingMethodLabel(block);
+              const stageLabel = getStageLabel(block);
               return (
                 <ListItem
                   key={block.id}
                   id={block.name}
                   primaryInfo={varieties}
-                  secondaryInfo={`${vineCount} vine${vineCount !== 1 ? 's' : ''}`}
+                  secondaryInfo={`${vineCount} vine${vineCount !== 1 ? 's' : ''} • ${stageLabel}`}
                   status={trainingLabel}
                   onClick={() => navigateToBlock(block.id)}
                 />

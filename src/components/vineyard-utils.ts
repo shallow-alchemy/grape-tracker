@@ -80,6 +80,8 @@ export const transformBlockData = (block: BlockDataRaw): BlockData => ({
   notes: block.notes,
   trainingMethod: block.training_method,
   trainingMethodOther: block.training_method_other,
+  currentStage: block.current_stage,
+  stageEnteredAt: block.stage_entered_at,
 });
 
 export const filterVinesByBlock = (vines: VineDataRaw[], blockId: string | null): VineDataRaw[] => {

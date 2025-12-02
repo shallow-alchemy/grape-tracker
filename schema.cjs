@@ -59,6 +59,8 @@ var blockTable = (0, import_zero.table)("block").columns({
   notes: (0, import_zero.string)(),
   training_method: (0, import_zero.string)().optional(),
   training_method_other: (0, import_zero.string)().optional(),
+  current_stage: (0, import_zero.string)().optional(),
+  stage_entered_at: (0, import_zero.number)().optional(),
   created_at: (0, import_zero.number)(),
   updated_at: (0, import_zero.number)()
 }).primaryKey("id");
@@ -134,6 +136,19 @@ var stageHistoryTable = (0, import_zero.table)("stage_history").columns({
   completed_at: (0, import_zero.number)().optional(),
   skipped: (0, import_zero.boolean)(),
   notes: (0, import_zero.string)(),
+  created_at: (0, import_zero.number)(),
+  updated_at: (0, import_zero.number)()
+}).primaryKey("id");
+var blockStageHistoryTable = (0, import_zero.table)("block_stage_history").columns({
+  id: (0, import_zero.string)(),
+  user_id: (0, import_zero.string)(),
+  block_id: (0, import_zero.string)(),
+  stage: (0, import_zero.string)(),
+  started_at: (0, import_zero.number)(),
+  completed_at: (0, import_zero.number)().optional(),
+  notes: (0, import_zero.string)(),
+  triggered_by: (0, import_zero.string)(),
+  // 'manual' | 'ai_suggestion' | 'auto'
   created_at: (0, import_zero.number)(),
   updated_at: (0, import_zero.number)()
 }).primaryKey("id");
@@ -293,6 +308,7 @@ var schema = (0, import_zero.createSchema)({
     vintageTable,
     wineTable,
     stageHistoryTable,
+    blockStageHistoryTable,
     stageTable,
     taskTemplateTable,
     taskTable,
@@ -486,6 +502,17 @@ var permissions = (0, import_zero.definePermissions)(
         }
       },
       supply_instance: {
+        row: {
+          select: import_zero.ANYONE_CAN,
+          insert: import_zero.ANYONE_CAN,
+          update: {
+            preMutation: import_zero.ANYONE_CAN,
+            postMutation: import_zero.ANYONE_CAN
+          },
+          delete: import_zero.ANYONE_CAN
+        }
+      },
+      block_stage_history: {
         row: {
           select: import_zero.ANYONE_CAN,
           insert: import_zero.ANYONE_CAN,

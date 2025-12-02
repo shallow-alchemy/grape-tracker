@@ -26,6 +26,17 @@ const TRAINING_METHOD_OPTIONS = [
   { value: 'OTHER', label: 'Other (Custom)' },
 ];
 
+const SEASONAL_STAGE_OPTIONS = [
+  { value: 'dormant', label: 'Dormant', description: 'Winter rest period. Ideal for pruning.' },
+  { value: 'bud_break', label: 'Bud Break', description: 'Spring awakening. Critical frost protection.' },
+  { value: 'flowering', label: 'Flowering', description: 'Pollination occurs. Weather-sensitive.' },
+  { value: 'fruit_set', label: 'Fruit Set', description: 'Berries form. Canopy management.' },
+  { value: 'veraison', label: 'Veraison', description: 'Color change. Ripening begins.' },
+  { value: 'ripening', label: 'Ripening', description: 'Sugar rises. Monitor Brix.' },
+  { value: 'harvest', label: 'Harvest', description: 'Active picking operations.' },
+  { value: 'post_harvest', label: 'Post-Harvest', description: 'Leaves drop. Prepare for winter.' },
+];
+
 type BlockDetailsViewProps = {
   blockId: string;
   onUpdateSuccess: (message: string) => void;
@@ -171,7 +182,55 @@ export const BlockDetailsView = ({
 
         <div className={styles.vineDetailsSection}>
           <h2 className={styles.sectionTitle}>SEASONAL STAGE</h2>
-          <p className={styles.sectionPlaceholder}>Coming soon...</p>
+          <InlineEdit
+            label="CURRENT STAGE"
+            value={block.currentStage || 'dormant'}
+            type="select"
+            options={SEASONAL_STAGE_OPTIONS}
+            formatDisplay={(stage) => {
+              const option = SEASONAL_STAGE_OPTIONS.find((o) => o.value === stage);
+              return option?.label || 'Dormant';
+            }}
+            onSave={async (newStage) => {
+              const now = Date.now();
+              const previousStage = block.currentStage || 'dormant';
+
+              // Update the block with new stage
+              await zero.mutate.block.update({
+                id: block.id,
+                current_stage: newStage,
+                stage_entered_at: now,
+                updated_at: now,
+              } as any);
+
+              // Record the stage transition in history
+              await (zero.mutate as any).block_stage_history.insert({
+                id: crypto.randomUUID(),
+                user_id: blockRaw?.user_id || '',
+                block_id: block.id,
+                stage: newStage,
+                started_at: now,
+                notes: `Transitioned from ${previousStage} to ${newStage}`,
+                triggered_by: 'manual',
+                created_at: now,
+                updated_at: now,
+              });
+
+              const stageLabel = SEASONAL_STAGE_OPTIONS.find((o) => o.value === newStage)?.label || newStage;
+              onUpdateSuccess(`Stage updated to ${stageLabel}`);
+            }}
+          />
+          {block.stageEnteredAt && (
+            <div className={styles.inlineEditRow}>
+              <span className={styles.inlineEditLabel}>SINCE</span>
+              <span className={styles.inlineEditValue}>
+                {new Date(block.stageEnteredAt).toLocaleDateString()}
+              </span>
+            </div>
+          )}
+          <div className={styles.stageDescription}>
+            {SEASONAL_STAGE_OPTIONS.find((o) => o.value === (block.currentStage || 'dormant'))?.description}
+          </div>
         </div>
 
         <div className={styles.vineDetailsSection}>

@@ -348,3 +348,35 @@ export const mySupplyInstancesByEntity = syncedQueryWithContext(
       .where('entity_id', entityId);
   }
 );
+
+// Block stage history queries
+export const myBlockStageHistory = syncedQueryWithContext(
+  'myBlockStageHistory',
+  z.tuple([]),
+  (userID: string | undefined) => {
+    if (!userID) return builder.block_stage_history.where('id', '___never_match___');
+    return builder.block_stage_history.where('user_id', userID);
+  }
+);
+
+export const myBlockStageHistoryByBlock = syncedQueryWithContext(
+  'myBlockStageHistoryByBlock',
+  z.tuple([z.string()]),
+  (userID: string | undefined, blockId: string) => {
+    if (!userID) return builder.block_stage_history.where('id', '___never_match___');
+    return builder.block_stage_history
+      .where('user_id', userID)
+      .where('block_id', blockId);
+  }
+);
+
+// Vineyard stages (entity_type = 'block')
+export const vineyardStages = syncedQueryWithContext(
+  'vineyardStages',
+  z.tuple([]),
+  (_userID: string | undefined) => {
+    return builder.stage
+      .where('entity_type', 'block')
+      .where('is_archived', false);
+  }
+);

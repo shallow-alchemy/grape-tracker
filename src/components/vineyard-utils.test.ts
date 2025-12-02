@@ -402,6 +402,8 @@ describe('vineyard-utils', () => {
         notes: 'Excellent drainage',
         training_method: 'BILATERAL_CORDON',
         training_method_other: null,
+        current_stage: 'dormant',
+        stage_entered_at: Date.now(),
         created_at: Date.now(),
         updated_at: Date.now(),
       };
@@ -416,6 +418,7 @@ describe('vineyard-utils', () => {
       expect(result.notes).toBe('Excellent drainage');
       expect(result.trainingMethod).toBe('BILATERAL_CORDON');
       expect(result.trainingMethodOther).toBeNull();
+      expect(result.currentStage).toBe('dormant');
     });
 
     test('handles all block fields correctly', () => {
@@ -429,6 +432,8 @@ describe('vineyard-utils', () => {
         notes: 'Needs irrigation',
         training_method: null,
         training_method_other: null,
+        current_stage: null,
+        stage_entered_at: null,
         created_at: Date.now(),
         updated_at: Date.now(),
       };
@@ -444,6 +449,8 @@ describe('vineyard-utils', () => {
         notes: 'Needs irrigation',
         trainingMethod: null,
         trainingMethodOther: null,
+        currentStage: null,
+        stageEnteredAt: null,
       });
     });
   });

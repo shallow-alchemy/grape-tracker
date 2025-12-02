@@ -21,6 +21,21 @@ let cachedVinesData: any[] | null = null;
 let cachedBlocksData: any[] | null = null;
 let cachedWinesData: any[] | null = null;
 
+// Vineyard seasonal stage display labels
+const VINEYARD_STAGE_LABELS: Record<string, string> = {
+  dormant: 'DORMANT',
+  bud_break: 'BUD BREAK',
+  flowering: 'FLOWERING',
+  fruit_set: 'FRUIT SET',
+  veraison: 'VERAISON',
+  ripening: 'RIPENING',
+  harvest: 'HARVEST',
+  post_harvest: 'POST-HARVEST',
+};
+
+// Stage order for determining the "furthest along" stage
+const STAGE_ORDER = ['dormant', 'bud_break', 'flowering', 'fruit_set', 'veraison', 'ripening', 'harvest', 'post_harvest'];
+
 export const VineyardSummary = () => {
   const { user } = useUser();
   const [vinesData] = useQuery(myVines(user?.id) as any) as any;
@@ -46,6 +61,41 @@ export const VineyardSummary = () => {
   const concerningVines = effectiveVinesData.filter(
     (v: any) => v.health && !healthyStates.includes(v.health.toUpperCase())
   ).length;
+
+  // Determine the vineyard's overall stage from block stages
+  // Use the "furthest along" stage if blocks are at different stages
+  const getVineyardStage = (): string => {
+    if (effectiveBlocksData.length === 0) {
+      return 'dormant'; // Default when no blocks
+    }
+
+    // Get all unique stages from blocks
+    const stages = effectiveBlocksData
+      .map((b: any) => b.current_stage || 'dormant')
+      .filter((s: string) => STAGE_ORDER.includes(s));
+
+    if (stages.length === 0) {
+      return 'dormant';
+    }
+
+    // Find the stage that's furthest along in the season
+    let maxIndex = -1;
+    for (const stage of stages) {
+      const index = STAGE_ORDER.indexOf(stage);
+      if (index > maxIndex) {
+        maxIndex = index;
+      }
+    }
+
+    return STAGE_ORDER[maxIndex] || 'dormant';
+  };
+
+  const currentStage = getVineyardStage();
+  const stageLabel = VINEYARD_STAGE_LABELS[currentStage] || currentStage.toUpperCase().replace(/_/g, ' ');
+
+  // Check if blocks are at different stages
+  const uniqueStages = new Set(effectiveBlocksData.map((b: any) => b.current_stage || 'dormant'));
+  const hasMultipleStages = uniqueStages.size > 1;
 
   if (isLoading) {
     return (
@@ -83,7 +133,10 @@ export const VineyardSummary = () => {
       </div>
       <div className={styles.vineyardStage}>
         <span className={styles.vineyardStageLabel}>CURRENT STAGE</span>
-        <span className={styles.vineyardStageValue}>DORMANT</span>
+        <span className={styles.vineyardStageValue}>
+          {stageLabel}
+          {hasMultipleStages && <span className={styles.vineyardStageMixed}> (MIXED)</span>}
+        </span>
       </div>
     </div>
   );

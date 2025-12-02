@@ -33,6 +33,8 @@ export type BlockData = {
   notes: string;
   trainingMethod: string | null;
   trainingMethodOther: string | null;
+  currentStage: string | null;
+  stageEnteredAt: number | null;
 };
 
 export type BlockDataRaw = {
@@ -45,6 +47,8 @@ export type BlockDataRaw = {
   notes: string;
   training_method: string | null;
   training_method_other: string | null;
+  current_stage: string | null;
+  stage_entered_at: number | null;
   created_at: number;
   updated_at: number;
 };

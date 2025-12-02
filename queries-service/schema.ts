@@ -37,6 +37,8 @@ const blockTable = table('block')
     notes: string(),
     training_method: string().optional(),
     training_method_other: string().optional(),
+    current_stage: string().optional(),
+    stage_entered_at: number().optional(),
     created_at: number(),
     updated_at: number(),
   })
@@ -127,6 +129,21 @@ const stageHistoryTable = table('stage_history')
     completed_at: number().optional(),
     skipped: boolean(),
     notes: string(),
+    created_at: number(),
+    updated_at: number(),
+  })
+  .primaryKey('id');
+
+const blockStageHistoryTable = table('block_stage_history')
+  .columns({
+    id: string(),
+    user_id: string(),
+    block_id: string(),
+    stage: string(),
+    started_at: number(),
+    completed_at: number().optional(),
+    notes: string(),
+    triggered_by: string(),  // 'manual' | 'ai_suggestion' | 'auto'
     created_at: number(),
     updated_at: number(),
   })
@@ -296,6 +313,7 @@ export const schema = createSchema({
     vintageTable,
     wineTable,
     stageHistoryTable,
+    blockStageHistoryTable,
     stageTable,
     taskTemplateTable,
     taskTable,
@@ -497,6 +515,17 @@ export const permissions = definePermissions<{ sub: string }, Schema>(
         },
       },
       supply_instance: {
+        row: {
+          select: ANYONE_CAN,
+          insert: ANYONE_CAN,
+          update: {
+            preMutation: ANYONE_CAN,
+            postMutation: ANYONE_CAN,
+          },
+          delete: ANYONE_CAN,
+        },
+      },
+      block_stage_history: {
         row: {
           select: ANYONE_CAN,
           insert: ANYONE_CAN,
